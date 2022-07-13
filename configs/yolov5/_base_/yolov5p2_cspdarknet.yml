@@ -1,0 +1,18 @@
+_BASE_: [
+  'yolov5_cspdarknet.yml',
+]
+
+CSPDarkNet:
+  arch: "P5"
+  return_idx: [1, 2, 3, 4]
+
+YOLOv5Head:
+  anchors: [[5, 6], [8, 14], [15, 11],
+            [10, 13], [16, 30], [33, 23],
+            [30, 61], [62, 45], [59, 119],
+            [116, 90], [156, 198], [373, 326]]
+  anchor_masks: [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
+  stride: [4, 8, 16, 32]
+
+YOLOv5Loss:
+  downsample_ratios: [4, 8, 16, 32]

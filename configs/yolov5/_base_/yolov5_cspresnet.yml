@@ -1,0 +1,22 @@
+_BASE_: [
+  'yolov5_cspdarknet.yml',
+]
+
+YOLOv5:
+  backbone: CSPResNet
+  neck: CustomCSPPAN
+  yolo_head: YOLOv5Head
+  post_process: ~
+
+CSPResNet:
+  layers: [3, 6, 6, 3]
+  channels: [64, 128, 256, 512, 1024]
+  return_idx: [1, 2, 3]
+  use_large_stem: True
+
+CustomCSPPAN:
+  out_channels: [768, 384, 192]
+  stage_num: 1
+  block_num: 3
+  act: 'swish'
+  spp: true
