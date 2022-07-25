@@ -1142,7 +1142,6 @@ class ELANFPN(nn.Layer):
             trt=False):
         super(ELANFPN, self).__init__()
         self.in_channels = in_channels  # * width_mult
-        Conv = DWConv if depthwise else BaseConv
         self.arch = arch
         concat_list_settings = self.concat_list_settings[arch]
         num_blocks = self.num_blocks[arch]
@@ -1213,10 +1212,11 @@ class ELANFPN(nn.Layer):
             act=act)
 
         self.repconvs = nn.LayerList()
+        Conv = RepConv if self.arch == 'L' else BaseConv
         for out_ch in self._out_channels:
             self.repconvs.append(
-                RepConv(
-                    int(out_ch // 2), out_ch, k=3, s=1, p=1))
+                Conv(
+                    int(out_ch // 2), out_ch, 3, 1))
 
     def forward(self, feats, for_mot=False):
         assert len(feats) == len(self.in_channels)
@@ -1232,7 +1232,7 @@ class ELANFPN(nn.Layer):
         f_out1 = paddle.concat([route_c4, p5_up], 1)  # 512 # [8, 512, 40, 40]
         fpn_out1 = self.elan_fpn1(
             f_out1)  # 512 -> 128*4 + 256*2 -> 1024 -> 256
-        #print('63  fpn_out1 ', fpn_out1.shape, fpn_out1.sum())
+        # print('63  fpn_out1 ', fpn_out1.shape, fpn_out1.sum())
         # 63
         fpn_out1_lateral = self.lateral_conv2(fpn_out1)  # 256->128
         fpn_out1_up = self.upsample(fpn_out1_lateral)
@@ -1259,7 +1259,7 @@ class ELANFPN(nn.Layer):
         pan_outs = [fpn_out2, pan_out1, pan_out2]  # 75 88 101
         # for x in pan_outs:
         #     print('///// 75 88 101 pan_outs:  ', x.shape, x.sum())
-        # [8, 128, 80, 80] [8, 256, 40, 40] [8, 512, 20, 20]
+        # #[8, 128, 80, 80] [8, 256, 40, 40] [8, 512, 20, 20]
         outputs = []
         for i, out in enumerate(pan_outs):
             outputs.append(self.repconvs[i](out))

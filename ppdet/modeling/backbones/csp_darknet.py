@@ -423,11 +423,11 @@ class RepConv(nn.Layer):
             return 0, 0
         if isinstance(branch, nn.Sequential):
             kernel = branch[0].weight
-            running_mean = branch[1].running_mean
-            running_var = branch[1].running_var
+            running_mean = branch[1]._mean
+            running_var = branch[1]._variance
             gamma = branch[1].weight
             beta = branch[1].bias
-            eps = branch[1].eps
+            eps = branch[1]._epsilon
         else:
             assert isinstance(branch, nn.BatchNorm2D)
             if not hasattr(self, "id_tensor"):
@@ -439,17 +439,29 @@ class RepConv(nn.Layer):
                     kernel_value[i, i % input_dim, 1, 1] = 1
                 self.id_tensor = kernel_value  #torch.from_numpy(kernel_value).to(branch.weight.device)
             kernel = self.id_tensor
-            running_mean = branch.running_mean
-            running_var = branch.running_var
+            running_mean = branch._mean
+            running_var = branch._variance
             gamma = branch.weight
             beta = branch.bias
-            eps = branch.eps
+            eps = branch._epsilon
         std = (running_var + eps).sqrt()
         t = (gamma / std).reshape((-1, 1, 1, 1))
         return kernel * t, beta - running_mean * gamma / std
 
     def convert_to_deploy(self):
-        # repvgg_convert()
+        if hasattr(self, 'rbr_reparam'):
+            return
+        print(f"RepConv_OREPA.switch_to_deploy")
+        kernel, bias = self.get_equivalent_kernel_bias()
+        # self.rbr_reparam = nn.Conv2D(
+        #     self.rbr_dense.in_channels,
+        #     self.rbr_dense.out_channels,
+        #     self.rbr_dense.kernel_size,
+        #     self.rbr_dense.stride,
+        #     self.rbr_dense.padding,
+        #     dilation=self.rbr_dense.dilation,
+        #     groups=self.rbr_dense.groups,
+        #     bias_attr=True)
         if not hasattr(self, 'rbr_reparam'):
             self.conv = nn.Conv2D(
                 self.in_channels,
@@ -458,14 +470,18 @@ class RepConv(nn.Layer):
                 1,
                 1,
                 groups=self.groups,
-                bias=True)
-        kernel, bias = self.get_equivalent_kernel_bias()
-        #return (kernel.numpy(), bias.numpy())
-        self.rbr_reparam.weight.set_value(kernel)
-        self.rbr_reparam.bias.set_value(bias)
+                bias_attr=True)
         return (kernel.numpy(), bias.numpy())
-        self.__delattr__('rbr_dense')
-        self.__delattr__('rbr_1x1')
+        
+        # self.rbr_reparam.weight.set_value(kernel)
+        # self.rbr_reparam.bias.set_value(bias)
+        # # for para in self.parameters():
+        # #     para.detach_()
+        # self.__delattr__('rbr_dense')
+        # self.__delattr__('rbr_1x1')
+        # if hasattr(self, 'rbr_identity'):
+        #     self.__delattr__('rbr_identity') 
+        # return (kernel.numpy(), bias.numpy())
 
     def fuse_conv_bn(self, conv, bn):
         std = (bn.running_var + bn.eps).sqrt()

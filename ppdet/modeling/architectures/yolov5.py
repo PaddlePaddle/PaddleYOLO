@@ -92,7 +92,6 @@ class YOLOv5(BaseArch):
             bbox, bbox_num = self.yolo_head.post_process(
                 yolo_head_outs, self.inputs['im_shape'],
                 self.inputs['scale_factor'])
-            # print(bbox)
             return {'bbox': bbox, 'bbox_num': bbox_num}
 
     def get_loss(self):
