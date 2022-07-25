@@ -50,6 +50,8 @@ from ppdet.modeling.initializer import reset_initialized_parameter
 from .callbacks import Callback, ComposeCallback, LogPrinter, Checkpointer, WiferFaceEval, VisualDLWriter, SniperProposalsGenerator, WandbCallback
 from .export_utils import _dump_infer_config, _prune_input_spec
 
+from paddle.distributed.fleet.utils.hybrid_parallel_util import fused_allreduce_gradients
+
 from ppdet.utils.logger import setup_logger
 logger = setup_logger('ppdet.engine')
 
@@ -157,7 +159,6 @@ class Trainer(object):
             if self.cfg.get('unstructured_prune'):
                 self.pruner = create('UnstructuredPruner')(self.model,
                                                            steps_per_epoch)
-
         if self.use_amp and self.amp_level == 'O2':
             self.model = paddle.amp.decorate(
                 models=self.model, level=self.amp_level)
@@ -401,8 +402,6 @@ class Trainer(object):
             scaler = paddle.amp.GradScaler(
                 enable=self.cfg.use_gpu or self.cfg.use_npu,
                 init_loss_scaling=self.cfg.get('init_loss_scaling', 1024))
-            # model = paddle.amp.decorate(models=model, level=self.amp_level)
-            # only for tipc
         else:
             scaler = paddle.amp.GradScaler(enable=False)
 
@@ -436,6 +435,9 @@ class Trainer(object):
 
         self._compose_callback.on_train_begin(self.status)
 
+        use_fused_allreduce_gradients = self.cfg[
+            'use_fused_allreduce_gradients'] if 'use_fused_allreduce_gradients' in self.cfg else False
+
         for epoch_id in range(self.start_epoch, self.cfg.epoch):
             self.status['mode'] = 'train'
             self.status['epoch_id'] = epoch_id
@@ -464,22 +466,51 @@ class Trainer(object):
                 data['num_gpus'] = self._nranks
 
                 if self.use_amp:
-                    with paddle.amp.auto_cast(
-                            enable=self.cfg.use_gpu, level=self.amp_level):
+                    if isinstance(
+                            model, paddle.
+                            DataParallel) and use_fused_allreduce_gradients:
+                        with model.no_sync():
+                            with paddle.amp.auto_cast(
+                                    enable=self.cfg.use_gpus,
+                                    level=self.amp_level):
+                                # model forward
+                                outputs = model(data)
+                                loss = outputs['loss']
+                            # model backward
+                            scaled_loss = scaler.scale(loss)
+                            scaled_loss.backward()
+                        fused_allreduce_gradients(
+                            list(model.parameters()), None)
+                    else:
+                        with paddle.amp.auto_cast(
+                                enable=self.cfg.use_gpu, level=self.amp_level):
+                            # model forward
+                            outputs = model(data)
+                            loss = outputs['loss']
+                        # model backward
+                        scaled_loss = scaler.scale(loss)
+                        scaled_loss.backward()
+                    # in dygraph mode, optimizer.minimize is equal to optimizer.step
+                    scaler.minimize(self.optimizer, scaled_loss)
+
+                else:
+                    if isinstance(
+                            model, paddle.
+                            DataParallel) and use_fused_allreduce_gradients:
+                        with model.no_sync():
+                            # model forward
+                            outputs = model(data)
+                            loss = outputs['loss']
+                            # model backward
+                            loss.backward()
+                        fused_allreduce_gradients(
+                            list(model.parameters()), None)
+                    else:
                         # model forward
                         outputs = model(data)
                         loss = outputs['loss']
-                    # model backward
-                    scaled_loss = scaler.scale(loss)
-                    scaled_loss.backward()
-                    # in dygraph mode, optimizer.minimize is equal to optimizer.step
-                    scaler.minimize(self.optimizer, scaled_loss)
-                else:
-                    # model forward
-                    outputs = model(data)
-                    loss = outputs['loss']
-                    # model backward
-                    loss.backward()
+                        # model backward
+                        loss.backward()
                     self.optimizer.step()
                 curr_lr = self.optimizer.get_lr()
                 self.lr.step()
