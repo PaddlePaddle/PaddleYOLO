@@ -270,7 +270,7 @@ class CSPLayer(nn.Layer):
             stride=1,
             bias=bias,
             act=act)
-        self.bottlenecks = nn.Sequential(* [
+        self.bottlenecks = nn.Sequential(*[
             BottleNeck(
                 hidden_channels,
                 hidden_channels,
@@ -380,12 +380,12 @@ class RepConv(nn.Layer):
         else:
             self.rbr_identity = (nn.BatchNorm2D(c1)
                                  if c2 == c1 and s == 1 else None)
-            self.rbr_dense = nn.Sequential(* [
+            self.rbr_dense = nn.Sequential(*[
                 nn.Conv2D(
                     c1, c2, k, s, autopad(k, p), groups=g, bias_attr=False),
                 nn.BatchNorm2D(c2),
             ])
-            self.rbr_1x1 = nn.Sequential(* [
+            self.rbr_1x1 = nn.Sequential(*[
                 nn.Conv2D(
                     c1, c2, 1, s, padding_11, groups=g, bias_attr=False),
                 nn.BatchNorm2D(c2),
@@ -724,7 +724,7 @@ class ELANLayer(nn.Layer):
         self.conv2 = BaseConv(
             in_channels, mid_channels1, ksize=1, stride=1, bias=bias, act=act)
 
-        self.bottlenecks = nn.Sequential(* [
+        self.bottlenecks = nn.Sequential(*[
             BaseConv(
                 mid_channels1 if i == 0 else mid_channels2,
                 mid_channels2,
@@ -756,10 +756,7 @@ class ELANLayer(nn.Layer):
                 outs.append(x_2)
         outs = outs[::-1]  # [-1, -3]
         x_all = paddle.concat(outs, axis=1)
-        try:
-            y = self.conv3(x_all)
-        except:
-            embed()
+        y = self.conv3(x_all)
         return y
 
 
@@ -790,7 +787,7 @@ class MPConvLayer(nn.Layer):
     def forward(self, x):
         x_1 = self.conv1(self.maxpool(x))
         x_2 = self.conv3(self.conv2(x))
-        x = paddle.concat([x_1, x_2], axis=1)
+        x = paddle.concat([x_2, x_1], axis=1)
         return x
 
 
@@ -855,7 +852,7 @@ class CSPDarkNetv7(nn.Layer):
         ch_2 = ch_settings[0][0] * 2
         ch_out = ch_settings[0][-1]
         if arch in ['L', 'X']:
-            self.stem = nn.Sequential(* [
+            self.stem = nn.Sequential(*[
                 Conv(
                     3, ch_1, ksize=3, stride=1, bias=False, act=act),
                 Conv(
@@ -864,14 +861,14 @@ class CSPDarkNetv7(nn.Layer):
                     ch_2, ch_out, ksize=3, stride=1, bias=False, act=act),
             ])
         elif arch in ['tiny']:
-            self.stem = nn.Sequential(* [
+            self.stem = nn.Sequential(*[
                 Conv(
                     3, ch_1, ksize=3, stride=2, bias=False, act=act),
                 Conv(
                     ch_1, ch_out, ksize=3, stride=2, bias=False, act=act),
             ])
         elif arch in ['d6', 'e6', 'w6', 'e6e']:
-            self.stem = nn.Sequential(* [
+            self.stem = nn.Sequential(*[
                 Conv(
                     3, ch_1, ksize=3, stride=1, bias=False, act=act),  # TODO
             ])

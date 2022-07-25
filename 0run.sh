@@ -1,13 +1,13 @@
 export FLAGS_allocator_strategy=auto_growth
 #name=tiny
-name=l
+name=x
 model_type=yolov7
 job_name=yolov7_${name}_300e_coco
 config=configs/${model_type}/${job_name}.yml
 log_dir=log_dir/${job_name}
 weights=https://bj.bcebos.com/v1/paddledet/models/yolov5_${name}_300e_coco.pdparams
 
-weights=../yolov7_tools/yolov7_${name}_300e_coco.pdparams
+weights=../yolov7_${name}_300e_coco.pdparams
 
 #python3.7 dygraph_print.py -c ${config} 2>&1 | tee yolov7_${name}_dy_print.txt
 #python3.7 4convert_torch2paddle.py yolov7.pt weight_name_map_l.txt yolov7.pdparams
@@ -19,11 +19,11 @@ weights=../yolov7_tools/yolov7_${name}_300e_coco.pdparams
 
 # 2. eval
 #CUDA_VISIBLE_DEVICES=0 python3.7 tools/eval.py -c ${config} -o weights=https://paddledet.bj.bcebos.com/models/${job_name}.pdparams
-#CUDA_VISIBLE_DEVICES=7 python3.7 tools/eval.py -c ${config} -o weights=${weights}
+CUDA_VISIBLE_DEVICES=3 python3.7 tools/eval.py -c ${config} -o weights=${weights} #--classwise
 
 # 3. tools infer
 #CUDA_VISIBLE_DEVICES=7 python3.7 tools/infer.py -c ${config} -o weights=https://paddledet.bj.bcebos.com/models/${job_name}.pdparams --infer_img=demo/000000014439.jpg
-CUDA_VISIBLE_DEVICES=7 python3.7 tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg
+#CUDA_VISIBLE_DEVICES=1 python3.7 tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg
 
 # 4.export model
 #CUDA_VISIBLE_DEVICES=7 python3.7 tools/export_model.py -c ${config} -o weights=https://paddledet.bj.bcebos.com/models/${job_name}.pdparams

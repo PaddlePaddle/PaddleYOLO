@@ -11,3 +11,18 @@ width_mult: 1.0
 log_iter: 100
 snapshot_epoch: 10
 weights: output/yolov7_l_300e_coco/model_final
+
+
+TrainDataset:
+  !COCODataSet
+    image_dir: val2017
+    anno_path: annotations/instances_val2017.json
+    dataset_dir: dataset/coco
+    data_fields: ['image', 'gt_bbox', 'gt_class', 'is_crowd']
+    allow_empty: true
+
+EvalDataset:
+  !COCODataSet
+    image_dir: val2017
+    anno_path: annotations/instances_val2017.json
+    dataset_dir: dataset/coco

@@ -197,7 +197,7 @@ class YOLOXHead(nn.Layer):
             self.stem_conv.append(BaseConv(in_c, feat_channels, 1, 1, act=act))
 
             self.conv_cls.append(
-                nn.Sequential(* [
+                nn.Sequential(*[
                     ConvBlock(
                         feat_channels, feat_channels, 3, 1,
                         act=act), ConvBlock(
@@ -210,7 +210,7 @@ class YOLOXHead(nn.Layer):
                 ]))
 
             self.conv_reg.append(
-                nn.Sequential(* [
+                nn.Sequential(*[
                     ConvBlock(
                         feat_channels, feat_channels, 3, 1, act=act),
                     ConvBlock(
@@ -696,11 +696,8 @@ class YOLOv7Head(nn.Layer):
                 ny, dtype='float32'), paddle.arange(
                     nx, dtype='float32')
         ])
-
-        grid = paddle.stack(
-            (xv, yv), axis=2).expand([1, self.num_anchor, ny, nx, 2])
-        anchor_grid = anchor.reshape([1, self.num_anchor, 1, 1, 2]).expand(
-            (1, self.num_anchor, ny, nx, 2))
+        grid = paddle.stack((xv, yv), axis=2).reshape([1, 1, ny, nx, 2])
+        anchor_grid = anchor.reshape([1, self.num_anchor, 1, 1, 2])
         return grid, anchor_grid
 
     def postprocessing_by_level(self, head_out, stride, anchor, ny, nx):

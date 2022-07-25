@@ -1229,14 +1229,15 @@ class ELANFPN(nn.Layer):
         p5_lateral = self.lateral_conv1(c5)  # 512->256
         p5_up = self.upsample(p5_lateral)
         route_c4 = self.route_conv1(c4)  # 1024->256 # route
-        f_out1 = paddle.concat([p5_up, route_c4], 1)  # 512 # [8, 512, 40, 40]
+        f_out1 = paddle.concat([route_c4, p5_up], 1)  # 512 # [8, 512, 40, 40]
         fpn_out1 = self.elan_fpn1(
             f_out1)  # 512 -> 128*4 + 256*2 -> 1024 -> 256
+        #print('63  fpn_out1 ', fpn_out1.shape, fpn_out1.sum())
         # 63
         fpn_out1_lateral = self.lateral_conv2(fpn_out1)  # 256->128
         fpn_out1_up = self.upsample(fpn_out1_lateral)
         route_c3 = self.route_conv2(c3)  # 512->128 # route
-        f_out2 = paddle.concat([fpn_out1_up, route_c3], 1)  # 256
+        f_out2 = paddle.concat([route_c3, fpn_out1_up], 1)  # 256
         fpn_out2 = self.elan_fpn2(f_out2)  # 256 -> 64*4 + 128*2 -> 512 -> 128
         # 75
 
@@ -1256,6 +1257,8 @@ class ELANFPN(nn.Layer):
         # 101
 
         pan_outs = [fpn_out2, pan_out1, pan_out2]  # 75 88 101
+        # for x in pan_outs:
+        #     print('///// 75 88 101 pan_outs:  ', x.shape, x.sum())
         # [8, 128, 80, 80] [8, 256, 40, 40] [8, 512, 20, 20]
         outputs = []
         for i, out in enumerate(pan_outs):

@@ -21,7 +21,7 @@ import sys
 import copy
 import time
 from tqdm import tqdm
-
+from IPython import embed
 import numpy as np
 import typing
 from PIL import Image, ImageOps, ImageFile
@@ -557,6 +557,7 @@ class Trainer(object):
             self.status['step_id'] = step_id
             self._compose_callback.on_step_begin(self.status)
             # forward
+            # data['image'] = paddle.to_tensor(np.load('x0.npy')) ###
             if self.use_amp:
                 with paddle.amp.auto_cast(
                         enable=self.cfg.use_gpu, level=self.amp_level):
@@ -767,8 +768,8 @@ class Trainer(object):
 
         # Save infer cfg
         _dump_infer_config(self.cfg,
-                           os.path.join(save_dir, 'infer_cfg.yml'), image_shape,
-                           self.model)
+                           os.path.join(save_dir, 'infer_cfg.yml'),
+                           image_shape, self.model)
 
         input_spec = [{
             "image": InputSpec(

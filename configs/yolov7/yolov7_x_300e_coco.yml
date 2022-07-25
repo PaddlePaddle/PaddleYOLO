@@ -21,3 +21,18 @@ CSPDarkNetv7:
 ELANFPN:
   depthwise: false
   arch: 'X'
+
+
+TrainDataset:
+  !COCODataSet
+    image_dir: val2017
+    anno_path: annotations/instances_val2017.json
+    dataset_dir: dataset/coco
+    data_fields: ['image', 'gt_bbox', 'gt_class', 'is_crowd']
+    allow_empty: true
+
+EvalDataset:
+  !COCODataSet
+    image_dir: val2017
+    anno_path: annotations/instances_val2017.json
+    dataset_dir: dataset/coco
