@@ -28,6 +28,7 @@
   - [ ] 更多Data Augmentation、Attention Module、Loss
   - [ ] 精简代码只保留YOLO系列模型(YOLOv3、PP-YOLO、PP-YOLOv2、PP-YOLOE、YOLOX、YOLOv5、YOLOv7)
   - [ ] Objects365 pretrain
+  - [ ] Keypoint/Instance Segmentation
 
 
 ======================================================
