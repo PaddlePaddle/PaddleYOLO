@@ -36,10 +36,7 @@ from . import tood
 from . import retinanet
 from . import bytetrack
 from . import yolox
-<<<<<<< HEAD
 from . import yolov5
-=======
->>>>>>> upstream/develop
 
 from .meta_arch import *
 from .faster_rcnn import *
