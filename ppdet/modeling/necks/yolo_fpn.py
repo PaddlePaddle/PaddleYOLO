@@ -20,9 +20,13 @@ from ppdet.modeling.layers import DropBlock
 from ppdet.modeling.ops import get_act_fn
 from ..backbones.darknet import ConvBNLayer
 from ..shape_spec import ShapeSpec
-from ..backbones.csp_darknet import BaseConv, DWConv, CSPLayer
+from ..backbones.csp_darknet import BaseConv, DWConv, CSPLayer, ELANLayer, MPConvLayer, RepConv
+from ..backbones.cspresnet import RepVggBlock
 
-__all__ = ['YOLOv3FPN', 'PPYOLOFPN', 'PPYOLOTinyFPN', 'PPYOLOPAN', 'YOLOCSPPAN']
+__all__ = [
+    'YOLOv3FPN', 'PPYOLOFPN', 'PPYOLOTinyFPN', 'PPYOLOPAN', 'YOLOCSPPAN',
+    'ELANFPN'
+]
 
 
 def add_coord(x, data_format):
@@ -1089,6 +1093,172 @@ class YOLOCSPPAN(nn.Layer):
             outs.append(out)
 
         return outs
+
+    @classmethod
+    def from_config(cls, cfg, input_shape):
+        return {'in_channels': [i.channels for i in input_shape], }
+
+    @property
+    def out_shape(self):
+        return [ShapeSpec(channels=c) for c in self._out_channels]
+
+
+from IPython import embed
+
+
+@register
+@serializable
+class ELANFPN(nn.Layer):
+    """
+    YOLOv7 ELAN FPN.
+    """
+    __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
+
+    # in_ch, mid_ch, mid_ch, out_ch of each ELANLayer (2 FPN + 2 PAN): 
+    ch_settings = {
+        'tiny': [[64, 64], [32, 32], [64, 64], [128, 128]],
+        'L': [[512, 256, 128, 256], [256, 128, 64, 128], [128, 256, 128, 256],
+              [256, 512, 256, 512]],
+        'X': [[640, 256, 256, 320], [320, 128, 128, 160], [160, 256, 256, 320],
+              [320, 512, 512, 640]],
+    }
+    # concat_list of each ELANLayer:
+    concat_list_settings = {
+        'tiny': [-1, -2, -3, -4],
+        'L': [-1, -2, -3, -4, -5, -6],
+        'X': [-1, -3, -5, -7, -8],
+    }
+    num_blocks = {'tiny': 4, 'L': 4, 'X': 6}
+
+    def __init__(
+            self,
+            arch='L',
+            depth_mult=1.0,
+            width_mult=1.0,
+            in_channels=[512, 1024, 512],  # 24 37 51,  P3 p4 p5 # c345
+            out_channels=[256, 512, 1024],  # 
+            depthwise=False,
+            act='silu',
+            trt=False):
+        super(ELANFPN, self).__init__()
+        self.in_channels = in_channels  # * width_mult
+        self.arch = arch
+        concat_list_settings = self.concat_list_settings[arch]
+        num_blocks = self.num_blocks[arch]
+        ch_settings = self.ch_settings[arch]
+
+        self._out_channels = [chs[-1] * 2 for chs in ch_settings[1:]]
+
+        self.upsample = nn.Upsample(scale_factor=2, mode="nearest")
+
+        in_ch = int(ch_settings[0][0])
+        self.lateral_conv1 = BaseConv(
+            in_ch, int(in_ch // 2), 1, 1, act=act)  # 512->256
+        self.route_conv1 = BaseConv(
+            self.in_channels[1], int(in_ch // 2), 1, 1, act=act)  # 1024->256
+        self.elan_fpn1 = ELANLayer(
+            in_ch,
+            ch_settings[0][1],
+            ch_settings[0][2],
+            ch_settings[0][3],
+            num_blocks=num_blocks,
+            concat_list=concat_list_settings,
+            depthwise=depthwise,
+            bias=False,
+            act=act)
+
+        in_ch = int(ch_settings[0][-1])  # p3 # =256
+        self.lateral_conv2 = BaseConv(
+            in_ch, int(in_ch // 2), 1, 1, act=act)  # 256->128
+        self.route_conv2 = BaseConv(
+            self.in_channels[0], int(in_ch // 2), 1, 1, act=act)  # 512->128
+        self.elan_fpn2 = ELANLayer(
+            in_ch,
+            ch_settings[1][1],
+            ch_settings[1][2],
+            ch_settings[1][3],
+            num_blocks=num_blocks,
+            concat_list=concat_list_settings,
+            depthwise=depthwise,
+            bias=False,
+            act=act)
+
+        in_ch = int(ch_settings[1][-1])
+        self.mp_conv1 = MPConvLayer(
+            in_ch, in_ch, depthwise=depthwise, bias=False, act=act)
+        self.elan_pan1 = ELANLayer(
+            in_ch * 4,
+            ch_settings[2][1],  # 512*2
+            ch_settings[2][2],  # 512
+            ch_settings[2][3],  # 512
+            num_blocks=num_blocks,
+            concat_list=concat_list_settings,
+            depthwise=depthwise,
+            bias=False,
+            act=act)
+
+        in_ch = int(ch_settings[2][-1])
+        self.mp_conv2 = MPConvLayer(
+            in_ch, in_ch, depthwise=depthwise, bias=False, act=act)
+        self.elan_pan2 = ELANLayer(
+            in_ch * 4,
+            ch_settings[3][1],
+            ch_settings[3][2],
+            ch_settings[3][3],
+            num_blocks=num_blocks,
+            concat_list=concat_list_settings,
+            depthwise=depthwise,
+            bias=False,
+            act=act)
+
+        self.repconvs = nn.LayerList()
+        Conv = RepConv if self.arch == 'L' else BaseConv
+        for out_ch in self._out_channels:
+            self.repconvs.append(Conv(int(out_ch // 2), out_ch, 3, 1))
+
+    def forward(self, feats, for_mot=False):
+        assert len(feats) == len(self.in_channels)
+        [c3, c4, c5] = feats  # 24  37  51
+        # [8, 512, 80, 80]
+        # [8, 1024, 40, 40]
+        # [8, 512, 20, 20]
+
+        # top-down FPN
+        p5_lateral = self.lateral_conv1(c5)  # 512->256
+        p5_up = self.upsample(p5_lateral)
+        route_c4 = self.route_conv1(c4)  # 1024->256 # route
+        f_out1 = paddle.concat([route_c4, p5_up], 1)  # 512 # [8, 512, 40, 40]
+        fpn_out1 = self.elan_fpn1(f_out1)  # 512 -> 128*4 + 256*2 -> 1024 -> 256
+        # print('63  fpn_out1 ', fpn_out1.shape, fpn_out1.sum())
+        # 63
+        fpn_out1_lateral = self.lateral_conv2(fpn_out1)  # 256->128
+        fpn_out1_up = self.upsample(fpn_out1_lateral)
+        route_c3 = self.route_conv2(c3)  # 512->128 # route
+        f_out2 = paddle.concat([route_c3, fpn_out1_up], 1)  # 256
+        fpn_out2 = self.elan_fpn2(f_out2)  # 256 -> 64*4 + 128*2 -> 512 -> 128
+        # 75
+
+        # buttom-up PAN
+        p_out1_down = self.mp_conv1(fpn_out2)  # 128
+        #p_out1 = paddle.concat([p_out1_down, fpn_out2, fpn_out1], 1)  # 128*2 + 256 -> 512
+        p_out1 = paddle.concat([p_out1_down, fpn_out1], 1)  # 128*2 + 256 -> 512
+        pan_out1 = self.elan_pan1(p_out1)  # 512 -> 128*4 + 256*2 -> 1024 -> 256
+        # 88
+        pan_out1_down = self.mp_conv2(pan_out1)  # 256
+        #p_out2 = paddle.concat([pan_out1_down, pan_out1, c5], 1)  # 256*2 + 512 -> 1024
+        p_out2 = paddle.concat([pan_out1_down, c5], 1)  # 256*2 + 512 -> 1024
+        pan_out2 = self.elan_pan2(
+            p_out2)  # 1024 -> 256*4 + 512*2 -> 2048 -> 512
+        # 101
+
+        pan_outs = [fpn_out2, pan_out1, pan_out2]  # 75 88 101
+        # for x in pan_outs:
+        #     print('///// 75 88 101 pan_outs:  ', x.shape, x.sum())
+        # #[8, 128, 80, 80] [8, 256, 40, 40] [8, 512, 20, 20]
+        outputs = []
+        for i, out in enumerate(pan_outs):
+            outputs.append(self.repconvs[i](out))
+        return outputs
 
     @classmethod
     def from_config(cls, cfg, input_shape):

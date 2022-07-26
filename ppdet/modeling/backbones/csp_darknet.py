@@ -18,11 +18,13 @@ import paddle.nn.functional as F
 from paddle import ParamAttr
 from paddle.regularizer import L2Decay
 from ppdet.core.workspace import register, serializable
-from ppdet.modeling.initializer import conv_init_
+from ppdet.modeling.initializer import conv_init_, normal_
+from paddle.nn.initializer import Constant
 from ..shape_spec import ShapeSpec
 
 __all__ = [
-    'CSPDarkNet', 'BaseConv', 'DWConv', 'BottleNeck', 'SPPLayer', 'SPPFLayer'
+    'CSPDarkNet', 'CSPDarkNetv7', 'BaseConv', 'DWConv', 'BottleNeck',
+    'SPPLayer', 'SPPFLayer'
 ]
 
 
@@ -46,6 +48,8 @@ class BaseConv(nn.Layer):
             bias_attr=bias)
         self.bn = nn.BatchNorm2D(
             out_channels,
+            epsilon=1e-3,  # for amp(fp16)
+            momentum=0.97,
             weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
             bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
 
@@ -258,6 +262,278 @@ class CSPLayer(nn.Layer):
         return x
 
 
+class SPPCSPC(nn.Layer):
+    # CSP https://github.com/WongKinYiu/CrossStagePartialNetworks
+    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5, k=(5, 9, 13)):
+        super(SPPCSPC, self).__init__()
+        c_ = int(2 * c2 * e)  # hidden channels
+        self.cv1 = BaseConv(c1, c_, 1, 1)
+        self.cv2 = BaseConv(c1, c_, 1, 1)
+        self.cv3 = BaseConv(c_, c_, 3, 1)
+        self.cv4 = BaseConv(c_, c_, 1, 1)
+        self.m = nn.LayerList(
+            [nn.MaxPool2D(
+                kernel_size=x, stride=1, padding=x // 2) for x in k])
+        self.cv5 = BaseConv(4 * c_, c_, 1, 1)
+        self.cv6 = BaseConv(c_, c_, 3, 1)
+        self.cv7 = BaseConv(2 * c_, c2, 1, 1)
+
+    def forward(self, x):
+        x1 = self.cv4(self.cv3(self.cv1(x)))
+        y1 = self.cv6(
+            self.cv5(paddle.concat([x1] + [m(x1) for m in self.m], 1)))
+        y2 = self.cv2(x)
+        return self.cv7(paddle.concat([y1, y2], axis=1))
+
+
+class ImplicitA(nn.Layer):
+    def __init__(self, channel, mean=0., std=.02):
+        super(ImplicitA, self).__init__()
+        self.channel = channel
+        self.mean = mean
+        self.std = std
+        self.implicit = self.create_parameter(
+            shape=([1, channel, 1, 1]),
+            attr=ParamAttr(initializer=Constant(0.)))
+        normal_(self.implicit, mean=self.mean, std=self.std)
+
+    def forward(self, x):
+        return self.implicit + x
+
+
+class ImplicitM(nn.Layer):
+    def __init__(self, channel, mean=0., std=.02):
+        super(ImplicitM, self).__init__()
+        self.channel = channel
+        self.mean = mean
+        self.std = std
+        self.implicit = self.create_parameter(
+            shape=([1, channel, 1, 1]),
+            attr=ParamAttr(initializer=Constant(1.)))
+        normal_(self.implicit, mean=self.mean, std=self.std)
+
+    def forward(self, x):
+        return self.implicit * x
+
+
+def autopad(k, p=None):  # kernel, padding
+    # Pad to 'same'
+    if p is None:
+        p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # auto-pad
+    return p
+
+
+class RepConv(nn.Layer):
+    # RepVGG, see https://arxiv.org/abs/2101.03697
+    def __init__(self, c1, c2, k=3, s=1, p=None, g=1, act=True, deploy=False):
+        super(RepConv, self).__init__()
+        self.deploy = deploy
+        self.groups = g
+        self.in_channels = c1
+        self.out_channels = c2
+        assert k == 3
+        assert autopad(k, p) == 1
+        padding_11 = autopad(k, p) - k // 2
+
+        self.act = nn.Silu(
+        )  #if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+
+        if deploy:
+            self.rbr_reparam = nn.Conv2D(
+                c1, c2, k, s, autopad(k, p), groups=g, bias_attr=True)
+        else:
+            self.rbr_identity = (nn.BatchNorm2D(c1)
+                                 if c2 == c1 and s == 1 else None)
+            self.rbr_dense = nn.Sequential(* [
+                nn.Conv2D(
+                    c1, c2, k, s, autopad(k, p), groups=g, bias_attr=False),
+                nn.BatchNorm2D(c2),
+            ])
+            self.rbr_1x1 = nn.Sequential(* [
+                nn.Conv2D(
+                    c1, c2, 1, s, padding_11, groups=g, bias_attr=False),
+                nn.BatchNorm2D(c2),
+            ])
+
+    def forward(self, inputs):
+        # [8, 128, 80, 80] [8, 256, 40, 40] [8, 512, 20, 20]
+        if hasattr(self, "rbr_reparam"):
+            return self.act(self.rbr_reparam(inputs))
+
+        if self.rbr_identity is None:
+            id_out = 0
+        else:
+            id_out = self.rbr_identity(inputs)
+
+        out = self.act(self.rbr_dense(inputs) + self.rbr_1x1(inputs) + id_out)
+        return out
+
+    def get_equivalent_kernel_bias(self):
+        kernel3x3, bias3x3 = self._fuse_bn_tensor(self.rbr_dense)
+        kernel1x1, bias1x1 = self._fuse_bn_tensor(self.rbr_1x1)
+        kernelid, biasid = self._fuse_bn_tensor(self.rbr_identity)
+        return (
+            kernel3x3 + self._pad_1x1_to_3x3_tensor(kernel1x1) + kernelid,
+            bias3x3 + bias1x1 + biasid, )
+
+    def _pad_1x1_to_3x3_tensor(self, kernel1x1):
+        if kernel1x1 is None:
+            return 0
+        else:
+            return nn.functional.pad(kernel1x1, [1, 1, 1, 1])
+
+    def _fuse_bn_tensor(self, branch):
+        if branch is None:
+            return 0, 0
+        if isinstance(branch, nn.Sequential):
+            kernel = branch[0].weight
+            running_mean = branch[1]._mean
+            running_var = branch[1]._variance
+            gamma = branch[1].weight
+            beta = branch[1].bias
+            eps = branch[1]._epsilon
+        else:
+            assert isinstance(branch, nn.BatchNorm2D)
+            if not hasattr(self, "id_tensor"):
+                input_dim = self.in_channels // self.groups
+                kernel_value = paddle.zeros([self.in_channels, input_dim, 3, 3])
+
+                for i in range(self.in_channels):
+                    kernel_value[i, i % input_dim, 1, 1] = 1
+                self.id_tensor = kernel_value  #torch.from_numpy(kernel_value).to(branch.weight.device)
+            kernel = self.id_tensor
+            running_mean = branch._mean
+            running_var = branch._variance
+            gamma = branch.weight
+            beta = branch.bias
+            eps = branch._epsilon
+        std = (running_var + eps).sqrt()
+        t = (gamma / std).reshape((-1, 1, 1, 1))
+        return kernel * t, beta - running_mean * gamma / std
+
+    def convert_to_deploy(self):
+        if hasattr(self, 'rbr_reparam'):
+            return
+        print(f"RepConv_OREPA.switch_to_deploy")
+        kernel, bias = self.get_equivalent_kernel_bias()
+        # self.rbr_reparam = nn.Conv2D(
+        #     self.rbr_dense.in_channels,
+        #     self.rbr_dense.out_channels,
+        #     self.rbr_dense.kernel_size,
+        #     self.rbr_dense.stride,
+        #     self.rbr_dense.padding,
+        #     dilation=self.rbr_dense.dilation,
+        #     groups=self.rbr_dense.groups,
+        #     bias_attr=True)
+        if not hasattr(self, 'rbr_reparam'):
+            self.conv = nn.Conv2D(
+                self.in_channels,
+                self.out_channels,
+                3,
+                1,
+                1,
+                groups=self.groups,
+                bias_attr=True)
+        return (kernel.numpy(), bias.numpy())
+
+        # self.rbr_reparam.weight.set_value(kernel)
+        # self.rbr_reparam.bias.set_value(bias)
+        # # for para in self.parameters():
+        # #     para.detach_()
+        # self.__delattr__('rbr_dense')
+        # self.__delattr__('rbr_1x1')
+        # if hasattr(self, 'rbr_identity'):
+        #     self.__delattr__('rbr_identity') 
+        # return (kernel.numpy(), bias.numpy())
+
+    def fuse_conv_bn(self, conv, bn):
+        std = (bn.running_var + bn.eps).sqrt()
+        bias = bn.bias - bn.running_mean * bn.weight / std
+        t = (bn.weight / std).reshape(-1, 1, 1, 1)
+        weights = conv.weight * t
+        bn = nn.Identity()
+        conv = nn.Conv2D(
+            in_channels=conv.in_channels,
+            out_channels=conv.out_channels,
+            kernel_size=conv.kernel_size,
+            stride=conv.stride,
+            padding=conv.padding,
+            dilation=conv.dilation,
+            groups=conv.groups,
+            bias=True,
+            padding_mode=conv.padding_mode)
+        conv.weight.set_value(weights)
+        conv.bias.set_value(bias)
+        return conv
+
+    def fuse_repvgg_block(self):
+        if self.deploy:
+            return
+        print(f"RepConv.fuse_repvgg_block")
+        self.rbr_dense = self.fuse_conv_bn(self.rbr_dense[0], self.rbr_dense[1])
+        self.rbr_1x1 = self.fuse_conv_bn(self.rbr_1x1[0], self.rbr_1x1[1])
+        rbr_1x1_bias = self.rbr_1x1.bias
+        weight_1x1_expanded = nn.functional.pad(self.rbr_1x1.weight,
+                                                [1, 1, 1, 1])
+
+        # Fuse self.rbr_identity
+        if isinstance(
+                self.rbr_identity, nn.BatchNorm2D
+        ):  #or isinstance(self.rbr_identity, nn.modules.batchnorm.SyncBatchNorm)):
+            # print(f"fuse: rbr_identity == BatchNorm2D or SyncBatchNorm")
+            identity_conv_1x1 = nn.Conv2D(
+                in_channels=self.in_channels,
+                out_channels=self.out_channels,
+                kernel_size=1,
+                stride=1,
+                padding=0,
+                groups=self.groups,
+                bias=False)
+            identity_conv_1x1.weight.data = identity_conv_1x1.weight.data.to(
+                self.rbr_1x1.weight.data.device)
+            identity_conv_1x1.weight.data = identity_conv_1x1.weight.data.squeeze(
+            ).squeeze()
+            # print(f" identity_conv_1x1.weight = {identity_conv_1x1.weight.shape}")
+            identity_conv_1x1.weight.data.fill_(0.0)
+            identity_conv_1x1.weight.data.fill_diagonal_(1.0)
+            identity_conv_1x1.weight.data = identity_conv_1x1.weight.data.unsqueeze(
+                2).unsqueeze(3)
+            # print(f" identity_conv_1x1.weight = {identity_conv_1x1.weight.shape}")
+
+            identity_conv_1x1 = self.fuse_conv_bn(identity_conv_1x1,
+                                                  self.rbr_identity)
+            bias_identity_expanded = identity_conv_1x1.bias
+            weight_identity_expanded = nn.functional.pad(
+                identity_conv_1x1.weight, [1, 1, 1, 1])
+        else:
+            # print(f"fuse: rbr_identity != BatchNorm2d, rbr_identity = {self.rbr_identity}")
+            bias_identity_expanded = nn.Parameter(
+                paddle.zeros_like(rbr_1x1_bias))
+            weight_identity_expanded = nn.Parameter(
+                paddle.zeros_like(weight_1x1_expanded))
+
+        self.rbr_dense.weight = nn.Parameter(self.rbr_dense.weight +
+                                             weight_1x1_expanded +
+                                             weight_identity_expanded)
+        self.rbr_dense.bias = nn.Parameter(self.rbr_dense.bias + rbr_1x1_bias +
+                                           bias_identity_expanded)
+
+        self.rbr_reparam = self.rbr_dense
+        self.deploy = True
+
+        if self.rbr_identity is not None:
+            del self.rbr_identity
+            self.rbr_identity = None
+
+        if self.rbr_1x1 is not None:
+            del self.rbr_1x1
+            self.rbr_1x1 = None
+
+        if self.rbr_dense is not None:
+            del self.rbr_dense
+            self.rbr_dense = None
+
+
 @register
 @serializable
 class CSPDarkNet(nn.Layer):
@@ -390,6 +666,257 @@ class CSPDarkNet(nn.Layer):
         outputs = []
         x = self.stem(x)
         for i, layer in enumerate(self.csp_dark_blocks):
+            x = layer(x)
+            if i + 1 in self.return_idx:
+                outputs.append(x)
+        return outputs
+
+    @property
+    def out_shape(self):
+        return [
+            ShapeSpec(
+                channels=c, stride=s)
+            for c, s in zip(self._out_channels, self.strides)
+        ]
+
+
+class ELANLayer(nn.Layer):
+    """ELAN layer used in YOLOv7"""
+
+    def __init__(self,
+                 in_channels,
+                 mid_channels1,
+                 mid_channels2,
+                 out_channels,
+                 num_blocks=4,
+                 concat_list=[-1, -3, -5, -6],
+                 depthwise=False,
+                 bias=False,
+                 act="silu"):
+        super(ELANLayer, self).__init__()
+        self.num_blocks = num_blocks
+        self.concat_list = concat_list
+
+        self.conv1 = BaseConv(
+            in_channels, mid_channels1, ksize=1, stride=1, bias=bias, act=act)
+        self.conv2 = BaseConv(
+            in_channels, mid_channels1, ksize=1, stride=1, bias=bias, act=act)
+
+        self.bottlenecks = nn.Sequential(* [
+            BaseConv(
+                mid_channels1 if i == 0 else mid_channels2,
+                mid_channels2,
+                ksize=3,
+                stride=1,
+                bias=bias,
+                act=act) for i in range(num_blocks)
+        ])
+
+        concat_chs = mid_channels1 * 2 + mid_channels2 * (len(concat_list) - 2)
+        self.conv3 = BaseConv(
+            int(concat_chs),
+            out_channels,
+            ksize=1,
+            stride=1,
+            bias=bias,
+            act=act)
+
+    def forward(self, x):
+        outs = []
+        x_1 = self.conv1(x)
+        x_2 = self.conv2(x)
+        outs.append(x_1)
+        outs.append(x_2)
+        idx = [i + self.num_blocks for i in self.concat_list[:-2]]
+        for i in range(self.num_blocks):
+            x_2 = self.bottlenecks[i](x_2)
+            if i in idx:
+                outs.append(x_2)
+        outs = outs[::-1]  # [-1, -3]
+        x_all = paddle.concat(outs, axis=1)
+        y = self.conv3(x_all)
+        return y
+
+
+from IPython import embed
+
+
+class MPConvLayer(nn.Layer):
+    """MPConvLayer used in YOLOv7"""
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 expansion=1.0,
+                 depthwise=False,
+                 bias=False,
+                 act="silu"):
+        super(MPConvLayer, self).__init__()
+        mid_channels = int(out_channels * expansion)
+        self.maxpool = nn.MaxPool2D(kernel_size=2, stride=2)
+        self.conv1 = BaseConv(
+            in_channels, mid_channels, ksize=1, stride=1, bias=bias, act=act)
+
+        self.conv2 = BaseConv(
+            in_channels, mid_channels, ksize=1, stride=1, bias=bias, act=act)
+        self.conv3 = BaseConv(
+            mid_channels, mid_channels, ksize=3, stride=2, bias=bias, act=act)
+
+    def forward(self, x):
+        x_1 = self.conv1(self.maxpool(x))
+        x_2 = self.conv3(self.conv2(x))
+        x = paddle.concat([x_2, x_1], axis=1)
+        return x
+
+
+@register
+@serializable
+class CSPDarkNetv7(nn.Layer):
+    """
+    CSPDarkNetv7 backbone.
+    Args:
+        arch (str): Architecture of CSPDarkNetv7, from {P5, P6, X}, default as X,
+            and 'X' means used in YOLOX, 'P5/P6' means used in YOLOv5.
+        depth_mult (float): Depth multiplier, multiply number of channels in
+            each layer, default as 1.0.
+        width_mult (float): Width multiplier, multiply number of blocks in
+            CSPLayer, default as 1.0.
+        depthwise (bool): Whether to use depth-wise conv layer.
+        act (str): Activation function type, default as 'silu'.
+        return_idx (list): Index of stages whose feature maps are returned.
+    """
+
+    __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
+
+    # in_channels, out_channels of 1 stem + 4 stages
+    ch_settings = {
+        'tiny': [[32, 64], [64, 64], [64, 128], [128, 256], [256, 512]],
+        'L': [[32, 64], [64, 256], [256, 512], [512, 1024], [1024, 1024]],
+        'X': [[40, 80], [80, 320], [320, 640], [640, 1280], [1280, 1280]],
+    }
+    # mid_ch1, mid_ch2 of 4 stages' ELANLayer
+    mid_ch_settings = {
+        'tiny': [[32, 32], [64, 64], [128, 128], [256, 256]],
+        'L': [[64, 64], [128, 128], [256, 256], [256, 256]],
+        'X': [[64, 64], [128, 128], [256, 256], [256, 256]],
+    }
+    # concat_list of 4 stages
+    concat_list_settings = {
+        'tiny': [-1, -2, -3, -4],
+        'L': [-1, -3, -5, -6],
+        'X': [-1, -3, -5, -7, -8],
+    }
+    num_blocks = {'tiny': 4, 'L': 4, 'X': 6}
+
+    def __init__(self,
+                 arch='L',
+                 depth_mult=1.0,
+                 width_mult=1.0,
+                 depthwise=False,
+                 act='silu',
+                 trt=False,
+                 return_idx=[2, 3, 4]):
+        super(CSPDarkNetv7, self).__init__()
+        self.arch = arch
+        self.return_idx = return_idx
+        Conv = DWConv if depthwise else BaseConv
+
+        ch_settings = self.ch_settings[arch]  # * width_mult
+        mid_ch_settings = self.mid_ch_settings[arch]
+        concat_list_settings = self.concat_list_settings[arch]
+        num_blocks = self.num_blocks[arch]
+
+        ch_1 = ch_settings[0][0]
+        ch_2 = ch_settings[0][0] * 2
+        ch_out = ch_settings[0][-1]
+        if arch in ['L', 'X']:
+            self.stem = nn.Sequential(* [
+                Conv(
+                    3, ch_1, ksize=3, stride=1, bias=False, act=act),
+                Conv(
+                    ch_1, ch_2, ksize=3, stride=2, bias=False, act=act),
+                Conv(
+                    ch_2, ch_out, ksize=3, stride=1, bias=False, act=act),
+            ])
+        elif arch in ['tiny']:
+            self.stem = nn.Sequential(* [
+                Conv(
+                    3, ch_1, ksize=3, stride=2, bias=False, act=act),
+                Conv(
+                    ch_1, ch_out, ksize=3, stride=2, bias=False, act=act),
+            ])
+        elif arch in ['d6', 'e6', 'w6', 'e6e']:
+            self.stem = nn.Sequential(* [
+                Conv(
+                    3, ch_1, ksize=3, stride=1, bias=False, act=act),  # TODO
+            ])
+        else:
+            raise AttributeError("Unsupported arch type: {}".format(arch))
+
+        self._out_channels = [chs[-1] for chs in ch_settings]
+        self._out_channels[-1] //= 2  # for sppcspc
+        self._out_channels = [self._out_channels[i] for i in self.return_idx]
+        self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
+        layers_num = 3 if arch in ['L', 'X'] else 2
+        self.blocks = []
+
+        for i, (in_channels, out_channels) in enumerate(ch_settings[1:]):
+            stage = []
+            if i == 0:
+                conv_layer = self.add_sublayer(
+                    'layers{}.stage{}.conv_layer'.format(layers_num, i + 1),
+                    Conv(
+                        in_channels, in_channels * 2, 3, 2, bias=False,
+                        act=act))
+                stage.append(conv_layer)
+                layers_num += 1
+            else:
+                conv_res_layer = self.add_sublayer(
+                    'layers{}.stage{}.mpconv_layer'.format(layers_num, i + 1),
+                    MPConvLayer(
+                        in_channels,
+                        in_channels,
+                        expansion=0.5,
+                        depthwise=depthwise,
+                        bias=False,
+                        act=act))
+                stage.append(conv_res_layer)
+                layers_num += 5  # 1 maxpool + 3 convs + 1 concat
+
+            in_ch = in_channels * 2 if i == 0 else in_channels
+            elan_layer = self.add_sublayer(
+                'layers{}.stage{}.elan_layer'.format(layers_num, i + 1),
+                ELANLayer(
+                    in_ch,
+                    mid_ch_settings[i][0],
+                    mid_ch_settings[i][1],
+                    out_channels,
+                    num_blocks=num_blocks,
+                    concat_list=concat_list_settings,
+                    depthwise=depthwise,
+                    bias=False,
+                    act=act))
+            stage.append(elan_layer)
+            layers_num += int(2 + num_blocks +
+                              2)  # conv1 + conv2 + bottleneck + concat + conv3
+
+            if i == len(ch_settings[1:]) - 1:
+                sppcspc_layer = self.add_sublayer(
+                    'layers{}.stage{}.sppcspc_layer'.format(layers_num, i + 1),
+                    SPPCSPC(
+                        out_channels,
+                        out_channels // 2,
+                        k=(5, 9, 13), ))
+                stage.append(sppcspc_layer)
+                layers_num += 1
+
+            self.blocks.append(nn.Sequential(*stage))
+
+    def forward(self, inputs):
+        x = inputs['image']
+        outputs = []
+        x = self.stem(x)
+        for i, layer in enumerate(self.blocks):
             x = layer(x)
             if i + 1 in self.return_idx:
                 outputs.append(x)

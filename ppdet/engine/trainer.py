@@ -588,6 +588,7 @@ class Trainer(object):
             self.status['step_id'] = step_id
             self._compose_callback.on_step_begin(self.status)
             # forward
+            # data['image'] = paddle.to_tensor(np.load('x0.npy')) ###
             if self.use_amp:
                 with paddle.amp.auto_cast(
                         enable=self.cfg.use_gpu, level=self.amp_level):
