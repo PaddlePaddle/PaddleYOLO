@@ -22,7 +22,7 @@ from ppdet.core.workspace import register
 import math
 import numpy as np
 from ..initializer import bias_init_with_prob, constant_
-from ..backbones.csp_darknet import BaseConv, DWConv
+from ..backbones.csp_darknet import BaseConv, DWConv, ImplicitA, ImplicitM
 from ..losses import IouLoss
 from ppdet.modeling.assigners.simota_assigner import SimOTAAssigner
 from ppdet.modeling.bbox_utils import bbox_overlaps
@@ -632,6 +632,7 @@ class YOLOv7Head(nn.Layer):
         self.num_out_ch = self.num_classes + 5  # self.no
 
         self.yolo_outputs = []
+        self.ia, self.im = [], []
         for i in range(len(self.anchors)):
             num_filters = self.num_anchor * self.num_out_ch
             name = 'yolo_output.{}'.format(i)
@@ -647,7 +648,10 @@ class YOLOv7Head(nn.Layer):
             yolo_output = self.add_sublayer(name, conv)
             self.yolo_outputs.append(yolo_output)
 
-        #self._initialize_biases()
+            self.ia.append(ImplicitA(self.in_channels[i]))
+            self.im.append(ImplicitA(num_filters))
+
+        self._initialize_biases()
 
     def _initialize_biases(self):
         # initialize biases into Detect()
@@ -673,7 +677,10 @@ class YOLOv7Head(nn.Layer):
         assert len(feats) == len(self.anchors)
         yolo_outputs = []
         for i, feat in enumerate(feats):
-            yolo_output = self.yolo_outputs[i](feat)
+            if self.training:
+                yolo_output = self.im[i](self.yolo_outputs[i](self.ia[i](feat)))
+            else:
+                yolo_output = self.yolo_outputs[i](feat)
             if self.data_format == 'NHWC':
                 yolo_output = paddle.transpose(yolo_output, [0, 3, 1, 2])
             yolo_outputs.append(yolo_output)

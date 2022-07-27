@@ -1116,7 +1116,8 @@ class ELANFPN(nn.Layer):
 
     # in_ch, mid_ch, mid_ch, out_ch of each ELANLayer (2 FPN + 2 PAN): 
     ch_settings = {
-        'tiny': [[64, 64], [32, 32], [64, 64], [128, 128]],
+        'tiny': [[256, 64, 64, 128], [128, 32, 32, 64], [64, 64, 64, 128],
+                 [128, 128, 128, 256]],
         'L': [[512, 256, 128, 256], [256, 128, 64, 128], [128, 256, 128, 256],
               [256, 512, 256, 512]],
         'X': [[640, 256, 256, 320], [320, 128, 128, 160], [160, 256, 256, 320],
@@ -1128,7 +1129,7 @@ class ELANFPN(nn.Layer):
         'L': [-1, -2, -3, -4, -5, -6],
         'X': [-1, -3, -5, -7, -8],
     }
-    num_blocks = {'tiny': 4, 'L': 4, 'X': 6}
+    num_blocks = {'tiny': 2, 'L': 4, 'X': 6}
 
     def __init__(
             self,
@@ -1184,13 +1185,18 @@ class ELANFPN(nn.Layer):
             act=act)
 
         in_ch = int(ch_settings[1][-1])
-        self.mp_conv1 = MPConvLayer(
-            in_ch, in_ch, depthwise=depthwise, bias=False, act=act)
+        if self.arch in ['L', 'X']:
+            self.mp_conv1 = MPConvLayer(
+                in_ch, in_ch, depthwise=depthwise, bias=False, act=act)
+        elif self.arch in ['tiny']:
+            self.mp_conv1 = BaseConv(in_ch, 2 * in_ch, 3, 2, act=act)
+        else:
+            raise AttributeError("Unsupported arch type: {}".format(self.arch))
         self.elan_pan1 = ELANLayer(
             in_ch * 4,
-            ch_settings[2][1],  # 512*2
-            ch_settings[2][2],  # 512
-            ch_settings[2][3],  # 512
+            ch_settings[2][1],
+            ch_settings[2][2],
+            ch_settings[2][3],
             num_blocks=num_blocks,
             concat_list=concat_list_settings,
             depthwise=depthwise,
@@ -1198,8 +1204,13 @@ class ELANFPN(nn.Layer):
             act=act)
 
         in_ch = int(ch_settings[2][-1])
-        self.mp_conv2 = MPConvLayer(
-            in_ch, in_ch, depthwise=depthwise, bias=False, act=act)
+        if self.arch in ['L', 'X']:
+            self.mp_conv2 = MPConvLayer(
+                in_ch, in_ch, depthwise=depthwise, bias=False, act=act)
+        elif self.arch in ['tiny']:
+            self.mp_conv2 = BaseConv(in_ch, 2 * in_ch, 3, 2, act=act)
+        else:
+            raise AttributeError("Unsupported arch type: {}".format(self.arch))
         self.elan_pan2 = ELANLayer(
             in_ch * 4,
             ch_settings[3][1],
@@ -1214,7 +1225,7 @@ class ELANFPN(nn.Layer):
         self.repconvs = nn.LayerList()
         Conv = RepConv if self.arch == 'L' else BaseConv
         for out_ch in self._out_channels:
-            self.repconvs.append(Conv(int(out_ch // 2), out_ch, 3, 1))
+            self.repconvs.append(Conv(int(out_ch // 2), out_ch, 3, 1, act=act))
 
     def forward(self, feats, for_mot=False):
         assert len(feats) == len(self.in_channels)
@@ -1231,6 +1242,7 @@ class ELANFPN(nn.Layer):
         fpn_out1 = self.elan_fpn1(f_out1)  # 512 -> 128*4 + 256*2 -> 1024 -> 256
         # print('63  fpn_out1 ', fpn_out1.shape, fpn_out1.sum())
         # 63
+
         fpn_out1_lateral = self.lateral_conv2(fpn_out1)  # 256->128
         fpn_out1_up = self.upsample(fpn_out1_lateral)
         route_c3 = self.route_conv2(c3)  # 512->128 # route
@@ -1240,21 +1252,19 @@ class ELANFPN(nn.Layer):
 
         # buttom-up PAN
         p_out1_down = self.mp_conv1(fpn_out2)  # 128
-        #p_out1 = paddle.concat([p_out1_down, fpn_out2, fpn_out1], 1)  # 128*2 + 256 -> 512
         p_out1 = paddle.concat([p_out1_down, fpn_out1], 1)  # 128*2 + 256 -> 512
         pan_out1 = self.elan_pan1(p_out1)  # 512 -> 128*4 + 256*2 -> 1024 -> 256
         # 88
+
         pan_out1_down = self.mp_conv2(pan_out1)  # 256
-        #p_out2 = paddle.concat([pan_out1_down, pan_out1, c5], 1)  # 256*2 + 512 -> 1024
         p_out2 = paddle.concat([pan_out1_down, c5], 1)  # 256*2 + 512 -> 1024
         pan_out2 = self.elan_pan2(
             p_out2)  # 1024 -> 256*4 + 512*2 -> 2048 -> 512
         # 101
 
         pan_outs = [fpn_out2, pan_out1, pan_out2]  # 75 88 101
-        # for x in pan_outs:
-        #     print('///// 75 88 101 pan_outs:  ', x.shape, x.sum())
-        # #[8, 128, 80, 80] [8, 256, 40, 40] [8, 512, 20, 20]
+        # for x in pan_outs: print('/// 75 88 101 pan_outs:', x.shape, x.sum())
+        # # [8, 128, 80, 80] [8, 256, 40, 40] [8, 512, 20, 20]
         outputs = []
         for i, out in enumerate(pan_outs):
             outputs.append(self.repconvs[i](out))

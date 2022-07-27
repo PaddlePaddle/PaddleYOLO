@@ -28,6 +28,18 @@ __all__ = [
 ]
 
 
+def get_activation(name="silu", inplace=True):
+    if name == "silu":
+        module = nn.Silu()
+    elif name == "relu":
+        module = nn.ReLU()
+    elif name == "LeakyReLU":
+        module = nn.LeakyReLU(0.1)
+    else:
+        raise AttributeError("Unsupported act type: {}".format(name))
+    return module
+
+
 class BaseConv(nn.Layer):
     def __init__(self,
                  in_channels,
@@ -52,7 +64,7 @@ class BaseConv(nn.Layer):
             momentum=0.97,
             weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
             bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
-
+        self.act = get_activation(act)
         self._init_weights()
 
     def _init_weights(self):
@@ -60,9 +72,10 @@ class BaseConv(nn.Layer):
 
     def forward(self, x):
         # use 'x * F.sigmoid(x)' replace 'silu'
-        x = self.bn(self.conv(x))
-        y = x * F.sigmoid(x)
-        return y
+        # x = self.bn(self.conv(x))
+        # y = x * F.sigmoid(x)
+        # return y
+        return self.act(self.bn(self.conv(x)))
 
 
 class DWConv(nn.Layer):
@@ -264,26 +277,49 @@ class CSPLayer(nn.Layer):
 
 class SPPCSPC(nn.Layer):
     # CSP https://github.com/WongKinYiu/CrossStagePartialNetworks
-    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5, k=(5, 9, 13)):
+    def __init__(self, c1, c2, g=1, e=0.5, k=(5, 9, 13), act='silu'):
         super(SPPCSPC, self).__init__()
         c_ = int(2 * c2 * e)  # hidden channels
-        self.cv1 = BaseConv(c1, c_, 1, 1)
-        self.cv2 = BaseConv(c1, c_, 1, 1)
-        self.cv3 = BaseConv(c_, c_, 3, 1)
-        self.cv4 = BaseConv(c_, c_, 1, 1)
-        self.m = nn.LayerList(
+        self.cv1 = BaseConv(c1, c_, 1, 1, act=act)
+        self.cv2 = BaseConv(c1, c_, 1, 1, act=act)
+        self.cv3 = BaseConv(c_, c_, 3, 1, act=act)
+        self.cv4 = BaseConv(c_, c_, 1, 1, act=act)
+        self.maxpoolings = nn.LayerList(
             [nn.MaxPool2D(
                 kernel_size=x, stride=1, padding=x // 2) for x in k])
-        self.cv5 = BaseConv(4 * c_, c_, 1, 1)
-        self.cv6 = BaseConv(c_, c_, 3, 1)
-        self.cv7 = BaseConv(2 * c_, c2, 1, 1)
+        self.cv5 = BaseConv(4 * c_, c_, 1, 1, act=act)
+        self.cv6 = BaseConv(c_, c_, 3, 1, act=act)
+        self.cv7 = BaseConv(2 * c_, c2, 1, 1, act=act)
 
     def forward(self, x):
         x1 = self.cv4(self.cv3(self.cv1(x)))
         y1 = self.cv6(
-            self.cv5(paddle.concat([x1] + [m(x1) for m in self.m], 1)))
+            self.cv5(
+                paddle.concat([x1] + [mp(x1) for mp in self.maxpoolings], 1)))
         y2 = self.cv2(x)
         return self.cv7(paddle.concat([y1, y2], axis=1))
+
+
+class SPPELAN(nn.Layer):
+    # CSP https://github.com/WongKinYiu/CrossStagePartialNetworks
+    def __init__(self, c1, c2, g=1, e=0.5, k=(5, 9, 13), act='silu'):
+        super(SPPELAN, self).__init__()
+        c_ = int(2 * c2 * e)  # hidden channels
+        self.cv1 = BaseConv(c1, c_, 1, 1, act=act)
+        self.cv2 = BaseConv(c1, c_, 1, 1, act=act)
+        self.maxpoolings = nn.LayerList(
+            [nn.MaxPool2D(
+                kernel_size=x, stride=1, padding=x // 2) for x in k])
+        self.cv3 = BaseConv(4 * c_, c_, 1, 1, act=act)
+        self.cv4 = BaseConv(2 * c_, c2, 1, 1, act=act)
+
+    def forward(self, x):
+        x_1 = self.cv1(x)
+        x_2 = self.cv2(x)
+        x_cats = [x_2] + [mp(x_2) for mp in self.maxpoolings]
+        y_cats = self.cv3(paddle.concat(x_cats[::-1], 1))
+        y = paddle.concat([y_cats, x_1], 1)
+        return self.cv4(y)
 
 
 class ImplicitA(nn.Layer):
@@ -335,8 +371,13 @@ class RepConv(nn.Layer):
         assert autopad(k, p) == 1
         padding_11 = autopad(k, p) - k // 2
 
-        self.act = nn.Silu(
-        )  #if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        if act == 'silu':
+            self.act = nn.Silu(
+            )  #if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        elif act == 'LeakyReLU':
+            self.act = nn.LeakyReLU(0.1)
+        else:
+            raise AttributeError("Unsupported act type: {}".format(act))
 
         if deploy:
             self.rbr_reparam = nn.Conv2D(
@@ -769,6 +810,15 @@ class MPConvLayer(nn.Layer):
         return x
 
 
+class MP(nn.Layer):
+    def __init__(self, kernel_size=2, stride=2):
+        super(MP, self).__init__()
+        self.mp = nn.MaxPool2D(kernel_size=kernel_size, stride=stride)
+
+    def forward(self, x):
+        return self.mp(x)
+
+
 @register
 @serializable
 class CSPDarkNetv7(nn.Layer):
@@ -806,7 +856,7 @@ class CSPDarkNetv7(nn.Layer):
         'L': [-1, -3, -5, -6],
         'X': [-1, -3, -5, -7, -8],
     }
-    num_blocks = {'tiny': 4, 'L': 4, 'X': 6}
+    num_blocks = {'tiny': 2, 'L': 4, 'X': 6}
 
     def __init__(self,
                  arch='L',
@@ -854,7 +904,7 @@ class CSPDarkNetv7(nn.Layer):
             raise AttributeError("Unsupported arch type: {}".format(arch))
 
         self._out_channels = [chs[-1] for chs in ch_settings]
-        self._out_channels[-1] //= 2  # for sppcspc
+        self._out_channels[-1] //= 2  # for sppcspc('L', 'X') or sppelan('tiny')
         self._out_channels = [self._out_channels[i] for i in self.return_idx]
         self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
         layers_num = 3 if arch in ['L', 'X'] else 2
@@ -863,27 +913,45 @@ class CSPDarkNetv7(nn.Layer):
         for i, (in_channels, out_channels) in enumerate(ch_settings[1:]):
             stage = []
             if i == 0:
-                conv_layer = self.add_sublayer(
-                    'layers{}.stage{}.conv_layer'.format(layers_num, i + 1),
-                    Conv(
-                        in_channels, in_channels * 2, 3, 2, bias=False,
-                        act=act))
-                stage.append(conv_layer)
-                layers_num += 1
+                if self.arch in ['L', 'X']:
+                    conv_layer = self.add_sublayer(
+                        'layers{}.stage{}.conv_layer'.format(layers_num, i + 1),
+                        Conv(
+                            in_channels,
+                            in_channels * 2,
+                            3,
+                            2,
+                            bias=False,
+                            act=act))
+                    stage.append(conv_layer)
+                    layers_num += 1
             else:
-                conv_res_layer = self.add_sublayer(
-                    'layers{}.stage{}.mpconv_layer'.format(layers_num, i + 1),
-                    MPConvLayer(
-                        in_channels,
-                        in_channels,
-                        expansion=0.5,
-                        depthwise=depthwise,
-                        bias=False,
-                        act=act))
-                stage.append(conv_res_layer)
-                layers_num += 5  # 1 maxpool + 3 convs + 1 concat
+                if self.arch in ['L', 'X']:
+                    conv_res_layer = self.add_sublayer(
+                        'layers{}.stage{}.mpconv_layer'.format(layers_num,
+                                                               i + 1),
+                        MPConvLayer(
+                            in_channels,
+                            in_channels,
+                            expansion=0.5,
+                            depthwise=depthwise,
+                            bias=False,
+                            act=act))
+                    stage.append(conv_res_layer)
+                    layers_num += 5  # 1 maxpool + 3 convs + 1 concat
+                elif self.arch in ['tiny']:
+                    mp_layer = self.add_sublayer(
+                        'layers{}.stage{}.mp_layer'.format(layers_num, i + 1),
+                        MP(kernel_size=2, stride=2))
+                    stage.append(mp_layer)
+                    layers_num += 1  # 1 maxpool + 3 convs + 1 concat
+                else:
+                    raise AttributeError("Unsupported arch type: {}".format(
+                        self.arch))
 
-            in_ch = in_channels * 2 if i == 0 else in_channels
+            in_ch = in_channels * 2 if i == 0 and self.arch in [
+                'L', 'X'
+            ] else in_channels
             elan_layer = self.add_sublayer(
                 'layers{}.stage{}.elan_layer'.format(layers_num, i + 1),
                 ELANLayer(
@@ -897,18 +965,35 @@ class CSPDarkNetv7(nn.Layer):
                     bias=False,
                     act=act))
             stage.append(elan_layer)
-            layers_num += int(2 + num_blocks +
-                              2)  # conv1 + conv2 + bottleneck + concat + conv3
+            layers_num += int(2 + num_blocks + 2)
+            # conv1 + conv2 + bottleneck + concat + conv3
 
             if i == len(ch_settings[1:]) - 1:
-                sppcspc_layer = self.add_sublayer(
-                    'layers{}.stage{}.sppcspc_layer'.format(layers_num, i + 1),
-                    SPPCSPC(
-                        out_channels,
-                        out_channels // 2,
-                        k=(5, 9, 13), ))
-                stage.append(sppcspc_layer)
-                layers_num += 1
+                if self.arch in ['L', 'X']:
+                    sppcspc_layer = self.add_sublayer(
+                        'layers{}.stage{}.sppcspc_layer'.format(layers_num,
+                                                                i + 1),
+                        SPPCSPC(
+                            out_channels,
+                            out_channels // 2,
+                            k=(5, 9, 13),
+                            act=act))
+                    stage.append(sppcspc_layer)
+                    layers_num += 1
+                elif self.arch in ['tiny']:
+                    sppcspc_layer = self.add_sublayer(
+                        'layers{}.stage{}.sppelan_layer'.format(layers_num,
+                                                                i + 1),
+                        SPPELAN(
+                            out_channels,
+                            out_channels // 2,
+                            k=(5, 9, 13),
+                            act=act))
+                    stage.append(sppcspc_layer)
+                    layers_num += 9
+                else:
+                    raise AttributeError("Unsupported arch type: {}".format(
+                        self.arch))
 
             self.blocks.append(nn.Sequential(*stage))
 
