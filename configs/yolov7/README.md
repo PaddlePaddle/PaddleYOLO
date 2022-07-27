@@ -15,6 +15,12 @@
 | YOLOv7-x        |  640     |    32      |   300e    |     -    |  53.0  | 70.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_x_300e_coco.pdparams) | [配置文件](./yolov7_x_300e_coco.yml) |
 
 
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  |   下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-------------: | :-----: |
+| YOLOv7-tiny     |  640     |    32      |   300e    |     -    |  37.3  | 54.5 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_300e_coco.pdparams) | [配置文件](./yolov7_tiny_300e_coco.yml) |
+| YOLOv7-tiny     |  416     |    32      |   300e    |     -    |  33.3  | 49.5 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_416_300e_coco.pdparams) | [配置文件](./yolov7_tiny_416_300e_coco.yml) |
+| YOLOv7-tiny     |  320     |    32      |   300e    |     -    |  29.1  | 43.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_320_300e_coco.pdparams) | [配置文件](./yolov7_tiny_320_300e_coco.yml) |
+
 **注意:**
   - YOLOv7模型训练使用COCO train2017作为训练集，Box AP为在COCO val2017上的`mAP(IoU=0.5:0.95)`结果；
   - YOLOv7模型训练过程中默认使用8 GPUs进行混合精度训练，默认lr为0.01为8卡总batch_size的设置，如果**GPU卡数**或者每卡**batch size**发生了改变，你需要按照公式 **lr<sub>new</sub> = lr<sub>default</sub> * (batch_size<sub>new</sub> * GPU_number<sub>new</sub>) / (batch_size<sub>default</sub> * GPU_number<sub>default</sub>)** 调整学习率；
