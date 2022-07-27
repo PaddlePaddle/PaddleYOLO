@@ -13,7 +13,7 @@ snapshot_epoch: 10
 weights: output/yolov7_x_300e_coco/model_final
 
 
-CSPDarkNetv7:
+ELANNet:
   return_idx: [2, 3, 4]
   depthwise: false
   arch: 'X'

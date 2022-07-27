@@ -21,10 +21,12 @@ from ppdet.core.workspace import register, serializable
 from ppdet.modeling.initializer import conv_init_, normal_
 from paddle.nn.initializer import Constant
 from ..shape_spec import ShapeSpec
+from IPython import embed
 
 __all__ = [
-    'CSPDarkNet', 'CSPDarkNetv7', 'BaseConv', 'DWConv', 'BottleNeck',
-    'SPPLayer', 'SPPFLayer'
+    'CSPDarkNet', 'BaseConv', 'DWConv', 'BottleNeck', 'SPPLayer', 'SPPFLayer',
+    'ELANNet', 'ELANLayer', 'MPConvLayer', 'SPPCSPC', 'SPPELAN', 'RepConv',
+    'MP', 'ImplicitA', 'ImplicitM'
 ]
 
 
@@ -33,7 +35,7 @@ def get_activation(name="silu", inplace=True):
         module = nn.Silu()
     elif name == "relu":
         module = nn.ReLU()
-    elif name == "LeakyReLU":
+    elif name in ["LeakyReLU", 'leakyrelu', 'lrelu']:
         module = nn.LeakyReLU(0.1)
     else:
         raise AttributeError("Unsupported act type: {}".format(name))
@@ -72,10 +74,10 @@ class BaseConv(nn.Layer):
 
     def forward(self, x):
         # use 'x * F.sigmoid(x)' replace 'silu'
-        # x = self.bn(self.conv(x))
+        x = self.bn(self.conv(x))
+        y = self.act(x)
         # y = x * F.sigmoid(x)
-        # return y
-        return self.act(self.bn(self.conv(x)))
+        return y
 
 
 class DWConv(nn.Layer):
@@ -275,6 +277,250 @@ class CSPLayer(nn.Layer):
         return x
 
 
+@register
+@serializable
+class CSPDarkNet(nn.Layer):
+    """
+    CSPDarkNet backbone.
+    Args:
+        arch (str): Architecture of CSPDarkNet, from {P5, P6, X}, default as X,
+            and 'X' means used in YOLOX, 'P5/P6' means used in YOLOv5.
+        depth_mult (float): Depth multiplier, multiply number of channels in
+            each layer, default as 1.0.
+        width_mult (float): Width multiplier, multiply number of blocks in
+            CSPLayer, default as 1.0.
+        depthwise (bool): Whether to use depth-wise conv layer.
+        act (str): Activation function type, default as 'silu'.
+        return_idx (list): Index of stages whose feature maps are returned.
+    """
+
+    __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
+
+    # in_channels, out_channels, num_blocks, add_shortcut, use_spp(use_sppf)
+    # 'X' means setting used in YOLOX, 'P5/P6' means setting used in YOLOv5.
+    arch_settings = {
+        'X': [[64, 128, 3, True, False], [128, 256, 9, True, False],
+              [256, 512, 9, True, False], [512, 1024, 3, False, True]],
+        'P5': [[64, 128, 3, True, False], [128, 256, 6, True, False],
+               [256, 512, 9, True, False], [512, 1024, 3, True, True]],
+        'P6': [[64, 128, 3, True, False], [128, 256, 6, True, False],
+               [256, 512, 9, True, False], [512, 768, 3, True, False],
+               [768, 1024, 3, True, True]],
+    }
+
+    def __init__(self,
+                 arch='X',
+                 depth_mult=1.0,
+                 width_mult=1.0,
+                 depthwise=False,
+                 act='silu',
+                 trt=False,
+                 return_idx=[2, 3, 4]):
+        super(CSPDarkNet, self).__init__()
+        self.arch = arch
+        self.return_idx = return_idx
+        Conv = DWConv if depthwise else BaseConv
+        arch_setting = self.arch_settings[arch]
+        base_channels = int(arch_setting[0][0] * width_mult)
+
+        # Note: differences between the latest YOLOv5 and the original YOLOX
+        # 1. self.stem, use SPPF(in YOLOv5) or SPP(in YOLOX)
+        # 2. use SPPF(in YOLOv5) or SPP(in YOLOX)
+        # 3. put SPPF before(YOLOv5) or SPP after(YOLOX) the last cspdark block's CSPLayer
+        # 4. whether SPPF(SPP)'CSPLayer add shortcut, True in YOLOv5, False in YOLOX
+        if arch in ['P5', 'P6']:
+            # in the latest YOLOv5, use Conv stem, and SPPF (fast, only single spp kernal size)
+            self.stem = Conv(
+                3, base_channels, ksize=6, stride=2, bias=False, act=act)
+            spp_kernal_sizes = 5
+        elif arch in ['X']:
+            # in the original YOLOX, use Focus stem, and SPP (three spp kernal sizes)
+            self.stem = Focus(
+                3, base_channels, ksize=3, stride=1, bias=False, act=act)
+            spp_kernal_sizes = (5, 9, 13)
+        else:
+            raise AttributeError("Unsupported arch type: {}".format(arch))
+
+        _out_channels = [base_channels]
+        layers_num = 1
+        self.csp_dark_blocks = []
+
+        for i, (in_channels, out_channels, num_blocks, shortcut,
+                use_spp) in enumerate(arch_setting):
+            in_channels = int(in_channels * width_mult)
+            out_channels = int(out_channels * width_mult)
+            _out_channels.append(out_channels)
+            num_blocks = max(round(num_blocks * depth_mult), 1)
+            stage = []
+
+            conv_layer = self.add_sublayer(
+                'layers{}.stage{}.conv_layer'.format(layers_num, i + 1),
+                Conv(
+                    in_channels, out_channels, 3, 2, bias=False, act=act))
+            stage.append(conv_layer)
+            layers_num += 1
+
+            if use_spp and arch in ['X']:
+                # in YOLOX use SPPLayer
+                spp_layer = self.add_sublayer(
+                    'layers{}.stage{}.spp_layer'.format(layers_num, i + 1),
+                    SPPLayer(
+                        out_channels,
+                        out_channels,
+                        kernel_sizes=spp_kernal_sizes,
+                        bias=False,
+                        act=act))
+                stage.append(spp_layer)
+                layers_num += 1
+
+            csp_layer = self.add_sublayer(
+                'layers{}.stage{}.csp_layer'.format(layers_num, i + 1),
+                CSPLayer(
+                    out_channels,
+                    out_channels,
+                    num_blocks=num_blocks,
+                    shortcut=shortcut,
+                    depthwise=depthwise,
+                    bias=False,
+                    act=act))
+            stage.append(csp_layer)
+            layers_num += 1
+
+            if use_spp and arch in ['P5', 'P6']:
+                # in latest YOLOv5 use SPPFLayer instead of SPPLayer
+                sppf_layer = self.add_sublayer(
+                    'layers{}.stage{}.sppf_layer'.format(layers_num, i + 1),
+                    SPPFLayer(
+                        out_channels,
+                        out_channels,
+                        ksize=5,
+                        bias=False,
+                        act=act))
+                stage.append(sppf_layer)
+                layers_num += 1
+
+            self.csp_dark_blocks.append(nn.Sequential(*stage))
+
+        self._out_channels = [_out_channels[i] for i in self.return_idx]
+        self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
+
+    def forward(self, inputs):
+        x = inputs['image']
+        outputs = []
+        x = self.stem(x)
+        for i, layer in enumerate(self.csp_dark_blocks):
+            x = layer(x)
+            if i + 1 in self.return_idx:
+                outputs.append(x)
+        return outputs
+
+    @property
+    def out_shape(self):
+        return [
+            ShapeSpec(
+                channels=c, stride=s)
+            for c, s in zip(self._out_channels, self.strides)
+        ]
+
+
+##### yolov7 ####
+
+
+class ELANLayer(nn.Layer):
+    """ELAN layer used in YOLOv7"""
+
+    def __init__(self,
+                 in_channels,
+                 mid_channels1,
+                 mid_channels2,
+                 out_channels,
+                 num_blocks=4,
+                 concat_list=[-1, -3, -5, -6],
+                 depthwise=False,
+                 bias=False,
+                 act="silu"):
+        super(ELANLayer, self).__init__()
+        self.num_blocks = num_blocks
+        self.concat_list = concat_list
+
+        self.conv1 = BaseConv(
+            in_channels, mid_channels1, ksize=1, stride=1, bias=bias, act=act)
+        self.conv2 = BaseConv(
+            in_channels, mid_channels1, ksize=1, stride=1, bias=bias, act=act)
+
+        self.bottlenecks = nn.Sequential(* [
+            BaseConv(
+                mid_channels1 if i == 0 else mid_channels2,
+                mid_channels2,
+                ksize=3,
+                stride=1,
+                bias=bias,
+                act=act) for i in range(num_blocks)
+        ])
+
+        concat_chs = mid_channels1 * 2 + mid_channels2 * (len(concat_list) - 2)
+        self.conv3 = BaseConv(
+            int(concat_chs),
+            out_channels,
+            ksize=1,
+            stride=1,
+            bias=bias,
+            act=act)
+
+    def forward(self, x):
+        outs = []
+        x_1 = self.conv1(x)
+        x_2 = self.conv2(x)
+        outs.append(x_1)
+        outs.append(x_2)
+        idx = [i + self.num_blocks for i in self.concat_list[:-2]]
+        for i in range(self.num_blocks):
+            x_2 = self.bottlenecks[i](x_2)
+            if i in idx:
+                outs.append(x_2)
+        outs = outs[::-1]  # [-1, -3]
+        x_all = paddle.concat(outs, axis=1)
+        y = self.conv3(x_all)
+        return y
+
+
+class MPConvLayer(nn.Layer):
+    """MPConvLayer used in YOLOv7"""
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 expansion=1.0,
+                 depthwise=False,
+                 bias=False,
+                 act="silu"):
+        super(MPConvLayer, self).__init__()
+        mid_channels = int(out_channels * expansion)
+        self.maxpool = nn.MaxPool2D(kernel_size=2, stride=2)
+        self.conv1 = BaseConv(
+            in_channels, mid_channels, ksize=1, stride=1, bias=bias, act=act)
+
+        self.conv2 = BaseConv(
+            in_channels, mid_channels, ksize=1, stride=1, bias=bias, act=act)
+        self.conv3 = BaseConv(
+            mid_channels, mid_channels, ksize=3, stride=2, bias=bias, act=act)
+
+    def forward(self, x):
+        x_1 = self.conv1(self.maxpool(x))
+        x_2 = self.conv3(self.conv2(x))
+        x = paddle.concat([x_2, x_1], axis=1)
+        return x
+
+
+class MP(nn.Layer):
+    def __init__(self, kernel_size=2, stride=2):
+        super(MP, self).__init__()
+        self.mp = nn.MaxPool2D(kernel_size=kernel_size, stride=stride)
+
+    def forward(self, x):
+        return self.mp(x)
+
+
 class SPPCSPC(nn.Layer):
     # CSP https://github.com/WongKinYiu/CrossStagePartialNetworks
     def __init__(self, c1, c2, g=1, e=0.5, k=(5, 9, 13), act='silu'):
@@ -371,13 +617,8 @@ class RepConv(nn.Layer):
         assert autopad(k, p) == 1
         padding_11 = autopad(k, p) - k // 2
 
-        if act == 'silu':
-            self.act = nn.Silu(
-            )  #if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
-        elif act == 'LeakyReLU':
-            self.act = nn.LeakyReLU(0.1)
-        else:
-            raise AttributeError("Unsupported act type: {}".format(act))
+        #if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        self.act = get_activation(act)
 
         if deploy:
             self.rbr_reparam = nn.Conv2D(
@@ -399,15 +640,20 @@ class RepConv(nn.Layer):
     def forward(self, inputs):
         # [8, 128, 80, 80] [8, 256, 40, 40] [8, 512, 20, 20]
         if hasattr(self, "rbr_reparam"):
-            return self.act(self.rbr_reparam(inputs))
+            x = self.rbr_reparam(inputs)
+            y = self.act(x)
+            # y = x * F.sigmoid(x)
+            return y
 
         if self.rbr_identity is None:
             id_out = 0
         else:
             id_out = self.rbr_identity(inputs)
 
-        out = self.act(self.rbr_dense(inputs) + self.rbr_1x1(inputs) + id_out)
-        return out
+        x = self.rbr_dense(inputs) + self.rbr_1x1(inputs) + id_out
+        y = self.act(x)
+        # y = x * F.sigmoid(x)
+        return y
 
     def get_equivalent_kernel_bias(self):
         kernel3x3, bias3x3 = self._fuse_bn_tensor(self.rbr_dense)
@@ -577,265 +823,20 @@ class RepConv(nn.Layer):
 
 @register
 @serializable
-class CSPDarkNet(nn.Layer):
+class ELANNet(nn.Layer):
     """
-    CSPDarkNet backbone.
+    ELANNet, YOLOv7's backbone.
     Args:
-        arch (str): Architecture of CSPDarkNet, from {P5, P6, X}, default as X,
-            and 'X' means used in YOLOX, 'P5/P6' means used in YOLOv5.
+        arch (str): Architecture of ELANNet, from {tiny, L, X, W6, E6, D6, E6E}, default as 'L',
         depth_mult (float): Depth multiplier, multiply number of channels in
             each layer, default as 1.0.
         width_mult (float): Width multiplier, multiply number of blocks in
             CSPLayer, default as 1.0.
         depthwise (bool): Whether to use depth-wise conv layer.
         act (str): Activation function type, default as 'silu'.
+        trt (bool): Whether use trt infer.
         return_idx (list): Index of stages whose feature maps are returned.
     """
-
-    __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
-
-    # in_channels, out_channels, num_blocks, add_shortcut, use_spp(use_sppf)
-    # 'X' means setting used in YOLOX, 'P5/P6' means setting used in YOLOv5.
-    arch_settings = {
-        'X': [[64, 128, 3, True, False], [128, 256, 9, True, False],
-              [256, 512, 9, True, False], [512, 1024, 3, False, True]],
-        'P5': [[64, 128, 3, True, False], [128, 256, 6, True, False],
-               [256, 512, 9, True, False], [512, 1024, 3, True, True]],
-        'P6': [[64, 128, 3, True, False], [128, 256, 6, True, False],
-               [256, 512, 9, True, False], [512, 768, 3, True, False],
-               [768, 1024, 3, True, True]],
-    }
-
-    def __init__(self,
-                 arch='X',
-                 depth_mult=1.0,
-                 width_mult=1.0,
-                 depthwise=False,
-                 act='silu',
-                 trt=False,
-                 return_idx=[2, 3, 4]):
-        super(CSPDarkNet, self).__init__()
-        self.arch = arch
-        self.return_idx = return_idx
-        Conv = DWConv if depthwise else BaseConv
-        arch_setting = self.arch_settings[arch]
-        base_channels = int(arch_setting[0][0] * width_mult)
-
-        # Note: differences between the latest YOLOv5 and the original YOLOX
-        # 1. self.stem, use SPPF(in YOLOv5) or SPP(in YOLOX)
-        # 2. use SPPF(in YOLOv5) or SPP(in YOLOX)
-        # 3. put SPPF before(YOLOv5) or SPP after(YOLOX) the last cspdark block's CSPLayer
-        # 4. whether SPPF(SPP)'CSPLayer add shortcut, True in YOLOv5, False in YOLOX
-        if arch in ['P5', 'P6']:
-            # in the latest YOLOv5, use Conv stem, and SPPF (fast, only single spp kernal size)
-            self.stem = Conv(
-                3, base_channels, ksize=6, stride=2, bias=False, act=act)
-            spp_kernal_sizes = 5
-        elif arch in ['X']:
-            # in the original YOLOX, use Focus stem, and SPP (three spp kernal sizes)
-            self.stem = Focus(
-                3, base_channels, ksize=3, stride=1, bias=False, act=act)
-            spp_kernal_sizes = (5, 9, 13)
-        else:
-            raise AttributeError("Unsupported arch type: {}".format(arch))
-
-        _out_channels = [base_channels]
-        layers_num = 1
-        self.csp_dark_blocks = []
-
-        for i, (in_channels, out_channels, num_blocks, shortcut,
-                use_spp) in enumerate(arch_setting):
-            in_channels = int(in_channels * width_mult)
-            out_channels = int(out_channels * width_mult)
-            _out_channels.append(out_channels)
-            num_blocks = max(round(num_blocks * depth_mult), 1)
-            stage = []
-
-            conv_layer = self.add_sublayer(
-                'layers{}.stage{}.conv_layer'.format(layers_num, i + 1),
-                Conv(
-                    in_channels, out_channels, 3, 2, bias=False, act=act))
-            stage.append(conv_layer)
-            layers_num += 1
-
-            if use_spp and arch in ['X']:
-                # in YOLOX use SPPLayer
-                spp_layer = self.add_sublayer(
-                    'layers{}.stage{}.spp_layer'.format(layers_num, i + 1),
-                    SPPLayer(
-                        out_channels,
-                        out_channels,
-                        kernel_sizes=spp_kernal_sizes,
-                        bias=False,
-                        act=act))
-                stage.append(spp_layer)
-                layers_num += 1
-
-            csp_layer = self.add_sublayer(
-                'layers{}.stage{}.csp_layer'.format(layers_num, i + 1),
-                CSPLayer(
-                    out_channels,
-                    out_channels,
-                    num_blocks=num_blocks,
-                    shortcut=shortcut,
-                    depthwise=depthwise,
-                    bias=False,
-                    act=act))
-            stage.append(csp_layer)
-            layers_num += 1
-
-            if use_spp and arch in ['P5', 'P6']:
-                # in latest YOLOv5 use SPPFLayer instead of SPPLayer
-                sppf_layer = self.add_sublayer(
-                    'layers{}.stage{}.sppf_layer'.format(layers_num, i + 1),
-                    SPPFLayer(
-                        out_channels,
-                        out_channels,
-                        ksize=5,
-                        bias=False,
-                        act=act))
-                stage.append(sppf_layer)
-                layers_num += 1
-
-            self.csp_dark_blocks.append(nn.Sequential(*stage))
-
-        self._out_channels = [_out_channels[i] for i in self.return_idx]
-        self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
-
-    def forward(self, inputs):
-        x = inputs['image']
-        outputs = []
-        x = self.stem(x)
-        for i, layer in enumerate(self.csp_dark_blocks):
-            x = layer(x)
-            if i + 1 in self.return_idx:
-                outputs.append(x)
-        return outputs
-
-    @property
-    def out_shape(self):
-        return [
-            ShapeSpec(
-                channels=c, stride=s)
-            for c, s in zip(self._out_channels, self.strides)
-        ]
-
-
-class ELANLayer(nn.Layer):
-    """ELAN layer used in YOLOv7"""
-
-    def __init__(self,
-                 in_channels,
-                 mid_channels1,
-                 mid_channels2,
-                 out_channels,
-                 num_blocks=4,
-                 concat_list=[-1, -3, -5, -6],
-                 depthwise=False,
-                 bias=False,
-                 act="silu"):
-        super(ELANLayer, self).__init__()
-        self.num_blocks = num_blocks
-        self.concat_list = concat_list
-
-        self.conv1 = BaseConv(
-            in_channels, mid_channels1, ksize=1, stride=1, bias=bias, act=act)
-        self.conv2 = BaseConv(
-            in_channels, mid_channels1, ksize=1, stride=1, bias=bias, act=act)
-
-        self.bottlenecks = nn.Sequential(* [
-            BaseConv(
-                mid_channels1 if i == 0 else mid_channels2,
-                mid_channels2,
-                ksize=3,
-                stride=1,
-                bias=bias,
-                act=act) for i in range(num_blocks)
-        ])
-
-        concat_chs = mid_channels1 * 2 + mid_channels2 * (len(concat_list) - 2)
-        self.conv3 = BaseConv(
-            int(concat_chs),
-            out_channels,
-            ksize=1,
-            stride=1,
-            bias=bias,
-            act=act)
-
-    def forward(self, x):
-        outs = []
-        x_1 = self.conv1(x)
-        x_2 = self.conv2(x)
-        outs.append(x_1)
-        outs.append(x_2)
-        idx = [i + self.num_blocks for i in self.concat_list[:-2]]
-        for i in range(self.num_blocks):
-            x_2 = self.bottlenecks[i](x_2)
-            if i in idx:
-                outs.append(x_2)
-        outs = outs[::-1]  # [-1, -3]
-        x_all = paddle.concat(outs, axis=1)
-        y = self.conv3(x_all)
-        return y
-
-
-from IPython import embed
-
-
-class MPConvLayer(nn.Layer):
-    """MPConvLayer used in YOLOv7"""
-
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 expansion=1.0,
-                 depthwise=False,
-                 bias=False,
-                 act="silu"):
-        super(MPConvLayer, self).__init__()
-        mid_channels = int(out_channels * expansion)
-        self.maxpool = nn.MaxPool2D(kernel_size=2, stride=2)
-        self.conv1 = BaseConv(
-            in_channels, mid_channels, ksize=1, stride=1, bias=bias, act=act)
-
-        self.conv2 = BaseConv(
-            in_channels, mid_channels, ksize=1, stride=1, bias=bias, act=act)
-        self.conv3 = BaseConv(
-            mid_channels, mid_channels, ksize=3, stride=2, bias=bias, act=act)
-
-    def forward(self, x):
-        x_1 = self.conv1(self.maxpool(x))
-        x_2 = self.conv3(self.conv2(x))
-        x = paddle.concat([x_2, x_1], axis=1)
-        return x
-
-
-class MP(nn.Layer):
-    def __init__(self, kernel_size=2, stride=2):
-        super(MP, self).__init__()
-        self.mp = nn.MaxPool2D(kernel_size=kernel_size, stride=stride)
-
-    def forward(self, x):
-        return self.mp(x)
-
-
-@register
-@serializable
-class CSPDarkNetv7(nn.Layer):
-    """
-    CSPDarkNetv7 backbone.
-    Args:
-        arch (str): Architecture of CSPDarkNetv7, from {P5, P6, X}, default as X,
-            and 'X' means used in YOLOX, 'P5/P6' means used in YOLOv5.
-        depth_mult (float): Depth multiplier, multiply number of channels in
-            each layer, default as 1.0.
-        width_mult (float): Width multiplier, multiply number of blocks in
-            CSPLayer, default as 1.0.
-        depthwise (bool): Whether to use depth-wise conv layer.
-        act (str): Activation function type, default as 'silu'.
-        return_idx (list): Index of stages whose feature maps are returned.
-    """
-
     __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
 
     # in_channels, out_channels of 1 stem + 4 stages
@@ -866,7 +867,7 @@ class CSPDarkNetv7(nn.Layer):
                  act='silu',
                  trt=False,
                  return_idx=[2, 3, 4]):
-        super(CSPDarkNetv7, self).__init__()
+        super(ELANNet, self).__init__()
         self.arch = arch
         self.return_idx = return_idx
         Conv = DWConv if depthwise else BaseConv
@@ -882,24 +883,21 @@ class CSPDarkNetv7(nn.Layer):
         if arch in ['L', 'X']:
             self.stem = nn.Sequential(* [
                 Conv(
-                    3, ch_1, ksize=3, stride=1, bias=False, act=act),
+                    3, ch_1, 3, 1, bias=False, act=act),
                 Conv(
-                    ch_1, ch_2, ksize=3, stride=2, bias=False, act=act),
+                    ch_1, ch_2, 3, 2, bias=False, act=act),
                 Conv(
-                    ch_2, ch_out, ksize=3, stride=1, bias=False, act=act),
+                    ch_2, ch_out, 3, 1, bias=False, act=act),
             ])
         elif arch in ['tiny']:
             self.stem = nn.Sequential(* [
                 Conv(
-                    3, ch_1, ksize=3, stride=2, bias=False, act=act),
+                    3, ch_1, 3, 2, bias=False, act=act),
                 Conv(
-                    ch_1, ch_out, ksize=3, stride=2, bias=False, act=act),
+                    ch_1, ch_out, 3, 2, bias=False, act=act),
             ])
-        elif arch in ['d6', 'e6', 'w6', 'e6e']:
-            self.stem = nn.Sequential(* [
-                Conv(
-                    3, ch_1, ksize=3, stride=1, bias=False, act=act),  # TODO
-            ])
+        elif arch in ['W6', 'E6', 'D6', 'E6E']:
+            raise NotImplementedError
         else:
             raise AttributeError("Unsupported arch type: {}".format(arch))
 
@@ -945,6 +943,8 @@ class CSPDarkNetv7(nn.Layer):
                         MP(kernel_size=2, stride=2))
                     stage.append(mp_layer)
                     layers_num += 1  # 1 maxpool + 3 convs + 1 concat
+                elif arch in ['W6', 'E6', 'D6', 'E6E']:
+                    raise NotImplementedError
                 else:
                     raise AttributeError("Unsupported arch type: {}".format(
                         self.arch))

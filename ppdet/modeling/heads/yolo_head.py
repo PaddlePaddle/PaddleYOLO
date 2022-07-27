@@ -609,7 +609,9 @@ class YOLOv7Head(nn.Layer):
             stride (list): strides
             loss (object): YOLOv5Loss instance
             data_format (str): nms format, NCHW or NHWC
-            loss (object): YOLOv5Loss instance
+            nms (object): MultiClassNMS instance
+            trt (bool): whether use trt infer
+            exclude_nms (bool): whether use exclude_nms for speed test
         """
         super(YOLOv7Head, self).__init__()
         assert len(in_channels) > 0, "in_channels length should > 0"
@@ -617,7 +619,7 @@ class YOLOv7Head(nn.Layer):
         self.in_channels = in_channels
 
         self.parse_anchor(anchors, anchor_masks)
-        self.anchors = paddle.to_tensor(self.anchors, dtype='float32')
+        self.anchors = paddle.to_tensor(self.anchors, dtype='int32')
         self.anchor_levels = len(self.anchors)
 
         self.stride = stride
@@ -649,7 +651,7 @@ class YOLOv7Head(nn.Layer):
             self.yolo_outputs.append(yolo_output)
 
             self.ia.append(ImplicitA(self.in_channels[i]))
-            self.im.append(ImplicitA(num_filters))
+            self.im.append(ImplicitM(num_filters))
 
         self._initialize_biases()
 
@@ -697,8 +699,8 @@ class YOLOv7Head(nn.Layer):
     def make_grid(self, nx, ny, anchor):
         yv, xv = paddle.meshgrid([
             paddle.arange(
-                ny, dtype='float32'), paddle.arange(
-                    nx, dtype='float32')
+                ny, dtype='int32'), paddle.arange(
+                    nx, dtype='int32')
         ])
         grid = paddle.stack((xv, yv), axis=2).reshape([1, 1, ny, nx, 2])
         anchor_grid = anchor.reshape([1, self.num_anchor, 1, 1, 2])
@@ -740,10 +742,7 @@ class YOLOv7Head(nn.Layer):
 
         if self.exclude_nms:
             # `exclude_nms=True` just use in benchmark for speed test
-            return paddle.concat(
-                [pred_bboxes, pred_scores.transpose([0, 2, 1])],
-                axis=-1), paddle.to_tensor(
-                    [1], dtype='int32')
+            return pred_bboxes.sum(), pred_scores.sum()
         else:
             bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
             return bbox_pred, bbox_num

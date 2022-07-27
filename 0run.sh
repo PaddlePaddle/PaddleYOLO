@@ -1,6 +1,8 @@
 export FLAGS_allocator_strategy=auto_growth
-name=tiny
+name=l
 model_type=yolov7
+#job_name=yolov7_${name}_416_300e_coco
+#job_name=yolov7_${name}_320_300e_coco
 job_name=yolov7_${name}_300e_coco
 config=configs/${model_type}/${job_name}.yml
 log_dir=log_dir/${job_name}
@@ -17,7 +19,7 @@ weights=../yolov7_tools/yolov7_${name}_300e_coco.pdparams
 
 # 2. eval
 #CUDA_VISIBLE_DEVICES=0 python3.7 tools/eval.py -c ${config} -o weights=https://paddledet.bj.bcebos.com/models/${job_name}.pdparams
-#CUDA_VISIBLE_DEVICES=3 python3.7 tools/eval.py -c ${config} -o weights=${weights} #--classwise
+CUDA_VISIBLE_DEVICES=5 python3.7 tools/eval.py -c ${config} -o weights=${weights} #--classwise
 
 # 3. tools infer
 #CUDA_VISIBLE_DEVICES=7 python3.7 tools/infer.py -c ${config} -o weights=https://paddledet.bj.bcebos.com/models/${job_name}.pdparams --infer_img=demo/000000014439.jpg
@@ -25,10 +27,10 @@ weights=../yolov7_tools/yolov7_${name}_300e_coco.pdparams
 
 # 4.export model
 #CUDA_VISIBLE_DEVICES=7 python3.7 tools/export_model.py -c ${config} -o weights=https://paddledet.bj.bcebos.com/models/${job_name}.pdparams
-CUDA_VISIBLE_DEVICES=3 python3.7 tools/export_model.py -c ${config} -o weights=${weights} # exclude_nms=True
+#CUDA_VISIBLE_DEVICES=3 python3.7 tools/export_model.py -c ${config} -o weights=${weights} exclude_nms=True
 
 # 5. deploy infer
 #CUDA_VISIBLE_DEVICES=7 python3.7 deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
 
 # 6. deploy speed
-CUDA_VISIBLE_DEVICES=3 python3.7 deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU #--run_benchmark=True #--run_mode=trt_fp16
+#CUDA_VISIBLE_DEVICES=3 python3.7 deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU #--run_benchmark=True #--run_mode=trt_fp16

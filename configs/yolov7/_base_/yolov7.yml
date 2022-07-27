@@ -11,12 +11,12 @@ width_mult: 1.0
 
 
 YOLOv5:
-  backbone: CSPDarkNetv7
+  backbone: ELANNet
   neck: ELANFPN
   yolo_head: YOLOv7Head
   post_process: ~
 
-CSPDarkNetv7:
+ELANNet:
   return_idx: [2, 3, 4]
   depthwise: false
 
