@@ -15,7 +15,7 @@ TrainReader:
     - NormalizeImage: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
     - RGBReverse: {} # bgr->rgb
     - Permute: {}
-  batch_size: 8
+  batch_size: 16
   shuffle: True
   drop_last: False
   use_shared_memory: False

@@ -524,16 +524,16 @@ class MP(nn.Layer):
 class DownC(nn.Layer):
     def __init__(self, c1, c2, k=2, act='silu'):
         super(DownC, self).__init__()
-        self.mp = nn.MaxPool2D(kernel_size=k, stride=k)
         c_ = int(c1)  # hidden channels
+        self.mp = nn.MaxPool2D(kernel_size=k, stride=k)
         self.cv1 = BaseConv(c1, c_, 1, 1, act=act)
         self.cv2 = BaseConv(c_, c2 // 2, 3, k, act=act)
         self.cv3 = BaseConv(c1, c2 // 2, 1, 1, act=act)
 
     def forward(self, x):
-        x_1 = self.cv3(self.mp(x))
         x_2 = self.cv2(self.cv1(x))
-        return paddle.concat([x_2, x_1], 1)
+        x_3 = self.cv3(self.mp(x))
+        return paddle.concat([x_2, x_3], 1)
 
 
 class SPPCSPC(nn.Layer):

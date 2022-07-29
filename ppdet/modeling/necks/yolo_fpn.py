@@ -1306,8 +1306,7 @@ class ELANFPNP6(nn.Layer):
             arch='W6',
             depth_mult=1.0,
             width_mult=1.0,
-            in_channels=[256, 512, 768,
-                         512],  # layer: 19 28 37 47 (c3,c4,c5,c6)
+            in_channels=[256, 512, 768, 512],  # 19 28 37 47 (c3,c4,c5,c6)
             out_channels=[256, 512, 768, 1024],  # layer: 83 93 103 113
             depthwise=False,
             act='silu',
