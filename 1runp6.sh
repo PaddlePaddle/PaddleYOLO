@@ -1,18 +1,16 @@
 export FLAGS_allocator_strategy=auto_growth
-name=l
+name=w6
+name=e6
+#name=d6
+#name=e6e
 model_type=yolov7
-job_name=yolov7_${name}_300e_coco
-# job_name=yolov7_${name}_416_300e_coco
-# job_name=yolov7_${name}_320_300e_coco
-# job_name=yolov7_${name}_512_300e_coco
+job_name=yolov7p6_${name}_300e_coco
 config=configs/${model_type}/${job_name}.yml
 log_dir=log_dir/${job_name}
-weights=https://bj.bcebos.com/v1/paddledet/models/yolov7_${name}_300e_coco.pdparams
-weights=../yolov7_tools/yolov7_${name}_300e_coco.pdparams
+weights=https://bj.bcebos.com/v1/paddledet/models/yolov7p6_${name}_300e_coco.pdparams
+weights=../yolov7_tools/yolov7p6_${name}_300e_coco.pdparams
 
-#python3.7 dygraph_print.py -c ${config} 2>&1 | tee yolov7_${name}_dy_print.txt
-#python3.7 4convert_torch2paddle.py yolov7.pt weight_name_map_l.txt yolov7.pdparams
-#python3.7 4convert_torch2paddle.py yolov7x.pt weight_name_map_x.txt yolov7x.pdparams
+#python3.7 dygraph_print.py -c ${config} 2>&1 | tee yolov7p6_${name}_dy_print.txt
 
 # 1. training
 #CUDA_VISIBLE_DEVICES=6 python3.7 tools/train.py -c ${config} --amp #-r ${weights}

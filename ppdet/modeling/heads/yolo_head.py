@@ -593,7 +593,8 @@ class YOLOv7Head(nn.Layer):
                           [72, 146], [142, 110], [192, 243], [459, 401]],
                  anchor_masks=[[0, 1, 2], [3, 4, 5], [6, 7, 8]],
                  stride=[8, 16, 32],
-                 loss='YOLOv5Loss',
+                 use_implicit=True,
+                 loss='YOLOv7Loss',
                  data_format='NCHW',
                  nms='MultiClassNMS',
                  trt=False,
@@ -607,11 +608,12 @@ class YOLOv7Head(nn.Layer):
             anchors (list): anchors
             anchor_masks (list): anchor masks
             stride (list): strides
-            loss (object): YOLOv5Loss instance
+            use_implicit (bool): whether to use ImplicitA and ImplicitM
+            loss (object): YOLOv7Loss instance
             data_format (str): nms format, NCHW or NHWC
             nms (object): MultiClassNMS instance
-            trt (bool): whether use trt infer
-            exclude_nms (bool): whether use exclude_nms for speed test
+            trt (bool): whether to use trt infer
+            exclude_nms (bool): whether to use exclude_nms for speed test
         """
         super(YOLOv7Head, self).__init__()
         assert len(in_channels) > 0, "in_channels length should > 0"
@@ -623,6 +625,7 @@ class YOLOv7Head(nn.Layer):
         self.anchor_levels = len(self.anchors)
 
         self.stride = stride
+        self.use_implicit = use_implicit
         self.loss = loss
         self.data_format = data_format
         self.nms = nms
@@ -634,7 +637,8 @@ class YOLOv7Head(nn.Layer):
         self.num_out_ch = self.num_classes + 5  # self.no
 
         self.yolo_outputs = []
-        self.ia, self.im = [], []
+        if self.use_implicit:
+            self.ia, self.im = [], []
         for i in range(len(self.anchors)):
             num_filters = self.num_anchor * self.num_out_ch
             name = 'yolo_output.{}'.format(i)
@@ -650,8 +654,9 @@ class YOLOv7Head(nn.Layer):
             yolo_output = self.add_sublayer(name, conv)
             self.yolo_outputs.append(yolo_output)
 
-            self.ia.append(ImplicitA(self.in_channels[i]))
-            self.im.append(ImplicitM(num_filters))
+            if self.use_implicit:
+                self.ia.append(ImplicitA(self.in_channels[i]))
+                self.im.append(ImplicitM(num_filters))
 
         self._initialize_biases()
 
@@ -679,7 +684,7 @@ class YOLOv7Head(nn.Layer):
         assert len(feats) == len(self.anchors)
         yolo_outputs = []
         for i, feat in enumerate(feats):
-            if self.training:
+            if self.training and self.use_implicit:
                 yolo_output = self.im[i](self.yolo_outputs[i](self.ia[i](feat)))
             else:
                 yolo_output = self.yolo_outputs[i](feat)

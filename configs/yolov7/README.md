@@ -9,17 +9,19 @@
 ## 模型库
 ### YOLOv7 on COCO
 
-| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  |   下载链接       | 配置文件 |
-| :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-------------: | :-----: |
-| YOLOv7-l        |  640     |    32      |   300e    |     -    |  51.2  | 69.2 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_l_300e_coco.pdparams) | [配置文件](./yolov7_l_300e_coco.yml) |
-| YOLOv7-x        |  640     |    32      |   300e    |     -    |  53.0  | 70.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_x_300e_coco.pdparams) | [配置文件](./yolov7_x_300e_coco.yml) |
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| YOLOv7-l        |  640     |    32      |   300e    |     -    |  51.2  | 69.2 |  37.62  | 53.04 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_l_300e_coco.pdparams) | [配置文件](./yolov7_l_300e_coco.yml) |
+| YOLOv7-x        |  640     |    32      |   300e    |     -    |  53.0  | 70.8 |  71.34  | 95.04 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_x_300e_coco.pdparams) | [配置文件](./yolov7_x_300e_coco.yml) |
+| YOLOv7P6-W6     |  1280    |    16      |   300e    |     -    |  54.4  | 71.8 |  70.43  | 180.13 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_w6_300e_coco.pdparams) | [配置文件](./yolov7p6_w6_300e_coco.yml) |
 
 
-| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  |   下载链接       | 配置文件 |
-| :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-------------: | :-----: |
-| YOLOv7-tiny     |  640     |    32      |   300e    |     -    |  37.3  | 54.5 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_300e_coco.pdparams) | [配置文件](./yolov7_tiny_300e_coco.yml) |
-| YOLOv7-tiny     |  416     |    32      |   300e    |     -    |  33.3  | 49.5 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_416_300e_coco.pdparams) | [配置文件](./yolov7_tiny_416_300e_coco.yml) |
-| YOLOv7-tiny     |  320     |    32      |   300e    |     -    |  29.1  | 43.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_320_300e_coco.pdparams) | [配置文件](./yolov7_tiny_320_300e_coco.yml) |
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| YOLOv7-tiny     |  640     |    32      |   300e    |     -    |  37.3  | 54.5 |  6.23  | 6.90 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_300e_coco.pdparams) | [配置文件](./yolov7_tiny_300e_coco.yml) |
+| YOLOv7-tiny     |  512     |    32      |   300e    |     -    |  35.9  | 52.7 |  6.23  | 4.42 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_512_300e_coco.pdparams) | [配置文件](./yolov7_tiny_512_300e_coco.yml) |
+| YOLOv7-tiny     |  416     |    32      |   300e    |     -    |  33.3  | 49.5 |  6.23  | 2.91 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_416_300e_coco.pdparams) | [配置文件](./yolov7_tiny_416_300e_coco.yml) |
+| YOLOv7-tiny     |  320     |    32      |   300e    |     -    |  29.1  | 43.8 |  6.23  | 1.73 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_320_300e_coco.pdparams) | [配置文件](./yolov7_tiny_320_300e_coco.yml) |
 
 **注意:**
   - YOLOv7模型训练使用COCO train2017作为训练集，Box AP为在COCO val2017上的`mAP(IoU=0.5:0.95)`结果；

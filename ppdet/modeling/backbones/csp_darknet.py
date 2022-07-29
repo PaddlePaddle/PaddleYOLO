@@ -490,7 +490,7 @@ class MPConvLayer(nn.Layer):
     def __init__(self,
                  in_channels,
                  out_channels,
-                 expansion=1.0,
+                 expansion=0.5,
                  depthwise=False,
                  bias=False,
                  act="silu"):
@@ -519,6 +519,21 @@ class MP(nn.Layer):
 
     def forward(self, x):
         return self.mp(x)
+
+
+class DownC(nn.Layer):
+    def __init__(self, c1, c2, k=2, act='silu'):
+        super(DownC, self).__init__()
+        self.mp = nn.MaxPool2D(kernel_size=k, stride=k)
+        c_ = int(c1)  # hidden channels
+        self.cv1 = BaseConv(c1, c_, 1, 1, act=act)
+        self.cv2 = BaseConv(c_, c2 // 2, 3, k, act=act)
+        self.cv3 = BaseConv(c1, c2 // 2, 1, 1, act=act)
+
+    def forward(self, x):
+        x_1 = self.cv3(self.mp(x))
+        x_2 = self.cv2(self.cv1(x))
+        return paddle.concat([x_2, x_1], 1)
 
 
 class SPPCSPC(nn.Layer):
@@ -571,13 +586,10 @@ class SPPELAN(nn.Layer):
 class ImplicitA(nn.Layer):
     def __init__(self, channel, mean=0., std=.02):
         super(ImplicitA, self).__init__()
-        self.channel = channel
-        self.mean = mean
-        self.std = std
         self.implicit = self.create_parameter(
             shape=([1, channel, 1, 1]),
             attr=ParamAttr(initializer=Constant(0.)))
-        normal_(self.implicit, mean=self.mean, std=self.std)
+        normal_(self.implicit, mean=mean, std=std)
 
     def forward(self, x):
         return self.implicit + x
@@ -586,13 +598,10 @@ class ImplicitA(nn.Layer):
 class ImplicitM(nn.Layer):
     def __init__(self, channel, mean=0., std=.02):
         super(ImplicitM, self).__init__()
-        self.channel = channel
-        self.mean = mean
-        self.std = std
         self.implicit = self.create_parameter(
             shape=([1, channel, 1, 1]),
             attr=ParamAttr(initializer=Constant(1.)))
-        normal_(self.implicit, mean=self.mean, std=self.std)
+        normal_(self.implicit, mean=mean, std=std)
 
     def forward(self, x):
         return self.implicit * x
@@ -844,20 +853,44 @@ class ELANNet(nn.Layer):
         'tiny': [[32, 64], [64, 64], [64, 128], [128, 256], [256, 512]],
         'L': [[32, 64], [64, 256], [256, 512], [512, 1024], [1024, 1024]],
         'X': [[40, 80], [80, 320], [320, 640], [640, 1280], [1280, 1280]],
+        'W6':
+        [[64, 64], [64, 128], [128, 256], [256, 512], [512, 768], [768, 1024]],
+        'E6':
+        [[80, 80], [80, 160], [160, 320], [320, 640], [640, 960], [960, 1280]],
+        'D6': [[96, 96], [96, 192], [192, 384], [384, 768], [768, 1152],
+               [1152, 1536]],
+        'E6E':
+        [[80, 80], [80, 160], [160, 320], [320, 640], [640, 960], [960, 1280]],
     }
     # mid_ch1, mid_ch2 of 4 stages' ELANLayer
     mid_ch_settings = {
         'tiny': [[32, 32], [64, 64], [128, 128], [256, 256]],
         'L': [[64, 64], [128, 128], [256, 256], [256, 256]],
         'X': [[64, 64], [128, 128], [256, 256], [256, 256]],
+        'W6': [[64, 64], [128, 128], [256, 256], [384, 384], [512, 512]],
+        'E6': [[64, 64], [128, 128], [256, 256], [384, 384], [512, 512]],
+        'D6': [[64, 64], [128, 128], [256, 256], [384, 384], [512, 512]],
+        'E6E': [[64, 64], [128, 128], [256, 256], [384, 384], [512, 512]],
     }
     # concat_list of 4 stages
     concat_list_settings = {
         'tiny': [-1, -2, -3, -4],
         'L': [-1, -3, -5, -6],
         'X': [-1, -3, -5, -7, -8],
+        'W6': [-1, -3, -5, -6],
+        'E6': [-1, -3, -5, -7, -8],
+        'D6': [-1, -3, -5, -7, -9, -10],
+        'E6E': [-1, -3, -5, -7, -8],
     }
-    num_blocks = {'tiny': 2, 'L': 4, 'X': 6}
+    num_blocks = {
+        'tiny': 2,
+        'L': 4,
+        'X': 6,
+        'W6': 4,
+        'E6': 6,
+        'D6': 8,
+        'E6E': 6
+    }
 
     def __init__(self,
                  arch='L',
@@ -877,10 +910,11 @@ class ELANNet(nn.Layer):
         concat_list_settings = self.concat_list_settings[arch]
         num_blocks = self.num_blocks[arch]
 
+        layers_num = 0
         ch_1 = ch_settings[0][0]
         ch_2 = ch_settings[0][0] * 2
         ch_out = ch_settings[0][-1]
-        if arch in ['L', 'X']:
+        if self.arch in ['L', 'X']:
             self.stem = nn.Sequential(* [
                 Conv(
                     3, ch_1, 3, 1, bias=False, act=act),
@@ -889,76 +923,110 @@ class ELANNet(nn.Layer):
                 Conv(
                     ch_2, ch_out, 3, 1, bias=False, act=act),
             ])
-        elif arch in ['tiny']:
+            layers_num = 3
+        elif self.arch in ['tiny']:
             self.stem = nn.Sequential(* [
                 Conv(
                     3, ch_1, 3, 2, bias=False, act=act),
                 Conv(
                     ch_1, ch_out, 3, 2, bias=False, act=act),
             ])
-        elif arch in ['W6', 'E6', 'D6', 'E6E']:
-            raise NotImplementedError
+            layers_num = 2
+        elif self.arch in ['W6', 'E6', 'D6', 'E6E']:
+            self.stem = Focus(3, ch_out, 3, 1, bias=False, act=act)
+            layers_num = 2
         else:
-            raise AttributeError("Unsupported arch type: {}".format(arch))
+            raise AttributeError("Unsupported arch type: {}".format(self.arch))
 
         self._out_channels = [chs[-1] for chs in ch_settings]
-        self._out_channels[-1] //= 2  # for sppcspc('L', 'X') or sppelan('tiny')
+        self._out_channels[
+            -1] //= 2  # for SPPCSPC(L,X,W6,E6,D6,E6E) or SPPELAN(tiny)
         self._out_channels = [self._out_channels[i] for i in self.return_idx]
         self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
-        layers_num = 3 if arch in ['L', 'X'] else 2
-        self.blocks = []
 
-        for i, (in_channels, out_channels) in enumerate(ch_settings[1:]):
+        self.blocks = []
+        for i, (in_ch, out_ch) in enumerate(ch_settings[1:]):
             stage = []
+
+            # 1.Downsample methods: Conv, DownC, MPConvLayer, MP, None
             if i == 0:
-                if self.arch in ['L', 'X']:
+                if self.arch in ['L', 'X', 'W6']:
+                    # Conv
+                    _out_ch = out_ch if self.arch == 'W6' else out_ch // 2
                     conv_layer = self.add_sublayer(
                         'layers{}.stage{}.conv_layer'.format(layers_num, i + 1),
                         Conv(
-                            in_channels,
-                            in_channels * 2,
-                            3,
-                            2,
-                            bias=False,
-                            act=act))
+                            in_ch, _out_ch, 3, 2, bias=False, act=act))
                     stage.append(conv_layer)
                     layers_num += 1
+                elif self.arch in ['E6', 'D6', 'E6E']:
+                    # DownC
+                    downc_layer = self.add_sublayer(
+                        'layers{}.stage{}.downc_layer'.format(layers_num,
+                                                              i + 1),
+                        DownC(
+                            in_ch, out_ch, 2, act=act))
+                    stage.append(downc_layer)
+                    layers_num += 1
+                elif self.arch in ['tiny']:
+                    # None
+                    pass
+                else:
+                    raise AttributeError("Unsupported arch type: {}".format(
+                        self.arch))
             else:
                 if self.arch in ['L', 'X']:
+                    # MPConvLayer
+                    # Note: out channels of MPConvLayer is int(in_ch * 0.5 * 2)
+                    # no relationship with out_ch when used in backbone
                     conv_res_layer = self.add_sublayer(
                         'layers{}.stage{}.mpconv_layer'.format(layers_num,
                                                                i + 1),
                         MPConvLayer(
-                            in_channels,
-                            in_channels,
-                            expansion=0.5,
-                            depthwise=depthwise,
-                            bias=False,
-                            act=act))
+                            in_ch, in_ch, 0.5, depthwise, bias=False, act=act))
                     stage.append(conv_res_layer)
                     layers_num += 5  # 1 maxpool + 3 convs + 1 concat
                 elif self.arch in ['tiny']:
+                    # MP
                     mp_layer = self.add_sublayer(
                         'layers{}.stage{}.mp_layer'.format(layers_num, i + 1),
                         MP(kernel_size=2, stride=2))
                     stage.append(mp_layer)
-                    layers_num += 1  # 1 maxpool + 3 convs + 1 concat
-                elif arch in ['W6', 'E6', 'D6', 'E6E']:
-                    raise NotImplementedError
+                    layers_num += 1
+                elif self.arch in ['W6']:
+                    # Conv
+                    conv_layer = self.add_sublayer(
+                        'layers{}.stage{}.conv_layer'.format(layers_num, i + 1),
+                        Conv(
+                            in_ch, out_ch, 3, 2, bias=False, act=act))
+                    stage.append(conv_layer)
+                    layers_num += 1
+                elif self.arch in ['E6', 'D6', 'E6E']:
+                    # DownC
+                    downc_layer = self.add_sublayer(
+                        'layers{}.stage{}.downc_layer'.format(layers_num,
+                                                              i + 1),
+                        DownC(
+                            in_ch, out_ch, 2, act=act))
+                    stage.append(downc_layer)
+                    layers_num += 1
                 else:
                     raise AttributeError("Unsupported arch type: {}".format(
                         self.arch))
 
-            in_ch = in_channels * 2 if i == 0 and self.arch in [
-                'L', 'X'
-            ] else in_channels
+            # 2.ELANLayer Block: like CSPLayer(C3) in YOLOv5/YOLOX
+            elan_in_ch = in_ch
+            if i == 0 and self.arch in ['L', 'X']:
+                elan_in_ch = in_ch * 2
+            if self.arch in ['W6', 'E6', 'D6', 'E6E']:
+                elan_in_ch = out_ch
             elan_layer = self.add_sublayer(
                 'layers{}.stage{}.elan_layer'.format(layers_num, i + 1),
                 ELANLayer(
-                    in_ch,
+                    elan_in_ch,
                     mid_ch_settings[i][0],
                     mid_ch_settings[i][1],
-                    out_channels,
+                    out_ch,
                     num_blocks=num_blocks,
                     concat_list=concat_list_settings,
                     depthwise=depthwise,
@@ -968,28 +1036,23 @@ class ELANNet(nn.Layer):
             layers_num += int(2 + num_blocks + 2)
             # conv1 + conv2 + bottleneck + concat + conv3
 
+            # 3.SPP(Spatial Pyramid Pooling) methods: SPPCSPC, SPPELAN
             if i == len(ch_settings[1:]) - 1:
-                if self.arch in ['L', 'X']:
+                if self.arch in ['L', 'X', 'W6', 'E6', 'D6', 'E6E']:
                     sppcspc_layer = self.add_sublayer(
                         'layers{}.stage{}.sppcspc_layer'.format(layers_num,
                                                                 i + 1),
                         SPPCSPC(
-                            out_channels,
-                            out_channels // 2,
-                            k=(5, 9, 13),
-                            act=act))
+                            out_ch, out_ch // 2, k=(5, 9, 13), act=act))
                     stage.append(sppcspc_layer)
                     layers_num += 1
                 elif self.arch in ['tiny']:
-                    sppcspc_layer = self.add_sublayer(
+                    sppelan_layer = self.add_sublayer(
                         'layers{}.stage{}.sppelan_layer'.format(layers_num,
                                                                 i + 1),
                         SPPELAN(
-                            out_channels,
-                            out_channels // 2,
-                            k=(5, 9, 13),
-                            act=act))
-                    stage.append(sppcspc_layer)
+                            out_ch, out_ch // 2, k=(5, 9, 13), act=act))
+                    stage.append(sppelan_layer)
                     layers_num += 9
                 else:
                     raise AttributeError("Unsupported arch type: {}".format(

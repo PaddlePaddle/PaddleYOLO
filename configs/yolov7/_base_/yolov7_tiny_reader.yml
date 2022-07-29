@@ -1,5 +1,5 @@
-input_height: &input_height 640
-input_width: &input_width 640
+input_height: &input_height 512
+input_width: &input_width 512
 input_size: &input_size [*input_height, *input_width]
 mosaic_epoch: &mosaic_epoch 300
 
@@ -7,7 +7,7 @@ worker_num: 4
 TrainReader:
   sample_transforms:
     - DecodeNormResize: {target_size: *input_size, mosaic: True}
-    - MosaicPerspective: {mosaic_prob: 1.0, mixup_prob: 0.15, paste_in_prob: 0.15, target_size: *input_height, translate: 0.2, scale: 0.9}
+    - MosaicPerspective: {mosaic_prob: 1.0, mixup_prob: 0.05, paste_in_prob: 0.05, target_size: *input_height, translate: 0.1, scale: 0.5}
     - RandomHSV: {hgain: 0.015, sgain: 0.7, vgain: 0.4}
     - RandomFlip: {}
     - BboxXYXY2XYWH: {}
@@ -26,8 +26,8 @@ TrainReader:
 EvalReader:
   sample_transforms:
     - Decode: {}
-    - Resize: {target_size: *input_size, keep_ratio: True}
-    - Pad: {size: *input_size, fill_value: [114., 114., 114.]}
+    - Resize: {target_size: [640, 640], keep_ratio: True}
+    - Pad: {size: [640, 640], fill_value: [114., 114., 114.]}
     - NormalizeImage: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
     - Permute: {}
   batch_size: 8
@@ -38,8 +38,8 @@ TestReader:
     image_shape: [3, 640, 640]
   sample_transforms:
     - Decode: {}
-    - Resize: {target_size: *input_size, keep_ratio: True}
-    - Pad: {size: *input_size, fill_value: [114., 114., 114.]}
+    - Resize: {target_size: [640, 640], keep_ratio: True}
+    - Pad: {size: [640, 640], fill_value: [114., 114., 114.]}
     - NormalizeImage: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
     - Permute: {}
   batch_size: 1

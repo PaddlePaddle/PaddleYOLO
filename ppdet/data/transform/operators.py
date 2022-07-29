@@ -144,6 +144,9 @@ class MosaicPerspective(BaseOperator):
 
     def __init__(self,
                  mosaic_prob=1.0,
+                 mixup_prob=1.0,
+                 copy_paste_prob=1.0,
+                 paste_in_prob=1.0,
                  target_size=640,
                  fill_value=114,
                  degrees=0.0,
@@ -153,6 +156,10 @@ class MosaicPerspective(BaseOperator):
                  perspective=0.0):
         super(MosaicPerspective, self).__init__()
         self.mosaic_prob = mosaic_prob
+        self.mixup_prob = mixup_prob
+        self.copy_paste_prob = copy_paste_prob
+        self.paste_in_prob = paste_in_prob
+
         self.target_size = target_size
         self.mosaic_border = (-target_size // 2, -target_size // 2)
         self.fill_value = fill_value
