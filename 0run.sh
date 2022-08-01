@@ -15,12 +15,12 @@ weights=../yolov7_tools/yolov7_${name}_300e_coco.pdparams
 #python3.7 4convert_torch2paddle.py yolov7x.pt weight_name_map_x.txt yolov7x.pdparams
 
 # 1. training
-#CUDA_VISIBLE_DEVICES=6 python3.7 tools/train.py -c ${config} --amp #-r ${weights}
+CUDA_VISIBLE_DEVICES=6 python3.7 tools/train.py -c ${config} --amp #-r ${weights}
 #python3.7 -m paddle.distributed.launch --log_dir=${log_dir} --gpus 4,5,6,7 tools/train.py -c ${config} --eval --amp
 
 # 2. eval
 #CUDA_VISIBLE_DEVICES=0 python3.7 tools/eval.py -c ${config} -o weights=https://paddledet.bj.bcebos.com/models/${job_name}.pdparams
-CUDA_VISIBLE_DEVICES=5 python3.7 tools/eval.py -c ${config} -o weights=${weights} #--classwise
+#CUDA_VISIBLE_DEVICES=5 python3.7 tools/eval.py -c ${config} -o weights=${weights} #--classwise
 
 # 3. tools infer
 #CUDA_VISIBLE_DEVICES=7 python3.7 tools/infer.py -c ${config} -o weights=https://paddledet.bj.bcebos.com/models/${job_name}.pdparams --infer_img=demo/000000014439.jpg
