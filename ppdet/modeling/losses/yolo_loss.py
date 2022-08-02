@@ -642,14 +642,15 @@ class YOLOv7Loss(nn.Layer):
 
             empty_feats_num = 0
             for i, pi in enumerate(p):
-                b, a, gj, gi = indices[i]
-                idx = (b == batch_idx)
+                #b, a, gj, gi = indices[i]
+                idx = (indices[i][0] == batch_idx)
                 if idx.sum() == 0:
                     empty_feats_num += 1
                     # print('batch_idx {} level {} empty: '.format(batch_idx, i))
                     continue
-                b, a, gj, gi = b[idx], a[idx], gj[idx], gi[idx]
-                # b, a, gj, gi = indices[i][0][idx], indices[i][1][idx], indices[i][2][idx], indices[i][3][idx]                
+                #b, a, gj, gi = b[idx], a[idx], gj[idx], gi[idx]
+                b, a, gj, gi = indices[i][0][idx], indices[i][1][idx], indices[
+                    i][2][idx], indices[i][3][idx]
                 all_b.append(b)
                 all_a.append(a)
                 all_gj.append(gj)
@@ -658,7 +659,9 @@ class YOLOv7Loss(nn.Layer):
                 from_which_layer.append(paddle.ones([len(b)]) * i)
 
                 try:
-                    fg_pred = pi[b, a, gj, gi]
+                    fg_pred = pi[b, a, gj, gi]  #
+                    if len(fg_pred.shape) == 1:
+                        fg_pred = fg_pred.unsqueeze(0)
                 except:
                     print('batch_idx: {}, fg_pred = pi[b, a, gj, gi]'.format(
                         batch_idx), b)
@@ -774,6 +777,8 @@ class YOLOv7Loss(nn.Layer):
             all_anch = all_anch[fg_mask_inboxes]  # [27, 2]
 
             this_target = this_target[matched_gt_inds]
+            if len(this_target.shape) == 1:
+                this_target = this_target.unsqueeze(0)
 
             for i in range(nl):
                 layer_idx = from_which_layer == i
