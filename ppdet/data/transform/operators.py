@@ -3745,9 +3745,9 @@ class PadResize(BaseOperator):
 
 
 @register_op
-class DecodeNormResize(BaseOperator):
+class DecodeNormResizebug(BaseOperator):
     def __init__(self, target_size, to_rgb=False, mosaic=True, cache_root=None):
-        super(DecodeNormResize, self).__init__()
+        super(DecodeNormResizebug, self).__init__()
         if not isinstance(target_size, (Integral, Sequence)):
             raise TypeError(
                 "Type of target_size is invalid. Must be Integer or List or Tuple, now is {}".
@@ -3869,3 +3869,203 @@ class DecodeNormResize(BaseOperator):
 
         finally:
             MUTEX.release()
+
+
+@register_op
+class DecodeNormResize(BaseOperator):
+    def __init__(self, target_size, to_rgb=False, mosaic=True):
+        super(DecodeNormResize, self).__init__()
+        if not isinstance(target_size, (Integral, Sequence)):
+            raise TypeError(
+                "Type of target_size is invalid. Must be Integer or List or Tuple, now is {}".
+                format(type(target_size)))
+        if isinstance(target_size, Integral):
+            target_size = [target_size, target_size]
+        self.target_size = target_size
+        self.to_rgb = to_rgb
+        self.mosaic = mosaic
+
+    def bbox_norm(self, sample):
+        assert 'gt_bbox' in sample
+        bbox = sample['gt_bbox']
+        height, width = sample['image'].shape[:2]
+        y = bbox.copy()
+        y[:, 0] = ((bbox[:, 0] + bbox[:, 2]) / 2) / width  # x center
+        y[:, 1] = ((bbox[:, 1] + bbox[:, 3]) / 2) / height  # y center
+        y[:, 2] = (bbox[:, 2] - bbox[:, 0]) / width  # width
+        y[:, 3] = (bbox[:, 3] - bbox[:, 1]) / height  # height
+        sample['gt_bbox'] = y
+        return sample
+
+    def load_resized_img(self, sample, target_size):
+        if 'image' not in sample:
+            img_file = sample['im_file']
+            sample['image'] = cv2.imread(img_file)  # BGR
+            sample.pop('im_file')
+        im = sample['image']
+        sample = self.bbox_norm(sample)
+
+        if 'keep_ori_im' in sample and sample['keep_ori_im']:
+            sample['ori_image'] = im
+
+        if 'h' not in sample:
+            sample['h'] = im.shape[0]
+        elif sample['h'] != im.shape[0]:
+            logger.warning(
+                "The actual image height: {} is not equal to the "
+                "height: {} in annotation, and update sample['h'] by actual "
+                "image height.".format(im.shape[0], sample['h']))
+            sample['h'] = im.shape[0]
+        if 'w' not in sample:
+            sample['w'] = im.shape[1]
+        elif sample['w'] != im.shape[1]:
+            logger.warning(
+                "The actual image width: {} is not equal to the "
+                "width: {} in annotation, and update sample['w'] by actual "
+                "image width.".format(im.shape[1], sample['w']))
+            sample['w'] = im.shape[1]
+
+        sample['im_shape'] = np.array(
+            im.shape[:2], dtype=np.float32)  # original shape
+
+        # get resized img
+        r = min(target_size[0] / im.shape[0], target_size[1] / im.shape[1])
+        if r != 1:  # if sizes are not equal
+            resized_img = cv2.resize(
+                im, (int(im.shape[1] * r), int(im.shape[0] * r)),
+                interpolation=cv2.INTER_LINEAR if (self.mosaic or r > 1) else
+                cv2.INTER_AREA)  ########## .astype(np.uint8)
+        else:
+            resized_img = im
+
+        h, w = resized_img.shape[:2]
+        if self.to_rgb:
+            resized_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2RGB)
+
+        sample['image'] = resized_img
+        sample['scale_factor'] = np.array(
+            [h / im.shape[0], w / im.shape[1]], dtype=np.float32)
+        return sample
+
+    def apply(self, sample, context=None):
+        sample = self.load_resized_img(sample, self.target_size)
+        return sample
+
+
+from IPython import embed
+
+
+@register_op
+class LetterBox(BaseOperator):
+    """Resize a rectangular image to a padded rectangular
+    Args:
+        target_size (float):
+        color (float):
+        auto (bool):
+        scaleFill (bool):
+        scaleup (bool):
+        stride (float):
+    """
+
+    def __init__(
+            self,
+            target_size=640,
+            color=(114, 114, 114),
+            auto=False,  # False in trainset, true in val
+            scaleFill=False,
+            scaleup=True,  # False in trainset augement
+            stride=32):
+        super(LetterBox, self).__init__()
+        if not isinstance(target_size, (Integral, Sequence)):
+            raise TypeError(
+                "Type of target_size is invalid. Must be Integer or List or Tuple, now is {}".
+                format(type(target_size)))
+        if isinstance(target_size, Integral):
+            target_size = [target_size, target_size]
+        self.target_size = target_size
+        self.img_size = target_size[0]
+
+        self.color = color
+        self.auto = auto
+        self.scaleFill = scaleFill
+        self.scaleup = scaleup
+        self.stride = stride
+
+    def apply_image(self, img, height, width, color=(114, 114, 114)):
+        shape = img.shape[:2]  # [height, width]
+        ratio_h = float(height) / shape[0]
+        ratio_w = float(width) / shape[1]
+        r = min(ratio_h, ratio_w)
+
+        # only scale down, do not scale up (for better val mAP)
+        if not self.scaleup:
+            r = min(r, 1.0)
+
+        # Compute padding
+        ratio = r, r  # width, height ratios
+        new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
+        padw, padh = width - new_unpad[0], height - new_unpad[1]
+        if self.auto:  # minimum rectangle
+            padw, padh = np.mod(padw, self.stride), np.mod(padh, self.stride)
+        elif self.scaleFill:  # stretch
+            padw, padh = 0.0, 0.0
+            new_unpad = width, height
+            ratio = width / shape[1], height / shape[0]  # width, height ratios
+
+        padw /= 2  # divide padding into 2 sides
+        padh /= 2
+        if shape[::-1] != new_unpad:
+            img = cv2.resize(img, new_unpad, interpolation=cv2.INTER_LINEAR)
+
+        top, bottom = int(round(padh - 0.1)), int(round(padh + 0.1))
+        left, right = int(round(padw - 0.1)), int(round(padw + 0.1))
+        img = cv2.copyMakeBorder(
+            img, top, bottom, left, right, cv2.BORDER_CONSTANT,
+            value=color)  # add border
+        return img, ratio, padw, padh
+
+    def apply_bbox(self, x, w=640, h=640, padw=0, padh=0):
+        # normalized [x, y, w, h] to pixel [x1, y1, x2, y2]
+        y = np.copy(x)
+        y[:, 0] = w * (x[:, 0] - x[:, 2] / 2) + padw
+        y[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh
+        y[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw
+        y[:, 3] = h * (x[:, 1] + x[:, 3] / 2) + padh
+        return y
+
+    def apply(self, sample, context=None):
+        img = sample['image']
+        h0, w0 = sample['h'], sample['w']  #sample['im_shape']
+        resized_h, resized_w = sample['im_shape']
+        '''
+        resized_ratio = self.img_size / max(h0, w0)
+        if resized_ratio != 1:  # if sizes are not equal
+            img = cv2.resize(img, (int(w0 * resized_ratio), int(h0 * resized_ratio)),
+                            interpolation=cv2.INTER_AREA if resized_ratio < 1 else cv2.INTER_LINEAR) # resized_ratio
+            resized_h, resized_w = img.shape[:2]
+        else:
+            resized_h, resized_w = h0, w0
+        '''
+
+        height, width = self.target_size
+        img, ratio, padw, padh = self.apply_image(
+            img, height=height, width=width)
+
+        sample['image'] = img
+        sample['im_pad'] = [padw, padh]
+
+        new_h, new_w = img.shape[:2]
+        scale_h_ratio = new_h / h0
+        scale_w_ratio = new_w / w0
+        sample['scale_factor'] = np.asarray(
+            [scale_h_ratio, scale_w_ratio], dtype=np.float32)
+
+        # apply bbox only when trainning
+        if 'gt_bbox' in sample and len(sample['gt_bbox']) > 0:
+            gt_bboxes = sample['gt_bbox']
+            sample['gt_bbox'] = self.apply_bbox(gt_bboxes, ratio[0] * resized_w,
+                                                ratio[1] * resized_h, padw,
+                                                padh)
+            sample['gt_num'] = len(sample['gt_bbox'])
+
+        return sample

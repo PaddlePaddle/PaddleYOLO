@@ -24,7 +24,7 @@ YOLOv7Head:
             [142, 110], [192, 243], [459, 401]]
   anchor_masks: [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
   stride: [8, 16, 32]
-  loss: YOLOv5Loss
+  loss: YOLOv7Loss
   nms:
     name: MultiClassNMS
     nms_top_k: 10000
@@ -32,7 +32,7 @@ YOLOv7Head:
     score_threshold: 0.001
     nms_threshold: 0.7
 
-YOLOv5Loss:
+YOLOv7Loss:
   box_weight: 0.05
   cls_weght: 0.5
   obj_weight: 1.0
