@@ -185,7 +185,18 @@ class MosaicPerspective(BaseOperator):
                   for x in self.mosaic_border)
         gt_bboxes = [x['gt_bbox'] for x in sample]
         for i in range(len(sample)):
-            im = sample[i]['image']
+            ori_im = sample[i]['image']
+            h0, w0 = ori_im.shape[:2]
+            # get resized img
+            scale = min(1. * s / h0, 1. * s / w0)
+            if scale != 1:  # if sizes are not equal
+                im = cv2.resize(
+                    ori_im, (int(w0 * scale), int(h0 * scale)),
+                    interpolation=cv2.INTER_LINEAR
+                    if scale > 1 else cv2.INTER_AREA).astype(np.uint8)
+            else:
+                im = ori_im
+
             h, w, c = im.shape
             # x1a, y1a, x2a, y2a: large image
             # x1b, y1b, x2b, y2b: small image
@@ -212,7 +223,11 @@ class MosaicPerspective(BaseOperator):
             image[y1a:y2a, x1a:x2a] = im[y1b:y2b, x1b:x2b]
             padw = x1a - x1b
             padh = y1a - y1b
-            gt_bboxes[i] = self.xywhn2xyxy(gt_bboxes[i], w, h, padw, padh)
+            #gt_bboxes[i] = self.xywhn2xyxy(gt_bboxes[i], w, h, padw, padh)
+            gt_bboxes[i][:, 0] = scale * gt_bboxes[i][:, 0] + padw
+            gt_bboxes[i][:, 1] = scale * gt_bboxes[i][:, 1] + padh
+            gt_bboxes[i][:, 2] = scale * gt_bboxes[i][:, 2] + padw
+            gt_bboxes[i][:, 3] = scale * gt_bboxes[i][:, 3] + padh
 
         gt_bboxes = np.concatenate(gt_bboxes, axis=0)
         gt_bboxes = np.clip(gt_bboxes, 0, s * 2)
@@ -347,6 +362,7 @@ class MosaicPerspective(BaseOperator):
         if random.random() >= self.mosaic_prob:
             return sample[0]
         random.shuffle(sample)
+
         mosaic_img, mosaic_gt_bboxes = self._mosaic_preprocess(sample)
 
         gt_classes = np.concatenate([x['gt_class'] for x in sample], axis=0)
@@ -369,6 +385,8 @@ class MosaicPerspective(BaseOperator):
 
         if 'difficult' in sample:
             sample.pop('difficult')
+        if 'is_crowd' in sample:
+            sample.pop('is_crowd')
         return sample
 
 
@@ -614,6 +632,23 @@ class RandomErasingImage(BaseOperator):
                 off_x1 = random.randint(0, int(w_bbox - w))
                 im[int(y1 + off_y1):int(y1 + off_y1 + h), int(x1 + off_x1):int(
                     x1 + off_x1 + w), :] = 0
+        sample['image'] = im
+        return sample
+
+
+@register_op
+class NormalizeImageQuick(BaseOperator):
+    def __init__(self, mean=[0, 0, 0], std=[1, 1, 1], is_scale=True):
+        super(NormalizeImageQuick, self).__init__()
+        self.is_scale = is_scale
+
+    def apply(self, sample, context=None):
+        """Normalize the image
+        """
+        im = sample['image']
+        im = im.astype(np.float32, copy=False)
+        if self.is_scale:
+            im = im / 255.0
         sample['image'] = im
         return sample
 
@@ -1960,13 +1995,14 @@ class Cutmix(BaseOperator):
 
 @register_op
 class Mixup(BaseOperator):
-    def __init__(self, alpha=1.5, beta=1.5):
+    def __init__(self, prob=1.0, alpha=1.5, beta=1.5):
         """ Mixup image and gt_bbbox/gt_score
         Args:
             alpha (float): alpha parameter of beta distribute
             beta (float): beta parameter of beta distribute
         """
         super(Mixup, self).__init__()
+        self.prob = prob
         self.alpha = alpha
         self.beta = beta
         if self.alpha <= 0.0:
@@ -1989,6 +2025,9 @@ class Mixup(BaseOperator):
             return sample
 
         assert len(sample) == 2, 'mixup need two samples'
+
+        if np.random.uniform(0., 1.) > self.prob:
+            return sample[0]
 
         factor = np.random.beta(self.alpha, self.beta)
         factor = max(0.0, min(1.0, factor))
@@ -2082,6 +2121,37 @@ class BboxXYXY2XYWH(BaseOperator):
         bbox[:, 2:4] = bbox[:, 2:4] - bbox[:, :2]
         bbox[:, :2] = bbox[:, :2] + bbox[:, 2:4] / 2.
         sample['gt_bbox'] = bbox
+        return sample
+
+
+@register_op
+class YOLOv5BoxImageNorm(BaseOperator):
+    """
+    YOLOv5BoxImageNorm: Convert bbox XYXY format to XYWH, and Norm
+    - BboxXYXY2XYWH: {}
+    - NormalizeBox: {}
+    - NormalizeImageQuick: {}
+    """
+
+    def __init__(self):
+        super(YOLOv5BoxImageNorm, self).__init__()
+
+    def apply(self, sample, context=None):
+        assert 'gt_bbox' in sample
+        bbox = sample['gt_bbox']
+        bbox[:, 2:4] = bbox[:, 2:4] - bbox[:, :2]
+        bbox[:, :2] = bbox[:, :2] + bbox[:, 2:4] / 2.
+
+        gt_bbox = bbox
+        height, width, _ = sample['image'].shape
+        gt_bbox[:, 0] = gt_bbox[:, 0] / width
+        gt_bbox[:, 1] = gt_bbox[:, 1] / height
+        gt_bbox[:, 2] = gt_bbox[:, 2] / width
+        gt_bbox[:, 3] = gt_bbox[:, 3] / height
+        sample['gt_bbox'] = gt_bbox
+
+        im = sample['image']
+        sample['image'] = im.astype(np.float32, copy=False) / 255.0
         return sample
 
 
@@ -3742,133 +3812,6 @@ class PadResize(BaseOperator):
         sample['gt_bbox'] = bboxes
         sample['gt_class'] = labels
         return sample
-
-
-@register_op
-class DecodeNormResizebug(BaseOperator):
-    def __init__(self, target_size, to_rgb=False, mosaic=True, cache_root=None):
-        super(DecodeNormResizebug, self).__init__()
-        if not isinstance(target_size, (Integral, Sequence)):
-            raise TypeError(
-                "Type of target_size is invalid. Must be Integer or List or Tuple, now is {}".
-                format(type(target_size)))
-        if isinstance(target_size, Integral):
-            target_size = [target_size, target_size]
-        self.target_size = target_size
-        self.to_rgb = to_rgb
-        self.mosaic = mosaic
-
-        self.use_cache = False if cache_root is None else True
-        self.cache_root = cache_root
-        if cache_root is not None:
-            _make_dirs(cache_root)
-
-    def bbox_norm(self, sample):
-        assert 'gt_bbox' in sample
-        bbox = sample['gt_bbox']
-        height, width = sample['image'].shape[:2]
-        y = bbox.copy()
-        y[:, 0] = ((bbox[:, 0] + bbox[:, 2]) / 2) / width  # x center
-        y[:, 1] = ((bbox[:, 1] + bbox[:, 3]) / 2) / height  # y center
-        y[:, 2] = (bbox[:, 2] - bbox[:, 0]) / width  # width
-        y[:, 3] = (bbox[:, 3] - bbox[:, 1]) / height  # height
-        sample['gt_bbox'] = y
-        return sample
-
-    def load_resized_img(self, sample, target_size):
-        # if 'image' not in sample:
-        #     img_file = sample['im_file']
-        #     sample['image'] = cv2.imread(img_file)  # BGR
-        #     sample.pop('im_file')
-        # im = sample['image']
-
-        if self.use_cache and os.path.exists(
-                self.cache_path(self.cache_root, sample['im_file'])):
-            path = self.cache_path(self.cache_root, sample['im_file'])
-            im = self.load(path)
-            sample['image'] = im
-            sample.pop('im_file')
-        else:
-            img_file = sample['im_file']
-            sample['image'] = cv2.imread(img_file)  # BGR
-            im = sample['image']
-            sample.pop('im_file')
-
-            if self.use_cache and not os.path.exists(
-                    self.cache_path(self.cache_root, sample['im_file'])):
-                path = self.cache_path(self.cache_root, sample['im_file'])
-                self.dump(im, path)
-
-        sample = self.bbox_norm(sample)
-
-        if 'keep_ori_im' in sample and sample['keep_ori_im']:
-            sample['ori_image'] = im
-
-        if 'h' not in sample:
-            sample['h'] = im.shape[0]
-        elif sample['h'] != im.shape[0]:
-            logger.warning(
-                "The actual image height: {} is not equal to the "
-                "height: {} in annotation, and update sample['h'] by actual "
-                "image height.".format(im.shape[0], sample['h']))
-            sample['h'] = im.shape[0]
-        if 'w' not in sample:
-            sample['w'] = im.shape[1]
-        elif sample['w'] != im.shape[1]:
-            logger.warning(
-                "The actual image width: {} is not equal to the "
-                "width: {} in annotation, and update sample['w'] by actual "
-                "image width.".format(im.shape[1], sample['w']))
-            sample['w'] = im.shape[1]
-
-        sample['im_shape'] = np.array(
-            im.shape[:2], dtype=np.float32)  # original shape
-
-        # get resized img
-        r = min(target_size[0] / im.shape[0], target_size[1] / im.shape[1])
-        if r != 1:  # if sizes are not equal
-            resized_img = cv2.resize(
-                im, (int(im.shape[1] * r), int(im.shape[0] * r)),
-                interpolation=cv2.INTER_LINEAR if (self.mosaic or r > 1) else
-                cv2.INTER_AREA)  ########## .astype(np.uint8)
-        else:
-            resized_img = im
-
-        h, w = resized_img.shape[:2]
-        if self.to_rgb:
-            resized_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2RGB)
-
-        sample['image'] = resized_img
-        sample['scale_factor'] = np.array(
-            [h / im.shape[0], w / im.shape[1]], dtype=np.float32)
-        return sample
-
-    def apply(self, sample, context=None):
-        sample = self.load_resized_img(sample, self.target_size)
-        return sample
-
-    @staticmethod
-    def cache_path(dir_oot, im_file):
-        return os.path.join(dir_oot, os.path.basename(im_file) + '.pkl')
-
-    @staticmethod
-    def load(path):
-        with open(path, 'rb') as f:
-            im = pickle.load(f)
-        return im
-
-    @staticmethod
-    def dump(obj, path):
-        MUTEX.acquire()
-        try:
-            with open(path, 'wb') as f:
-                pickle.dump(obj, f)
-
-        except Exception as e:
-            logger.warning('dump {} occurs exception {}'.format(path, str(e)))
-
-        finally:
-            MUTEX.release()
 
 
 @register_op
