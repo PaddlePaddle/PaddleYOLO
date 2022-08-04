@@ -10,8 +10,8 @@ weights=../yolov7_tools/yolov7_${name}_300e_coco.pdparams
 #python3.7 dygraph_print.py -c ${config} 2>&1 | tee yolov7_${name}_dy_print.txt
 
 # 1. training
-CUDA_VISIBLE_DEVICES=0 python3.7 tools/train.py -c ${config} --amp --eval #-r ${weights}
-#python3.7 -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
+#CUDA_VISIBLE_DEVICES=0 python3.7 tools/train.py -c ${config} --amp --eval #-r ${weights}
+python3.7 -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
 
 # 2. eval
 #CUDA_VISIBLE_DEVICES=5 python3.7 tools/eval.py -c ${config} -o weights=${weights} #--classwise

@@ -143,11 +143,11 @@ class MosaicPerspective(BaseOperator):
     """
 
     def __init__(self,
+                 target_size=[640, 640],
                  mosaic_prob=1.0,
-                 mixup_prob=1.0,
-                 copy_paste_prob=1.0,
-                 paste_in_prob=1.0,
-                 target_size=640,
+                 mixup_prob=0.0,
+                 copy_paste_prob=0.0,
+                 paste_in_prob=0.0,
                  fill_value=114,
                  degrees=0.0,
                  translate=0.1,
@@ -157,11 +157,13 @@ class MosaicPerspective(BaseOperator):
         super(MosaicPerspective, self).__init__()
         self.mosaic_prob = mosaic_prob
         self.mixup_prob = mixup_prob
-        self.copy_paste_prob = copy_paste_prob
+        self.copy_paste_prob = copy_paste_prob  # no use
         self.paste_in_prob = paste_in_prob
 
+        if isinstance(target_size, Integral):
+            target_size = [target_size, target_size]
         self.target_size = target_size
-        self.mosaic_border = (-target_size // 2, -target_size // 2)
+        self.mosaic_border = (-target_size[0] // 2, -target_size[1] // 2)
         self.fill_value = fill_value
         self.degrees = degrees
         self.translate = translate
@@ -169,17 +171,8 @@ class MosaicPerspective(BaseOperator):
         self.shear = shear
         self.perspective = perspective
 
-    def xywhn2xyxy(self, x, w=640, h=640, padw=0, padh=0):
-        # Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
-        y = np.copy(x)
-        y[:, 0] = w * (x[:, 0] - x[:, 2] / 2) + padw  # top left x
-        y[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh  # top left y
-        y[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw  # bottom right x
-        y[:, 3] = h * (x[:, 1] + x[:, 3] / 2) + padh  # bottom right y
-        return y
-
-    def _mosaic_preprocess(self, sample):
-        s = self.target_size
+    def _mosaic4_preprocess(self, sample):
+        s = self.target_size[0]
         # select mosaic center (x, y)
         yc, xc = (int(random.uniform(-x, 2 * s + x))
                   for x in self.mosaic_border)
@@ -231,8 +224,35 @@ class MosaicPerspective(BaseOperator):
 
         gt_bboxes = np.concatenate(gt_bboxes, axis=0)
         gt_bboxes = np.clip(gt_bboxes, 0, s * 2)
+        gt_classes = [x['gt_class'] for x in sample]
+        gt_classes = np.concatenate(gt_classes, axis=0)
+        return image, gt_classes, gt_bboxes
 
-        return image, gt_bboxes
+    def letterbox_resize(self,
+                         img,
+                         gt_bboxes,
+                         new_shape=(640, 640),
+                         color=(114, 114, 114)):
+        shape = img.shape[:2]  # [height, width]
+        r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])
+        # r = min(r, 1.0)
+        ratio = r, r
+        new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
+        dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]
+        dw /= 2
+        dh /= 2
+        if shape[::-1] != new_unpad:
+            img = cv2.resize(img, new_unpad, interpolation=cv2.INTER_LINEAR)
+        top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
+        left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+        img = cv2.copyMakeBorder(
+            img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+
+        gt_bboxes[:, 0] = ratio[0] * gt_bboxes[:, 0] + dw
+        gt_bboxes[:, 1] = ratio[1] * gt_bboxes[:, 1] + dh
+        gt_bboxes[:, 2] = ratio[0] * gt_bboxes[:, 2] + dw
+        gt_bboxes[:, 3] = ratio[1] * gt_bboxes[:, 3] + dh
+        return img, gt_bboxes
 
     def random_perspective(self,
                            im,
@@ -355,22 +375,41 @@ class MosaicPerspective(BaseOperator):
         # current sample and other 3 samples to a new sample
         if not isinstance(sample, Sequence):
             return sample
-        sample = sample[:-1]  # exclude last one (mixup)
-        assert len(sample) == 4 or len(
-            sample) == 9, 'YOLOv5 Mosaic need 4 or 9 samples'
+        # assert len(sample) == 5 or len(
+        #     sample) == 10, 'YOLOv5 Mosaic need 4 or 9 samples and 1 for mixup'
 
+        # 0.no mosaic
         if random.random() >= self.mosaic_prob:
-            return sample[0]
-        random.shuffle(sample)
+            sample0 = sample[0]
+            sample0['image'], sample0['gt_bbox'] = self.letterbox_resize(
+                sample0['image'], sample0['gt_bbox'], self.target_size)
+            return sample0
 
-        mosaic_img, mosaic_gt_bboxes = self._mosaic_preprocess(sample)
+        # 1._mosaic_preprocess
+        mosaic_img, mosaic_gt_classes, mosaic_gt_bboxes = self._mosaic4_preprocess(
+            sample[:4])
 
-        gt_classes = np.concatenate([x['gt_class'] for x in sample], axis=0)
-        mosaic_img, gt_classes, mosaic_gt_bboxes = self.random_perspective(
-            mosaic_img, gt_classes, mosaic_gt_bboxes, self.degrees,
+        # 2.random_perspective
+        mosaic_img, mosaic_gt_classes, mosaic_gt_bboxes = self.random_perspective(
+            mosaic_img, mosaic_gt_classes, mosaic_gt_bboxes, self.degrees,
             self.translate, self.scale, self.shear, self.perspective,
             self.mosaic_border)
 
+        # 3.copy_paste
+        # 4.mixup
+        if len(mosaic_gt_bboxes) and random.random() < self.mixup_prob:
+            sample4 = sample[4]
+            img4, gt_bboxes = self.letterbox_resize(
+                sample4['image'], sample4['gt_bbox'], self.target_size)
+
+            r = np.random.beta(8.0, 8.0)
+            mosaic_img = (mosaic_img * r + img4 * (1 - r))  #.astype(np.uint8)
+            mosaic_gt_classes = np.concatenate(
+                (mosaic_gt_classes, sample4['gt_class']), 0)
+            mosaic_gt_bboxes = np.concatenate((mosaic_gt_bboxes, gt_bboxes), 0)
+
+        # 5.paste_in
+        # 6.clip
         nl = len(mosaic_gt_bboxes)
         eps = 1E-3
         if nl:
@@ -379,9 +418,9 @@ class MosaicPerspective(BaseOperator):
                 (mosaic_img.shape[0] - eps, mosaic_img.shape[1] - eps))
 
         sample = sample[0]  # list to one sample
-        sample['image'] = mosaic_img  #.astype(np.uint8)
+        sample['image'] = mosaic_img.astype(np.uint8)
         sample['gt_bbox'] = mosaic_gt_bboxes
-        sample['gt_class'] = gt_classes
+        sample['gt_class'] = mosaic_gt_classes
 
         if 'difficult' in sample:
             sample.pop('difficult')

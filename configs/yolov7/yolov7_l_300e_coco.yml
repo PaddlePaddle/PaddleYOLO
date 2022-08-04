@@ -22,23 +22,18 @@ input_width: &input_width 640
 input_size: &input_size [*input_height, *input_width]
 mosaic_epoch: &mosaic_epoch 300
 # mosaic_epoch: &mosaic_epoch -1 # debug
-mixup_epoch: &mixup_epoch 300
 
 worker_num: 8
 TrainReader:
   sample_transforms:
-    #- DecodeNormResize: {target_size: *input_size, mosaic: True}
-    #- Decode: {}
-    - DecodeCache: {cache_root: "dataset/coco/cache/buffer"}
-    - MosaicPerspective: {mosaic_prob: 1.0, target_size: *input_height, translate: 0.2, scale: 0.9}
-    # - LetterBox: {target_size: *input_size, auto: False} # debug
-    - Mixup: {prob: 0.15, alpha: 8.0, beta: 8.0}
+    - Decode: {}
+    #- DecodeCache: {cache_root: "dataset/coco/cache/buffer"}
+    - MosaicPerspective: {target_size: *input_height, mosaic_prob: 1.0, mixup_prob: 0.15, paste_in_prob: 0.15, translate: 0.2, scale: 0.9}
     - RandomHSV: {hgain: 0.015, sgain: 0.7, vgain: 0.4}
     - RandomFlip: {}
     - BboxXYXY2XYWH: {}
     - NormalizeBox: {}
     - NormalizeImageQuick: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
-    #- RGBReverse: {} # bgr->rgb
     - Permute: {}
   batch_size: 32
   shuffle: True
@@ -46,7 +41,6 @@ TrainReader:
   use_shared_memory: False
   collate_batch: False
   mosaic_epoch: *mosaic_epoch
-  mixup_epoch: *mixup_epoch
 
 
 TrainDatasetdebug:
