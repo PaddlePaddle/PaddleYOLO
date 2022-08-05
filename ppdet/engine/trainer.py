@@ -149,6 +149,12 @@ class Trainer(object):
                                                   self._eval_batch_sampler)
         # TestDataset build after user set images, skip loader creation here
 
+        params = sum([
+            p.numel() for n, p in self.model.named_parameters()
+            if all([x not in n for x in ['_mean', '_variance']])
+        ])  # exclude BatchNorm running status
+        print('Params: ', params / 1e6)
+
         # build optimizer in train mode
         if self.mode == 'train':
             steps_per_epoch = len(self.loader)
@@ -588,6 +594,7 @@ class Trainer(object):
             self.status['step_id'] = step_id
             self._compose_callback.on_step_begin(self.status)
             # forward
+            # data['image'] = paddle.to_tensor(np.load('x0.npy')) ###
             if self.use_amp:
                 with paddle.amp.auto_cast(
                         enable=self.cfg.use_gpu, level=self.amp_level):

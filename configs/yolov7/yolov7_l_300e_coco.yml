@@ -1,0 +1,58 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  '_base_/optimizer_300e.yml',
+  '_base_/yolov7_elannet.yml',
+  '_base_/yolov7_reader.yml',
+]
+log_iter: 100
+snapshot_epoch: 10
+weights: output/yolov7_l_300e_coco/model_final
+
+
+ELANNet:
+  arch: 'L'
+
+ELANFPN:
+  arch: 'L'
+
+
+input_height: &input_height 640
+input_width: &input_width 640
+input_size: &input_size [*input_height, *input_width]
+mosaic_epoch: &mosaic_epoch 300
+# mosaic_epoch: &mosaic_epoch -1 # debug
+
+worker_num: 8
+TrainReader:
+  sample_transforms:
+    - Decode: {}
+    #- DecodeCache: {cache_root: "dataset/coco/cache/buffer"}
+    - MosaicPerspective: {target_size: *input_height, mosaic_prob: 1.0, mixup_prob: 0.15, paste_in_prob: 0.15, translate: 0.2, scale: 0.9}
+    - RandomHSV: {hgain: 0.015, sgain: 0.7, vgain: 0.4}
+    - RandomFlip: {}
+    - BboxXYXY2XYWH: {}
+    - NormalizeBox: {}
+    - NormalizeImageQuick: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
+    - Permute: {}
+  batch_size: 32
+  shuffle: True
+  drop_last: False
+  use_shared_memory: False
+  collate_batch: False
+  mosaic_epoch: *mosaic_epoch
+
+
+TrainDatasetdebug:
+  !COCODataSet
+    image_dir: val2017
+    anno_path: annotations/instances_val2017.json
+    dataset_dir: dataset/coco
+    data_fields: ['image', 'gt_bbox', 'gt_class', 'is_crowd']
+
+
+EvalDatasetdebug:
+  !COCODataSet
+    image_dir: val2017
+    anno_path: annotations/instances_val2017_8img.json
+    dataset_dir: dataset/coco

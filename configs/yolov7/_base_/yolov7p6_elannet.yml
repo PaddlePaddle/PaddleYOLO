@@ -1,0 +1,48 @@
+architecture: YOLOv5 # YOLOv7 is based on YOLOv5
+norm_type: sync_bn
+use_ema: True
+ema_decay: 0.9999
+ema_decay_type: "exponential"
+act: silu
+find_unused_parameters: True
+
+depth_mult: 1.0 # no use in YOLOv7
+width_mult: 1.0
+
+
+YOLOv5:
+  backbone: ELANNet
+  neck: ELANFPNP6
+  yolo_head: YOLOv7Head
+  post_process: ~
+
+ELANNet:
+  arch: 'W6'
+  return_idx: [2, 3, 4, 5]
+  depthwise: false
+
+ELANFPNP6:
+  arch: 'W6'
+  depthwise: false
+
+YOLOv7Head:
+  anchors: [[19, 27], [44, 40], [38, 94],
+            [96, 68], [86, 152], [180, 137],
+            [140, 301], [303, 264], [238, 542],
+            [436, 615], [739, 380], [925, 792]]
+  anchor_masks: [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]]
+  stride: [8, 16, 32, 64]
+  loss: YOLOv7Loss
+  nms:
+    name: MultiClassNMS
+    nms_top_k: 10000
+    keep_top_k: 300
+    score_threshold: 0.001
+    nms_threshold: 0.7
+
+YOLOv7Loss:
+  downsample_ratios: [8, 16, 32, 64]
+  balance: [4.0, 1.0, 0.25, 0.06]
+  box_weight: 0.05
+  cls_weght: 0.3
+  obj_weight: 0.7

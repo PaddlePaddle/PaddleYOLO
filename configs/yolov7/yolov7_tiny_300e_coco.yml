@@ -1,0 +1,38 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  '_base_/optimizer_300e.yml',
+  '_base_/yolov7_elannet.yml',
+  '_base_/yolov7_tiny_reader.yml',
+]
+log_iter: 100
+snapshot_epoch: 10
+weights: output/yolov7_tiny_300e_coco/model_final
+
+
+ELANNet:
+  arch: 'tiny'
+  act: 'LeakyReLU'
+
+ELANFPN:
+  arch: 'tiny'
+  act: 'LeakyReLU'
+
+YOLOv7Head:
+  anchors: [[12, 16], [19, 36], [40, 28],
+            [36, 75], [76, 55], [72, 146],
+            [142, 110], [192, 243], [459, 401]]
+  anchor_masks: [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+  stride: [8, 16, 32]
+  loss: YOLOv7Loss
+  nms:
+    name: MultiClassNMS
+    nms_top_k: 10000
+    keep_top_k: 300
+    score_threshold: 0.001
+    nms_threshold: 0.7
+
+YOLOv7Loss:
+  box_weight: 0.05
+  cls_weght: 0.5
+  obj_weight: 1.0

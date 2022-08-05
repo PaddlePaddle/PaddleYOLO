@@ -50,6 +50,7 @@ class COCODataSet(DetDataset):
                  sample_num=-1,
                  load_crowd=False,
                  allow_empty=False,
+                 norm_bbox=False,
                  empty_ratio=1.,
                  repeat=1):
         super(COCODataSet, self).__init__(
@@ -63,6 +64,7 @@ class COCODataSet(DetDataset):
         self.load_semantic = False
         self.load_crowd = load_crowd
         self.allow_empty = allow_empty
+        self.norm_bbox = norm_bbox
         self.empty_ratio = empty_ratio
 
     def _sample_empty(self, records, num):
@@ -159,9 +161,18 @@ class COCODataSet(DetDataset):
                         y2 = y1 + box_h
                     eps = 1e-5
                     if inst['area'] > 0 and x2 - x1 > eps and y2 - y1 > eps:
-                        inst['clean_bbox'] = [
-                            round(float(x), 3) for x in [x1, y1, x2, y2]
-                        ]
+                        if not self.norm_bbox:
+                            inst['clean_bbox'] = [
+                                round(float(x), 3) for x in [x1, y1, x2, y2]
+                            ]
+                        else:
+                            norm_clean_bbox = [
+                                x1 * 1.0 / im_w, y1 * 1.0 / im_h,
+                                x2 * 1.0 / im_w, y2 * 1.0 / im_h
+                            ]
+                            inst['clean_bbox'] = [
+                                round(float(x), 6) for x in [norm_clean_bbox]
+                            ]
                         if is_rbox_anno:
                             inst['clean_rbox'] = [xc, yc, box_w, box_h, angle]
                         bboxes.append(inst)

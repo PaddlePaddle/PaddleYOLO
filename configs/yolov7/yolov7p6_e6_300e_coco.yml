@@ -1,0 +1,17 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  '_base_/optimizer_300e.yml',
+  '_base_/yolov7p6_elannet.yml',
+  '_base_/yolov7p6_reader.yml',
+]
+log_iter: 100
+snapshot_epoch: 10
+weights: output/yolov7p6_e6_300e_coco/model_final
+
+
+ELANNet:
+  arch: 'E6'
+
+ELANFPNP6:
+  arch: 'E6'

@@ -8,15 +8,36 @@
 
 
 ## Updates!
-* 【2022/07/24】新增[YOLOv7](configs/yolov7)目标检测模型，支持l/x版本。
+* 【2022/07/24】新增[YOLOv7](configs/yolov7)目标检测模型，支持tiny/L/X/W6/E6/D6/E6E版本。
 
 
 ## [ModelZoo](configs/yolov7) on COCO
 
-| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  |   下载链接       | 配置文件 |
-| :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-------------: | :-----: |
-| YOLOv7-l        |  640     |    32      |   300e    |     -    |  51.2  | 69.2 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_l_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_l_300e_coco.yml) |
-| YOLOv7-x        |  640     |    32      |   300e    |     -    |  53.0  | 70.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_x_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_x_300e_coco.yml) |
+## 模型库
+### YOLOv7 on COCO
+
+
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| YOLOv7-L        |  640     |    32      |   300e    |     7.4     |  -  | - |  37.62  | 53.04 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_l_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_l_300e_coco.yml) |
+| YOLOv7-X        |  640     |    32      |   300e    |     12.2    |  -  | - |  71.34  | 95.04 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_x_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_x_300e_coco.yml) |
+
+
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| YOLOv7P6-W6     |  1280    |    16      |   300e    |     25.5    |  -  | - |  70.43  | 180.13 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_w6_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_w6_300e_coco.yml) |
+| YOLOv7P6-E6     |  1280    |    16      |   300e    |     31.1    |  -  | - |  97.25  | 257.70 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_e6_300e_coco.yml) |
+| YOLOv7P6-D6     |  1280    |    16      |   300e    |     37.4    |  -  | - |  133.81  | 351.46 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_d6_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_d6_300e_coco.yml) |
+| YOLOv7P6-E6E    |  1280    |    16      |   300e    |     -    |  -  | - |  -  | - | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6e_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_e6e_300e_coco.yml) |
+
+
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| YOLOv7-tiny     |  640     |    32      |   300e    |   2.93   |  -  | - |  6.23  | 6.90 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_tiny_300e_coco.yml) |
+| YOLOv7-tiny     |  512     |    32      |   300e    |     -    |  -  | - |  6.23  | 4.42 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_512_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_tiny_512_300e_coco.yml) |
+| YOLOv7-tiny     |  416     |    32      |   300e    |     -    |  -  | - |  6.23  | 2.91 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_416_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_tiny_416_300e_coco.yml) |
+| YOLOv7-tiny     |  320     |    32      |   300e    |     -    |  -  | - |  6.23  | 1.73 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_320_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_tiny_320_300e_coco.yml) |
+
 
 **注意:**
  - 具体精度和速度细节请查看[yolov7](configs/yolov7)
