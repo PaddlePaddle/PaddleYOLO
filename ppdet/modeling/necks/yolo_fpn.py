@@ -1107,7 +1107,7 @@ class YOLOCSPPAN(nn.Layer):
 @serializable
 class ELANFPN(nn.Layer):
     """
-    YOLOv7 ELAN FPN
+    YOLOv7 E-ELAN FPN, used in P5 model like ['tiny', 'L', 'X'], return 3 feats
     """
     __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
 
@@ -1149,7 +1149,8 @@ class ELANFPN(nn.Layer):
         self.upsample = nn.Upsample(scale_factor=2, mode="nearest")
 
         in_ch, mid_ch1, mid_ch2, out_ch = ch_settings[0][:]
-        self.lateral_conv1 = BaseConv(in_ch, out_ch, 1, 1, act=act)  # 512->256
+        self.lateral_conv1 = BaseConv(
+            self.in_channels[2], out_ch, 1, 1, act=act)  # 512->256
         self.route_conv1 = BaseConv(
             self.in_channels[1], out_ch, 1, 1, act=act)  # 1024->256
         self.elan_fpn1 = ELANLayer(
@@ -1202,7 +1203,7 @@ class ELANFPN(nn.Layer):
         else:
             raise AttributeError("Unsupported arch type: {}".format(self.arch))
         self.elan_pan2 = ELANLayer(
-            out_ch * 2,
+            out_ch + self.in_channels[2],  # concat([pan_out1_down, c5], 1)
             mid_ch1,
             mid_ch2,
             out_ch,
@@ -1270,7 +1271,8 @@ class ELANFPN(nn.Layer):
 @serializable
 class ELANFPNP6(nn.Layer):
     """
-    YOLOv7P6 ELAN FPN.
+    YOLOv7P6 E-ELAN FPN, used in P6 model like ['W6', 'E6', 'D6', 'E6E']
+    return 4 feats
     """
     __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
 
@@ -1319,7 +1321,8 @@ class ELANFPNP6(nn.Layer):
         self.upsample = nn.Upsample(scale_factor=2, mode="nearest")
 
         in_ch, mid_ch1, mid_ch2, out_ch = ch_settings[0][:]
-        self.lateral_conv1 = BaseConv(in_ch, out_ch, 1, 1, act=act)  # 512->384
+        self.lateral_conv1 = BaseConv(
+            self.in_channels[3], out_ch, 1, 1, act=act)  # 512->384
         self.route_conv1 = BaseConv(
             self.in_channels[2], out_ch, 1, 1, act=act)  # 768->384
         self.elan_fpn1 = ELANLayer(
@@ -1402,7 +1405,7 @@ class ELANFPNP6(nn.Layer):
         else:
             raise AttributeError("Unsupported arch type: {}".format(self.arch))
         self.elan_pan3 = ELANLayer(
-            out_ch * 2,
+            out_ch + self.in_channels[3],  # concat([pan_out2_down, c6], 1)
             mid_ch1,
             mid_ch2,
             out_ch,

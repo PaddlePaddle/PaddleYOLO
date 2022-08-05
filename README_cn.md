@@ -1,38 +1,61 @@
 ## 简介
 
-此repository是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的`YOLOv7`，其upstream为PaddleDetection的[develop](https://github.com/PaddlePaddle/PaddleDetection/tree/develop)分支，在保持与PaddleDetection同步更新的同时，也更新关于YOLOv7的一些改进，并同步更新github和gitee的代码，欢迎一起使用和建设！
+此repository是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，包括`PP-YOLOE`,`YOLOX`,`YOLOv5`,`YOLOv7`，其upstream为PaddleDetection的[develop](https://github.com/PaddlePaddle/PaddleDetection/tree/develop)分支，并定期与PaddleDetection同步更新，包括github和gitee的代码，欢迎一起使用和建设！
 
 **注意:**
  - github链接为：https://github.com/nemonameless/PaddleDetection_YOLOv7
  - gitee链接为：https://gitee.com/nemonameless/PaddleDetection_YOLOv7
 
 
-## Updates!
-* 【2022/07/24】新增[YOLOv7](configs/yolov7)目标检测模型，支持tiny/L/X/W6/E6/D6/E6E版本。
+## ModelZoo on COCO
 
+### [PP-YOLOE](configs/ppyoloe)
 
-## [ModelZoo](configs/yolov7) on COCO
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| PP-YOLOE-s   |     640   |    32    |  400e    |    2.9    |       43.4        |        60.0         |   7.93    |  17.36   | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_s_400e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_s_400e_coco.yml)                   |
+| PP-YOLOE-s   |     640   |    32    |  300e    |    2.9    |       43.0        |        59.6         |   7.93    |  17.36   | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_s_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_s_300e_coco.yml)                   |
+| PP-YOLOE-m   |      640  |    32    |  300e    |    6.0    |       49.0        |        49.1         |   23.43   |  49.91   | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_m_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_m_300e_coco.yml)                   |
+| PP-YOLOE-l   |      640  |    32    |  300e    |    8.7    |       51.4        |        65.9         |   52.20   |  110.07 | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_l_300e_coco.yml)                   |
+| PP-YOLOE-x   |      640  |    32    |  300e    |    14.9   |       **52.3**    |        **69.5**     |   98.42   |  206.59  |[model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_x_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_x_300e_coco.yml)  
+| PP-YOLOE-ConvNeXt-tiny | 640 |    16      |   36e    | -   |       44.6        |        63.3         |   33.04   |  **13.87** | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_convnext_tiny_36e_coco.pdparams) | [config](configs/convnext/ppyoloe_convnext_tiny_36e_coco.yml) |
 
-## 模型库
-### YOLOv7 on COCO
+### [YOLOX](configs/yolox)
 
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| YOLOX-nano     |  416     |    8      |   300e    |     2.3    |  26.1  |  42.0 |  0.91  |  1.08 | [下载链接](https://paddledet.bj.bcebos.com/models/yolox_nano_300e_coco.pdparams) | [配置文件](configs/yolox/yolox_nano_300e_coco.yml) |
+| YOLOX-tiny     |  416     |    8      |   300e    |     2.8    |  32.9  |  50.4 |  5.06  |  6.45 | [下载链接](https://paddledet.bj.bcebos.com/models/yolox_tiny_300e_coco.pdparams) | [配置文件](configs/yolox/yolox_tiny_300e_coco.yml) |
+| YOLOX-s        |  640     |    8      |   300e    |     3.0    |  40.4  |  59.6 |  9.0  |  26.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolox_s_300e_coco.pdparams) | [配置文件](configs/yolox/yolox_s_300e_coco.yml) |
+| YOLOX-m        |  640     |    8      |   300e    |     5.8    |  46.9  |  65.7 |  25.3  |  73.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolox_m_300e_coco.pdparams) | [配置文件](configs/yolox/yolox_m_300e_coco.yml) |
+| YOLOX-l        |  640     |    8      |   300e    |     9.3    |  50.1  |  68.8 |  54.2  |  155.6 | [下载链接](https://paddledet.bj.bcebos.com/models/yolox_l_300e_coco.pdparams) | [配置文件](configs/yolox/yolox_l_300e_coco.yml) |
+| YOLOX-x        |  640     |    8      |   300e    |     16.6   |  **51.8**  |  **70.6** |  99.1  |  281.9 | [下载链接](https://paddledet.bj.bcebos.com/models/yolox_x_300e_coco.pdparams) | [配置文件](configs/yolox/yolox_x_300e_coco.yml) |
+ YOLOX-cdn-tiny    |  416     |    8      |   300e    |     1.9    |  32.4  |  50.2 |  5.03 |  6.33  | [下载链接](https://paddledet.bj.bcebos.com/models/yolox_cdn_tiny_300e_coco.pdparams) | [配置文件](configs/yolox/yolox_cdn_tiny_300e_coco.yml) |
+| YOLOX-crn-s     |  640     |    8      |   300e    |     3.0    |  40.4  |  59.6 |  7.7  |  24.69 | [下载链接](https://paddledet.bj.bcebos.com/models/yolox_crn_s_300e_coco.pdparams) | [配置文件](configs/yolox/yolox_crn_s_300e_coco.yml) |
+| YOLOX-ConvNeXt-s|  640     |    8      |   36e     |     -      |  44.6**  |  65.3 |  36.2 |  **27.52** | [下载链接](https://paddledet.bj.bcebos.com/models/yolox_convnext_s_36e_coco.pdparams) | [配置文件](configs/convnext/yolox_convnext_s_36e_coco.yml) |
+
+### [YOLOv5](configs/yolov5)
+
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| YOLOv5-n        |  640     |    16     |   300e    |     2.6    |  28.0  | 45.7 |  1.87  | 2.26 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_n_300e_coco.pdparams) | [配置文件](configs/yolov5/yolov5_n_300e_coco.yml) |
+| YOLOv5-s        |  640     |    8      |   300e    |     3.2    |  37.0  | 55.9 |  7.24  | 8.27 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_s_300e_coco.pdparams) | [配置文件](configs/yolov5/yolov5_s_300e_coco.yml) |
+| YOLOv5-m        |  640     |    8      |   300e    |     5.2    |  45.3  | 63.8 |  21.19  | 24.54 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_m_300e_coco.pdparams) | [配置文件](configs/yolov5/yolov5_m_300e_coco.yml) |
+| YOLOv5-l        |  640     |    8      |   300e    |     7.9    |  48.6  | 66.9 |  46.56  | 54.66 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) | [配置文件](configs/yolov5/yolov5_l_300e_coco.yml) |
+| YOLOv5-x        |  640     |    8      |   300e    |     13.7    |  **50.6**  | **68.7** |  86.75  | 102.96 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [配置文件](configs/yolov5/yolov5_x_300e_coco.yml) |
+| YOLOv5-ConvNeXt-s|  640     |    8      |   36e     |     -      |  42.4  |  65.3  |  34.54 |  **8.98** | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_convnext_s_36e_coco.pdparams) | [配置文件](configs/yolov5/yolov5_convnext_s_36e_coco.yml) |
+
+### [YOLOv7](configs/yolov7)
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | YOLOv7-L        |  640     |    32      |   300e    |     7.4     |  -  | - |  37.62  | 53.04 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_l_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_l_300e_coco.yml) |
 | YOLOv7-X        |  640     |    32      |   300e    |     12.2    |  -  | - |  71.34  | 95.04 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_x_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_x_300e_coco.yml) |
-
-
-| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
-| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| YOLOv7-l  ConvNeXt|  640   |    8       |   36e     |      -      |  -  | - |  44.58  | 18.79 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_x_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_x_300e_coco.yml) |
 | YOLOv7P6-W6     |  1280    |    16      |   300e    |     25.5    |  -  | - |  70.43  | 180.13 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_w6_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_w6_300e_coco.yml) |
 | YOLOv7P6-E6     |  1280    |    16      |   300e    |     31.1    |  -  | - |  97.25  | 257.70 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_e6_300e_coco.yml) |
 | YOLOv7P6-D6     |  1280    |    16      |   300e    |     37.4    |  -  | - |  133.81  | 351.46 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_d6_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_d6_300e_coco.yml) |
 | YOLOv7P6-E6E    |  1280    |    16      |   300e    |     -    |  -  | - |  -  | - | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6e_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_e6e_300e_coco.yml) |
-
-
-| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
-| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | YOLOv7-tiny     |  640     |    32      |   300e    |   2.93   |  -  | - |  6.23  | 6.90 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_tiny_300e_coco.yml) |
 | YOLOv7-tiny     |  512     |    32      |   300e    |     -    |  -  | - |  6.23  | 4.42 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_512_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_tiny_512_300e_coco.yml) |
 | YOLOv7-tiny     |  416     |    32      |   300e    |     -    |  -  | - |  6.23  | 2.91 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_416_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_tiny_416_300e_coco.yml) |
@@ -40,15 +63,72 @@
 
 
 **注意:**
- - 具体精度和速度细节请查看[yolov7](configs/yolov7)
+ - 训练使用COCO train2017作为训练集，在COCO val2017上验证精度。
+ - 具体精度和速度细节请查看[ppyoloe](configs/ppyoloe),[yolox](configs/yolox),[yolov5](configs/yolox),[yolov7](configs/yolov7)。
+ - [ppyoloe](configs/ppyoloe),[yolov3](configs/yolov3)和[yolox](configs/yolox)推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)里使用。
+ - [yolov5](configs/yolox)和[yolov7](configs/yolov7)由于GPL协议而不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)主代码库。
+
+
+## 使用指南
+
+### 数据集下载
+下载MS COCO数据集，[官网](https://cocodataset.org)下载地址为: [annotations](http://images.cocodataset.org/annotations/annotations_trainval2017.zip), [train2017](http://images.cocodataset.org/zips/train2017.zip), [val2017](http://images.cocodataset.org/zips/val2017.zip), [test2017](http://images.cocodataset.org/zips/test2017.zip)。
+PaddleDetection团队提供的下载链接为：[coco](https://bj.bcebos.com/v1/paddledet/data/coco.tar)和[test2017](https://bj.bcebos.com/v1/paddledet/data/cocotest2017.zip)，注意test2017可不下载，评估是使用的val2017集。
+
+
+### **一键全流程运行**:
+```
+export FLAGS_allocator_strategy=auto_growth
+
+model_type=ppyoloe
+job_name=ppyoloe_crn_l_300e_coco
+config=configs/${model_type}/${job_name}.yml
+log_dir=log_dir/${job_name}
+#weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
+weights=output/${job_name}/model_final.pdparams
+
+# 1. training
+CUDA_VISIBLE_DEVICES=0 python3.7 tools/train.py -c ${config} --eval --amp
+#python3.7 -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
+
+# 2. eval
+CUDA_VISIBLE_DEVICES=0 python3.7 tools/eval.py -c ${config} -o weights=${weights} --classwise
+
+# 3. tools infer
+CUDA_VISIBLE_DEVICES=0 python3.7 tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg --draw_threshold=0.5
+
+# 4.export model
+CUDA_VISIBLE_DEVICES=0 python3.7 tools/export_model.py -c ${config} -o weights=${weights} # exclude_nms=True
+
+# 5. deploy infer
+#CUDA_VISIBLE_DEVICES=0 python3.7 deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
+
+# 6. deploy speed
+#CUDA_VISIBLE_DEVICES=0 python3.7 deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU --run_benchmark=True # --run_mode=trt_fp16
+
+# 7. onnx
+paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmodel --params_filename model.pdiparams --opset_version 12 --save_file ${job_name}.onnx
+
+# 8. onnx speed
+/usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp16
+
+```
+
+如果想切换模型，只要修改如下两行即可:
+```
+model_type=yolov7
+job_name=yolov7_l_300e_coco
+...
+```
 
 
 ## TODO
   - [ ] Transformer modules
   - [ ] 更多Data Augmentation、Attention Module、Loss
   - [ ] 精简代码只保留YOLO系列模型(YOLOv3、PP-YOLO、PP-YOLOv2、PP-YOLOE、YOLOX、YOLOv5、YOLOv7)
-  - [ ] Objects365 pretrain
-  - [ ] Keypoint/Instance Segmentation
+  - [ ] Objects365预训练
+  - [ ] Pose Estimation(Keypoint Detection)
+  - [ ] Instance Segmentation
 
 
 ======================================================
