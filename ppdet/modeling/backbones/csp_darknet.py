@@ -21,7 +21,6 @@ from ppdet.core.workspace import register, serializable
 from ppdet.modeling.initializer import conv_init_, normal_
 from paddle.nn.initializer import Constant
 from ..shape_spec import ShapeSpec
-from IPython import embed
 
 __all__ = [
     'CSPDarkNet', 'BaseConv', 'DWConv', 'BottleNeck', 'SPPLayer', 'SPPFLayer',

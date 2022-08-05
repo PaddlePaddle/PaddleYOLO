@@ -1103,14 +1103,11 @@ class YOLOCSPPAN(nn.Layer):
         return [ShapeSpec(channels=c) for c in self._out_channels]
 
 
-from IPython import embed
-
-
 @register
 @serializable
 class ELANFPN(nn.Layer):
     """
-    YOLOv7 ELAN FPN.
+    YOLOv7 ELAN FPN
     """
     __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
 

@@ -578,9 +578,6 @@ class YOLOv5Head(nn.Layer):
             return bbox_pred, bbox_num
 
 
-from IPython import embed
-
-
 @register
 class YOLOv7Head(nn.Layer):
     __shared__ = ['num_classes', 'data_format', 'trt', 'exclude_nms']

@@ -420,11 +420,12 @@ class YOLOv5Loss(nn.Layer):
         return yolo_losses
 
 
-from IPython import embed
-
-
 @register
 class YOLOv7Loss(nn.Layer):
+    """
+    this code is based on https://github.com/WongKinYiu/yolov7
+    Note: Please use paddle 2.3.0+
+    """
     __shared__ = ['num_classes']
 
     def __init__(self,
@@ -510,7 +511,6 @@ class YOLOv7Loss(nn.Layer):
         #print('targets: ', targets.shape, targets.sum()) # [22, 6] [-6398980.]
         #np.save('targets.npy', targets)
 
-        ### copy
         lcls, lbox, lobj = paddle.zeros([1]), paddle.zeros([1]), paddle.zeros(
             [1])
         bs, as_, gjs, gis, targets, anchors = self.build_targets(
