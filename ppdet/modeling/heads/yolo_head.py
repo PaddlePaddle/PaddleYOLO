@@ -676,43 +676,18 @@ class YOLOv7Head(nn.Layer):
                 self.ia.append(ImplicitA(self.in_channels[i]))
                 self.im.append(ImplicitM(num_filters))
 
-        self._initialize_biases()
+        self._initialize_biases(self.yolo_outputs)
         if self.training and self.use_aux:
-            self._initialize_biases()
+            self._initialize_biases(self.yolo_outputs_aux)
 
-    def _initialize_biases(self):
-        # initialize biases into Detect()
-        # https://arxiv.org/abs/1708.02002 section 3.3
+    def _initialize_biases(self, convs):
+        # initialize biases, see https://arxiv.org/abs/1708.02002 section 3.3
         import math
-        for i, conv in enumerate(self.yolo_outputs):
-            b = conv.bias.numpy().reshape([3, -1])
+        for i, conv in enumerate(convs):
+            b = conv.bias.numpy().reshape([3, -1])  # [255] to [3,85]
             b[:, 4] += math.log(8 / (640 / self.stride[i])**2)
-            b[:, 5:] += math.log(0.6 / (self.num_classes - 0.999999))
+            b[:, 5:] += math.log(0.6 / (self.num_classes - 0.99))
             conv.bias.set_value(b.reshape([-1]))
-
-    # def _initialize_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
-    #     # https://arxiv.org/abs/1708.02002 section 3.3
-    #     # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
-    #     m = self.model[-1]  # Detect() module
-    #     for mi, s in zip(m.m, m.stride):  # from
-    #         b = mi.bias.view(m.na, -1)  # conv.bias(255) to (3,85)
-    #         b.data[:, 4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-    #         b.data[:, 5:] += math.log(0.6 / (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
-    #         mi.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
-
-    # def _initialize_aux_biases(self, cf=None):  # initialize biases into Detect(), cf is class frequency
-    #     # https://arxiv.org/abs/1708.02002 section 3.3
-    #     # cf = torch.bincount(torch.tensor(np.concatenate(dataset.labels, 0)[:, 0]).long(), minlength=nc) + 1.
-    #     m = self.model[-1]  # Detect() module
-    #     for mi, mi2, s in zip(m.m, m.m2, m.stride):  # from
-    #         b = mi.bias.view(m.na, -1)  # conv.bias(255) to (3,85)
-    #         b.data[:, 4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-    #         b.data[:, 5:] += math.log(0.6 / (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
-    #         mi.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
-    #         b2 = mi2.bias.view(m.na, -1)  # conv.bias(255) to (3,85)
-    #         b2.data[:, 4] += math.log(8 / (640 / s) ** 2)  # obj (8 objects per 640 image)
-    #         b2.data[:, 5:] += math.log(0.6 / (m.nc - 0.99)) if cf is None else torch.log(cf / cf.sum())  # cls
-    #         mi2.bias = torch.nn.Parameter(b2.view(-1), requires_grad=True)
 
     def parse_anchor(self, anchors, anchor_masks):
         self.anchors = [[anchors[i] for i in mask] for mask in anchor_masks]

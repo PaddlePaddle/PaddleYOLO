@@ -10,7 +10,7 @@ depth_mult: 1.0 # no use in YOLOv7
 width_mult: 1.0
 
 arch: 'W6'
-use_aux: True
+use_aux: True # set False if compute params or flops
 
 YOLOv5:
   backbone: ELANNet

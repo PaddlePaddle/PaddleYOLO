@@ -111,7 +111,6 @@ class Trainer(object):
 
         if self.cfg.architecture == 'YOLOv5':
             reset_initialized_parameter(self.model)
-            self.model.yolo_head._initialize_biases()
 
         if cfg.architecture in ['YOLOX', 'YOLOv5']:
             for k, m in self.model.named_sublayers():

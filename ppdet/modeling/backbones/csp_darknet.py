@@ -29,7 +29,7 @@ __all__ = [
 ]
 
 
-def get_activation(name="silu", inplace=True):
+def get_activation(name="silu"):
     if name == "silu":
         module = nn.Silu()
     elif name == "relu":
@@ -585,25 +585,25 @@ class SPPELAN(nn.Layer):
 class ImplicitA(nn.Layer):
     def __init__(self, channel, mean=0., std=.02):
         super(ImplicitA, self).__init__()
-        self.implicit = self.create_parameter(
+        self.ia = self.create_parameter(
             shape=([1, channel, 1, 1]),
             attr=ParamAttr(initializer=Constant(0.)))
-        normal_(self.implicit, mean=mean, std=std)
+        normal_(self.ia, mean=mean, std=std)
 
     def forward(self, x):
-        return self.implicit + x
+        return self.ia + x
 
 
 class ImplicitM(nn.Layer):
     def __init__(self, channel, mean=0., std=.02):
         super(ImplicitM, self).__init__()
-        self.implicit = self.create_parameter(
+        self.im = self.create_parameter(
             shape=([1, channel, 1, 1]),
             attr=ParamAttr(initializer=Constant(1.)))
-        normal_(self.implicit, mean=mean, std=std)
+        normal_(self.im, mean=mean, std=std)
 
     def forward(self, x):
-        return self.implicit * x
+        return self.im * x
 
 
 def autopad(k, p=None):  # kernel, padding

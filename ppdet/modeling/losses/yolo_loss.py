@@ -420,9 +420,6 @@ class YOLOv5Loss(nn.Layer):
         return yolo_losses
 
 
-from IPython import embed
-
-
 @register
 class YOLOv7Loss(nn.Layer):
     """
