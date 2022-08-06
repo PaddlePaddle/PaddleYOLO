@@ -9,13 +9,7 @@ log_iter: 100
 snapshot_epoch: 10
 weights: output/yolov7_l_300e_coco/model_final
 
-
-ELANNet:
-  arch: 'L'
-
-ELANFPN:
-  arch: 'L'
-
+arch: 'L'
 
 input_height: &input_height 640
 input_width: &input_width 640

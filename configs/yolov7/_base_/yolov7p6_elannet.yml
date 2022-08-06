@@ -9,6 +9,8 @@ find_unused_parameters: True
 depth_mult: 1.0 # no use in YOLOv7
 width_mult: 1.0
 
+arch: 'W6'
+use_aux: True
 
 YOLOv5:
   backbone: ELANNet
@@ -17,12 +19,10 @@ YOLOv5:
   post_process: ~
 
 ELANNet:
-  arch: 'W6'
   return_idx: [2, 3, 4, 5]
   depthwise: false
 
 ELANFPNP6:
-  arch: 'W6'
   depthwise: false
 
 YOLOv7Head:

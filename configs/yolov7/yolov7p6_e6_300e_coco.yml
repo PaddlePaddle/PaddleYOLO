@@ -9,9 +9,7 @@ log_iter: 100
 snapshot_epoch: 10
 weights: output/yolov7p6_e6_300e_coco/model_final
 
+arch: 'E6'
 
-ELANNet:
-  arch: 'E6'
-
-ELANFPNP6:
-  arch: 'E6'
+TrainReader:
+  batch_size: 16

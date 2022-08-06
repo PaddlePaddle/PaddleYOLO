@@ -1109,7 +1109,7 @@ class ELANFPN(nn.Layer):
     """
     YOLOv7 E-ELAN FPN, used in P5 model like ['tiny', 'L', 'X'], return 3 feats
     """
-    __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
+    __shared__ = ['arch', 'depth_mult', 'width_mult', 'act', 'trt']
 
     # [in_ch, mid_ch1, mid_ch2, out_ch] of each ELANLayer (2 FPN + 2 PAN): 
     ch_settings = {
@@ -1267,6 +1267,9 @@ class ELANFPN(nn.Layer):
         return [ShapeSpec(channels=c) for c in self._out_channels]
 
 
+from IPython import embed
+
+
 @register
 @serializable
 class ELANFPNP6(nn.Layer):
@@ -1274,7 +1277,7 @@ class ELANFPNP6(nn.Layer):
     YOLOv7P6 E-ELAN FPN, used in P6 model like ['W6', 'E6', 'D6', 'E6E']
     return 4 feats
     """
-    __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
+    __shared__ = ['arch', 'depth_mult', 'width_mult', 'act', 'use_aux', 'trt']
 
     # in_ch, mid_ch1, mid_ch2, out_ch of each ELANLayer (3 FPN + 3 PAN): 
     ch_settings = {
@@ -1303,6 +1306,7 @@ class ELANFPNP6(nn.Layer):
     def __init__(
             self,
             arch='W6',
+            use_aux=False,
             depth_mult=1.0,
             width_mult=1.0,
             in_channels=[256, 512, 768, 512],  # 19 28 37 47 (c3,c4,c5,c6)
@@ -1313,11 +1317,16 @@ class ELANFPNP6(nn.Layer):
         super(ELANFPNP6, self).__init__()
         self.in_channels = in_channels  # * width_mult
         self.arch = arch
+        self.use_aux = use_aux
         concat_list = self.concat_list_settings[arch]
         num_blocks = self.num_blocks[arch]
         ch_settings = self.ch_settings[arch]
         self._out_channels = [chs[-1] * 2 for chs in ch_settings[2:]]
-
+        if self.training and self.use_aux:
+            chs_aux = [chs[-1] for chs in ch_settings[:3][::-1]
+                       ] + [self.in_channels[3]]
+            self.in_channels_aux = chs_aux
+            self._out_channels = self._out_channels + [320, 640, 960, 1280]
         self.upsample = nn.Upsample(scale_factor=2, mode="nearest")
 
         in_ch, mid_ch1, mid_ch2, out_ch = ch_settings[0][:]
@@ -1416,8 +1425,15 @@ class ELANFPNP6(nn.Layer):
 
         self.repconvs = nn.LayerList()
         Conv = RepConv if self.arch == 'L' else BaseConv
-        for _out_ch in self._out_channels:
+        for i, _out_ch in enumerate(self._out_channels[:4]):
             self.repconvs.append(Conv(_out_ch // 2, _out_ch, 3, 1, act=act))
+
+        if self.training and self.use_aux:
+            self.repconvs_aux = nn.LayerList()
+            for i, _out_ch in enumerate(self._out_channels[4:]):
+                self.repconvs_aux.append(
+                    Conv(
+                        self.in_channels_aux[i], _out_ch, 3, 1, act=act))
 
     def forward(self, feats, for_mot=False):
         assert len(feats) == len(self.in_channels)
@@ -1472,6 +1488,10 @@ class ELANFPNP6(nn.Layer):
         outputs = []
         for i, out in enumerate(pan_outs):
             outputs.append(self.repconvs[i](out))
+
+        if self.training and self.use_aux:
+            for i, out in enumerate([fpn_out3, fpn_out2, fpn_out1, c6]):
+                outputs.append(self.repconvs_aux[i](out))
         return outputs
 
     @classmethod

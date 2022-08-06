@@ -752,10 +752,7 @@ class RepConv(nn.Layer):
                                                 [1, 1, 1, 1])
 
         # Fuse self.rbr_identity
-        if isinstance(
-                self.rbr_identity, nn.BatchNorm2D
-        ):  #or isinstance(self.rbr_identity, nn.modules.batchnorm.SyncBatchNorm)):
-            # print(f"fuse: rbr_identity == BatchNorm2D or SyncBatchNorm")
+        if isinstance(self.rbr_identity, nn.BatchNorm2D):
             identity_conv_1x1 = nn.Conv2D(
                 in_channels=self.in_channels,
                 out_channels=self.out_channels,
@@ -768,12 +765,10 @@ class RepConv(nn.Layer):
                 self.rbr_1x1.weight.data.device)
             identity_conv_1x1.weight.data = identity_conv_1x1.weight.data.squeeze(
             ).squeeze()
-            # print(f" identity_conv_1x1.weight = {identity_conv_1x1.weight.shape}")
             identity_conv_1x1.weight.data.fill_(0.0)
             identity_conv_1x1.weight.data.fill_diagonal_(1.0)
             identity_conv_1x1.weight.data = identity_conv_1x1.weight.data.unsqueeze(
                 2).unsqueeze(3)
-            # print(f" identity_conv_1x1.weight = {identity_conv_1x1.weight.shape}")
 
             identity_conv_1x1 = self.fuse_conv_bn(identity_conv_1x1,
                                                   self.rbr_identity)
@@ -781,7 +776,6 @@ class RepConv(nn.Layer):
             weight_identity_expanded = nn.functional.pad(
                 identity_conv_1x1.weight, [1, 1, 1, 1])
         else:
-            # print(f"fuse: rbr_identity != BatchNorm2d, rbr_identity = {self.rbr_identity}")
             bias_identity_expanded = nn.Parameter(
                 paddle.zeros_like(rbr_1x1_bias))
             weight_identity_expanded = nn.Parameter(
@@ -825,7 +819,7 @@ class ELANNet(nn.Layer):
         trt (bool): Whether use trt infer.
         return_idx (list): Index of stages whose feature maps are returned.
     """
-    __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
+    __shared__ = ['arch', 'depth_mult', 'width_mult', 'act', 'trt']
 
     # in_channels, out_channels of 1 stem + 4 stages
     ch_settings = {

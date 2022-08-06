@@ -420,16 +420,20 @@ class YOLOv5Loss(nn.Layer):
         return yolo_losses
 
 
+from IPython import embed
+
+
 @register
 class YOLOv7Loss(nn.Layer):
     """
     this code is based on https://github.com/WongKinYiu/yolov7
     Note: Please use paddle 2.3.0+
     """
-    __shared__ = ['num_classes']
+    __shared__ = ['num_classes', 'use_aux']
 
     def __init__(self,
                  num_classes=80,
+                 use_aux=False,
                  downsample_ratios=[8, 16, 32],
                  balance=[4.0, 1.0, 0.4],
                  box_weight=0.05,
@@ -440,7 +444,10 @@ class YOLOv7Loss(nn.Layer):
                  label_smooth_eps=0.):
         super(YOLOv7Loss, self).__init__()
         self.num_classes = num_classes
+        self.use_aux = use_aux
         self.balance = balance
+        if self.use_aux:
+            self.balance = balance * 2
         self.na = 3  # not len(anchors)
         self.gr = 1.0
 
@@ -460,6 +467,8 @@ class YOLOv7Loss(nn.Layer):
         self.cls_neg_label = 0.5 * eps
 
         self.downsample_ratios = downsample_ratios
+        if self.use_aux:
+            self.downsample_ratios = downsample_ratios * 2
         self.bias = bias
         self.off = paddle.to_tensor(
             [
@@ -473,8 +482,9 @@ class YOLOv7Loss(nn.Layer):
         self.anchor_t = anchor_t
 
     def forward(self, head_outs, gt_targets, anchors):
+        if self.use_aux:
+            anchors = paddle.concat([anchors, anchors], 0)
         assert len(head_outs) == len(anchors)
-        assert len(head_outs) == len(self.downsample_ratios)
         yolo_losses = dict()
         inputs = []
         for i, pi in enumerate(head_outs):
