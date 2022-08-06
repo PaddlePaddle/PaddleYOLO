@@ -29,7 +29,7 @@ __all__ = [
 ]
 
 
-def get_activation(name="silu", inplace=True):
+def get_activation(name="silu"):
     if name == "silu":
         module = nn.Silu()
     elif name == "relu":
@@ -585,25 +585,25 @@ class SPPELAN(nn.Layer):
 class ImplicitA(nn.Layer):
     def __init__(self, channel, mean=0., std=.02):
         super(ImplicitA, self).__init__()
-        self.implicit = self.create_parameter(
+        self.ia = self.create_parameter(
             shape=([1, channel, 1, 1]),
             attr=ParamAttr(initializer=Constant(0.)))
-        normal_(self.implicit, mean=mean, std=std)
+        normal_(self.ia, mean=mean, std=std)
 
     def forward(self, x):
-        return self.implicit + x
+        return self.ia + x
 
 
 class ImplicitM(nn.Layer):
     def __init__(self, channel, mean=0., std=.02):
         super(ImplicitM, self).__init__()
-        self.implicit = self.create_parameter(
+        self.im = self.create_parameter(
             shape=([1, channel, 1, 1]),
             attr=ParamAttr(initializer=Constant(1.)))
-        normal_(self.implicit, mean=mean, std=std)
+        normal_(self.im, mean=mean, std=std)
 
     def forward(self, x):
-        return self.implicit * x
+        return self.im * x
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -625,7 +625,6 @@ class RepConv(nn.Layer):
         assert autopad(k, p) == 1
         padding_11 = autopad(k, p) - k // 2
 
-        #if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
         self.act = get_activation(act)
 
         if deploy:
@@ -695,7 +694,7 @@ class RepConv(nn.Layer):
 
                 for i in range(self.in_channels):
                     kernel_value[i, i % input_dim, 1, 1] = 1
-                self.id_tensor = kernel_value  #torch.from_numpy(kernel_value).to(branch.weight.device)
+                self.id_tensor = kernel_value
             kernel = self.id_tensor
             running_mean = branch._mean
             running_var = branch._variance
@@ -711,15 +710,6 @@ class RepConv(nn.Layer):
             return
         print(f"RepConv_OREPA.switch_to_deploy")
         kernel, bias = self.get_equivalent_kernel_bias()
-        # self.rbr_reparam = nn.Conv2D(
-        #     self.rbr_dense.in_channels,
-        #     self.rbr_dense.out_channels,
-        #     self.rbr_dense.kernel_size,
-        #     self.rbr_dense.stride,
-        #     self.rbr_dense.padding,
-        #     dilation=self.rbr_dense.dilation,
-        #     groups=self.rbr_dense.groups,
-        #     bias_attr=True)
         if not hasattr(self, 'rbr_reparam'):
             self.conv = nn.Conv2D(
                 self.in_channels,
@@ -730,16 +720,6 @@ class RepConv(nn.Layer):
                 groups=self.groups,
                 bias_attr=True)
         return (kernel.numpy(), bias.numpy())
-
-        # self.rbr_reparam.weight.set_value(kernel)
-        # self.rbr_reparam.bias.set_value(bias)
-        # # for para in self.parameters():
-        # #     para.detach_()
-        # self.__delattr__('rbr_dense')
-        # self.__delattr__('rbr_1x1')
-        # if hasattr(self, 'rbr_identity'):
-        #     self.__delattr__('rbr_identity') 
-        # return (kernel.numpy(), bias.numpy())
 
     def fuse_conv_bn(self, conv, bn):
         std = (bn.running_var + bn.eps).sqrt()
@@ -772,10 +752,7 @@ class RepConv(nn.Layer):
                                                 [1, 1, 1, 1])
 
         # Fuse self.rbr_identity
-        if isinstance(
-                self.rbr_identity, nn.BatchNorm2D
-        ):  #or isinstance(self.rbr_identity, nn.modules.batchnorm.SyncBatchNorm)):
-            # print(f"fuse: rbr_identity == BatchNorm2D or SyncBatchNorm")
+        if isinstance(self.rbr_identity, nn.BatchNorm2D):
             identity_conv_1x1 = nn.Conv2D(
                 in_channels=self.in_channels,
                 out_channels=self.out_channels,
@@ -788,12 +765,10 @@ class RepConv(nn.Layer):
                 self.rbr_1x1.weight.data.device)
             identity_conv_1x1.weight.data = identity_conv_1x1.weight.data.squeeze(
             ).squeeze()
-            # print(f" identity_conv_1x1.weight = {identity_conv_1x1.weight.shape}")
             identity_conv_1x1.weight.data.fill_(0.0)
             identity_conv_1x1.weight.data.fill_diagonal_(1.0)
             identity_conv_1x1.weight.data = identity_conv_1x1.weight.data.unsqueeze(
                 2).unsqueeze(3)
-            # print(f" identity_conv_1x1.weight = {identity_conv_1x1.weight.shape}")
 
             identity_conv_1x1 = self.fuse_conv_bn(identity_conv_1x1,
                                                   self.rbr_identity)
@@ -801,7 +776,6 @@ class RepConv(nn.Layer):
             weight_identity_expanded = nn.functional.pad(
                 identity_conv_1x1.weight, [1, 1, 1, 1])
         else:
-            # print(f"fuse: rbr_identity != BatchNorm2d, rbr_identity = {self.rbr_identity}")
             bias_identity_expanded = nn.Parameter(
                 paddle.zeros_like(rbr_1x1_bias))
             weight_identity_expanded = nn.Parameter(
@@ -845,7 +819,7 @@ class ELANNet(nn.Layer):
         trt (bool): Whether use trt infer.
         return_idx (list): Index of stages whose feature maps are returned.
     """
-    __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
+    __shared__ = ['arch', 'depth_mult', 'width_mult', 'act', 'trt']
 
     # in_channels, out_channels of 1 stem + 4 stages
     ch_settings = {

@@ -580,7 +580,7 @@ class YOLOv5Head(nn.Layer):
 
 @register
 class YOLOv7Head(nn.Layer):
-    __shared__ = ['num_classes', 'data_format', 'trt', 'exclude_nms']
+    __shared__ = ['num_classes', 'data_format', 'use_aux', 'trt', 'exclude_nms']
     __inject__ = ['loss', 'nms']
 
     def __init__(
@@ -591,6 +591,7 @@ class YOLOv7Head(nn.Layer):
                      [72, 146], [142, 110], [192, 243], [459, 401]],
             anchor_masks=[[0, 1, 2], [3, 4, 5], [6, 7, 8]],
             stride=[8, 16, 32],
+            use_aux=False,
             use_implicit=False,  # True,
             loss='YOLOv7Loss',
             data_format='NCHW',
@@ -606,6 +607,7 @@ class YOLOv7Head(nn.Layer):
             anchors (list): anchors
             anchor_masks (list): anchor masks
             stride (list): strides
+            use_aux (bool): whether to use Aux Head, only in P6 models
             use_implicit (bool): whether to use ImplicitA and ImplicitM
             loss (object): YOLOv7Loss instance
             data_format (str): nms format, NCHW or NHWC
@@ -623,6 +625,7 @@ class YOLOv7Head(nn.Layer):
         self.anchor_levels = len(self.anchors)
 
         self.stride = stride
+        self.use_aux = use_aux
         self.use_implicit = use_implicit
         self.loss = loss
         self.data_format = data_format
@@ -635,9 +638,12 @@ class YOLOv7Head(nn.Layer):
         self.num_out_ch = self.num_classes + 5  # self.no
 
         self.yolo_outputs = []
+        if self.training and self.use_aux:
+            self.yolo_outputs_aux = []
         if self.use_implicit:
             self.ia, self.im = [], []
-        for i in range(len(self.anchors)):
+        self.num_levels = len(self.anchors)
+        for i in range(self.num_levels):
             num_filters = self.num_anchor * self.num_out_ch
             name = 'yolo_output.{}'.format(i)
             conv = nn.Conv2D(
@@ -652,20 +658,35 @@ class YOLOv7Head(nn.Layer):
             yolo_output = self.add_sublayer(name, conv)
             self.yolo_outputs.append(yolo_output)
 
+            if self.training and self.use_aux:
+                name_aux = 'yolo_output_aux.{}'.format(i)
+                conv_aux = nn.Conv2D(
+                    in_channels=self.in_channels[i + self.num_levels],
+                    out_channels=num_filters,
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                    data_format=data_format,
+                    bias_attr=ParamAttr(regularizer=L2Decay(0.)))
+                conv_aux.skip_quant = True
+                yolo_output_aux = self.add_sublayer(name_aux, conv_aux)
+                self.yolo_outputs_aux.append(yolo_output_aux)
+
             if self.use_implicit:
                 self.ia.append(ImplicitA(self.in_channels[i]))
                 self.im.append(ImplicitM(num_filters))
 
-        self._initialize_biases()
+        self._initialize_biases(self.yolo_outputs)
+        if self.training and self.use_aux:
+            self._initialize_biases(self.yolo_outputs_aux)
 
-    def _initialize_biases(self):
-        # initialize biases into Detect()
-        # https://arxiv.org/abs/1708.02002 section 3.3
+    def _initialize_biases(self, convs):
+        # initialize biases, see https://arxiv.org/abs/1708.02002 section 3.3
         import math
-        for i, conv in enumerate(self.yolo_outputs):
-            b = conv.bias.numpy().reshape([3, -1])
+        for i, conv in enumerate(convs):
+            b = conv.bias.numpy().reshape([3, -1])  # [255] to [3,85]
             b[:, 4] += math.log(8 / (640 / self.stride[i])**2)
-            b[:, 5:] += math.log(0.6 / (self.num_classes - 0.999999))
+            b[:, 5:] += math.log(0.6 / (self.num_classes - 0.99))
             conv.bias.set_value(b.reshape([-1]))
 
     def parse_anchor(self, anchors, anchor_masks):
@@ -679,19 +700,30 @@ class YOLOv7Head(nn.Layer):
                 self.mask_anchors[-1].extend(anchors[mask])
 
     def forward(self, feats, targets=None):
-        assert len(feats) == len(self.anchors)
         yolo_outputs = []
-        for i, feat in enumerate(feats):
+        if self.training and self.use_aux:
+            yolo_outputs_aux = []
+        for i in range(self.num_levels):
             if self.training and self.use_implicit:
-                yolo_output = self.im[i](self.yolo_outputs[i](self.ia[i](feat)))
+                yolo_output = self.im[i](self.yolo_outputs[i](self.ia[i](feats[
+                    i])))
             else:
-                yolo_output = self.yolo_outputs[i](feat)
+                yolo_output = self.yolo_outputs[i](feats[i])
             if self.data_format == 'NHWC':
                 yolo_output = paddle.transpose(yolo_output, [0, 3, 1, 2])
             yolo_outputs.append(yolo_output)
 
+            if self.training and self.use_aux:
+                yolo_output_aux = self.yolo_outputs_aux[i](feats[
+                    i + self.num_levels])
+                yolo_outputs_aux.append(yolo_output_aux)
+
         if self.training:
-            return self.loss(yolo_outputs, targets, self.anchors)
+            if self.use_aux:
+                return self.loss(yolo_outputs + yolo_outputs_aux, targets,
+                                 self.anchors)
+            else:
+                return self.loss(yolo_outputs, targets, self.anchors)
         else:
             return yolo_outputs
 

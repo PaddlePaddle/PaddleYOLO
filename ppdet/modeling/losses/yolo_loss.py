@@ -426,10 +426,11 @@ class YOLOv7Loss(nn.Layer):
     this code is based on https://github.com/WongKinYiu/yolov7
     Note: Please use paddle 2.3.0+
     """
-    __shared__ = ['num_classes']
+    __shared__ = ['num_classes', 'use_aux']
 
     def __init__(self,
                  num_classes=80,
+                 use_aux=False,
                  downsample_ratios=[8, 16, 32],
                  balance=[4.0, 1.0, 0.4],
                  box_weight=0.05,
@@ -440,7 +441,10 @@ class YOLOv7Loss(nn.Layer):
                  label_smooth_eps=0.):
         super(YOLOv7Loss, self).__init__()
         self.num_classes = num_classes
+        self.use_aux = use_aux
         self.balance = balance
+        if self.use_aux:
+            self.balance = balance * 2
         self.na = 3  # not len(anchors)
         self.gr = 1.0
 
@@ -460,6 +464,8 @@ class YOLOv7Loss(nn.Layer):
         self.cls_neg_label = 0.5 * eps
 
         self.downsample_ratios = downsample_ratios
+        if self.use_aux:
+            self.downsample_ratios = downsample_ratios * 2
         self.bias = bias
         self.off = paddle.to_tensor(
             [
@@ -473,8 +479,9 @@ class YOLOv7Loss(nn.Layer):
         self.anchor_t = anchor_t
 
     def forward(self, head_outs, gt_targets, anchors):
+        if self.use_aux:
+            anchors = paddle.concat([anchors, anchors], 0)
         assert len(head_outs) == len(anchors)
-        assert len(head_outs) == len(self.downsample_ratios)
         yolo_losses = dict()
         inputs = []
         for i, pi in enumerate(head_outs):
@@ -502,12 +509,8 @@ class YOLOv7Loss(nn.Layer):
         yolov7_gt_bbox = paddle.cast(
             paddle.concat(
                 gt_targets['gt_bbox'], axis=0), 'float32')
-        try:
-            targets = paddle.concat(
-                [yolov7_gt_index, yolov7_gt_class, yolov7_gt_bbox], 1)
-        except:
-            print('concat([yolov7_gt_index, yolov7_gt_class, yolov7_gt_bbox]')
-            embed()
+        targets = paddle.concat(
+            [yolov7_gt_index, yolov7_gt_class, yolov7_gt_bbox], 1)
         #print('targets: ', targets.shape, targets.sum()) # [22, 6] [-6398980.]
         #np.save('targets.npy', targets)
 
@@ -520,35 +523,28 @@ class YOLOv7Loss(nn.Layer):
         ]
 
         # Losses
-        for i, pi in enumerate(inputs):  # layer index, layer predictions
-            b, a, gj, gi = bs[i], as_[i], gjs[i], gis[
-                i]  # image, anchor, gridy, gridx
-            tobj = paddle.zeros_like(pi[..., 0])  # target obj #######
+        for i, pi in enumerate(inputs):
+            b, a, gj, gi = bs[i], as_[i], gjs[i], gis[i]
+            tobj = paddle.zeros_like(pi[..., 0])
             n = b.shape[0]  # number of targets
             if n:
-                #print('for i, pi in enumerate(inputs): p{}'.format(i), pi.sum(), pi.shape)
-                ps = pi[b, a, gj,
-                        gi]  # prediction subset corresponding to targets
+                ps = pi[b, a, gj, gi]
                 # Regression
                 grid = paddle.stack([gi, gj], 1)
+                if len(ps.shape) == 1:
+                    ps = ps.unsqueeze(0)
                 pxy = F.sigmoid(ps[:, :2]) * 2. - 0.5
                 pwh = (F.sigmoid(ps[:, 2:4]) * 2)**2 * anchors[i]
                 pbox = paddle.concat([pxy, pwh], 1)  # predicted box
                 selected_tbox = targets[i][:, 2:6] * pre_gen_gains[i]
                 selected_tbox[:, :2] -= grid
-                try:
-                    iou = bbox_iou(
-                        pbox.T,
-                        selected_tbox.T,
-                        x1y1x2y2=False,
-                        ciou=True,
-                        eps=1e-7)  # iou(prediction, target)
-                except:
-                    print(
-                        'iou = bbox_iou(pbox.T, selected_tbox, x1y1x2y2=False, ciou=True)'
-                    )
-                    embed()
-                lbox += (1.0 - iou).mean()  # iou loss
+                iou = bbox_iou(
+                    pbox.T,
+                    selected_tbox.T,
+                    x1y1x2y2=False,
+                    ciou=True,
+                    eps=1e-7)
+                lbox += (1.0 - iou).mean()
 
                 # Objectness
                 #tobj[b, a, gj, gi] = (1.0 - self.gr) + self.gr * iou.detach().clamp(0).type(tobj.dtype)  # iou ratio
@@ -589,30 +585,19 @@ class YOLOv7Loss(nn.Layer):
         return y
 
     def box_iou(self, box1, box2):
-        # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
         """
-        Return intersection-over-union (Jaccard index) of boxes.
-        Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
-        Arguments:
-            box1 (Tensor[N, 4])
-            box2 (Tensor[M, 4])
-        Returns:
-            iou (Tensor[N, M]): the NxM matrix containing the pairwise
-                IoU values for every element in boxes1 and boxes2
+        [N, 4] [M, 4] to get [N, M] ious, boxes in (x1, y1, x2, y2) format.
         """
 
         def box_area(box):
-            # box = 4xn
             return (box[2] - box[0]) * (box[3] - box[1])
 
         area1 = box_area(box1.T)
         area2 = box_area(box2.T)
-
         # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
         inter = (paddle.minimum(box1[:, None, 2:], box2[:, 2:]) -
                  paddle.maximum(box1[:, None, :2], box2[:, :2])).clip(0).prod(2)
-        return inter / (area1[:, None] + area2 - inter
-                        )  # iou = inter / (area1 + area2 - inter)
+        return inter / (area1[:, None] + area2 - inter)
 
     def build_targets(self, p, targets, imgs, anchors):
         # [8, 3, 80, 80, 85] [8, 3, 40, 40, 85] [8, 3, 20, 20, 85], targets [22, 6], imgs [8, 3, 640, 640]
@@ -747,8 +732,8 @@ class YOLOv7Loss(nn.Layer):
             for gt_idx in range(num_gt):
                 _, pos_idx = paddle.topk(
                     cost[gt_idx], k=dynamic_ks[gt_idx].item(), largest=False)
-                matching_matrix[
-                    gt_idx, pos_idx] = 1.0  # shit bug, not [gt_idx][pos_idx]
+                matching_matrix[gt_idx, pos_idx] = 1.0
+                # an index bug, not [gt_idx][pos_idx]
             del top_k, dynamic_ks
 
             anchor_matching_gt = matching_matrix.sum(0)
@@ -845,7 +830,7 @@ class YOLOv7Loss(nn.Layer):
                 # Matches
                 r = t[:, :, 4:6] / anchors[:, None]  # wh ratio # [3, 22, 2]
                 j = paddle.maximum(r, 1. / r).max(2) < self.anchor_t  # compare
-                ### j = torch.max(r, 1. / r).max(2)[0] < self.hyp['anchor_t']  # compare
+                # j = torch.max(r, 1. / r).max(2)[0]
                 t = t[j]  # filter
 
                 # Offsets
@@ -862,7 +847,7 @@ class YOLOv7Loss(nn.Layer):
                 offsets = 0
 
             # Define
-            b, c = t[:, :2].astype(np.int64).T  # image, class
+            b, c = t[:, :2].astype(np.int64).T
             gxy = t[:, 2:4]  # grid xy
             # gwh = t[:, 4:6]  # grid wh no use
             gij = (gxy - offsets).astype(np.int64)

@@ -9,14 +9,9 @@ log_iter: 100
 snapshot_epoch: 10
 weights: output/yolov7_tiny_300e_coco/model_final
 
+arch: 'tiny'
+act: 'LeakyReLU'
 
-ELANNet:
-  arch: 'tiny'
-  act: 'LeakyReLU'
-
-ELANFPN:
-  arch: 'tiny'
-  act: 'LeakyReLU'
 
 YOLOv7Head:
   anchors: [[12, 16], [19, 36], [40, 28],

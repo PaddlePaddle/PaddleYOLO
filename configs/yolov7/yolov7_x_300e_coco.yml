@@ -9,9 +9,4 @@ log_iter: 100
 snapshot_epoch: 10
 weights: output/yolov7_x_300e_coco/model_final
 
-
-ELANNet:
-  arch: 'X'
-
-ELANFPN:
-  arch: 'X'
+arch: 'X'
