@@ -12,4 +12,4 @@ weights: output/yolov7p6_e6e_300e_coco/model_final
 arch: 'E6E'
 
 TrainReader:
-  batch_size: 16
+  batch_size: 8

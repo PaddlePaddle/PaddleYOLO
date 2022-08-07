@@ -23,7 +23,7 @@
 | YOLOv7P6-W6     |  1280    |    16      |   300e    |     25.5    |  -  | - |  70.43  | 180.13 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_w6_300e_coco.pdparams) | [配置文件](./yolov7p6_w6_300e_coco.yml) |
 | YOLOv7P6-E6     |  1280    |    16      |   300e    |     31.1    |  -  | - |  97.25  | 257.70 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6_300e_coco.pdparams) | [配置文件](./yolov7p6_e6_300e_coco.yml) |
 | YOLOv7P6-D6     |  1280    |    16      |   300e    |     37.4    |  -  | - |  133.81  | 351.46 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_d6_300e_coco.pdparams) | [配置文件](./yolov7p6_d6_300e_coco.yml) |
-| YOLOv7P6-E6E    |  1280    |    16      |   300e    |     -    |  -  | - |  -  | - | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6e_300e_coco.pdparams) | [配置文件](./yolov7p6_e6e_300e_coco.yml) |
+| YOLOv7P6-E6E    |  1280    |    16      |   300e    |     -       |  -  | - |  151.76  | 421.76 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6e_300e_coco.pdparams) | [配置文件](./yolov7p6_e6e_300e_coco.yml) |
 
 #### tiny模型
 

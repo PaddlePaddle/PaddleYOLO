@@ -20,7 +20,7 @@ from ppdet.modeling.layers import DropBlock
 from ppdet.modeling.ops import get_act_fn
 from ..backbones.darknet import ConvBNLayer
 from ..shape_spec import ShapeSpec
-from ..backbones.csp_darknet import BaseConv, DWConv, CSPLayer, ELANLayer, MPConvLayer, RepConv, DownC
+from ..backbones.csp_darknet import BaseConv, DWConv, CSPLayer, ELANLayer, ELAN2Layer, MPConvLayer, RepConv, DownC
 from ..backbones.cspresnet import RepVggBlock
 
 __all__ = [
@@ -1293,7 +1293,7 @@ class ELANFPNP6(nn.Layer):
         'W6': [-1, -2, -3, -4, -5, -6],
         'E6': [-1, -2, -3, -4, -5, -6, -7, -8],
         'D6': [-1, -2, -3, -4, -5, -6, -7, -8, -9, -10],
-        'E6E': [-1, -3, -5, -7, -8],
+        'E6E': [-1, -2, -3, -4, -5, -6, -7, -8],
     }
     num_blocks = {'W6': 4, 'E6': 6, 'D6': 8, 'E6E': 6}
 
@@ -1322,13 +1322,14 @@ class ELANFPNP6(nn.Layer):
             self.in_channels_aux = chs_aux
             self._out_channels = self._out_channels + [320, 640, 960, 1280]
         self.upsample = nn.Upsample(scale_factor=2, mode="nearest")
+        ELANBlock = ELAN2Layer if self.arch in ['E6E'] else ELANLayer
 
         in_ch, mid_ch1, mid_ch2, out_ch = ch_settings[0][:]
         self.lateral_conv1 = BaseConv(
             self.in_channels[3], out_ch, 1, 1, act=act)  # 512->384
         self.route_conv1 = BaseConv(
             self.in_channels[2], out_ch, 1, 1, act=act)  # 768->384
-        self.elan_fpn1 = ELANLayer(
+        self.elan_fpn1 = ELANBlock(
             out_ch * 2,
             mid_ch1,
             mid_ch2,
@@ -1342,7 +1343,7 @@ class ELANFPNP6(nn.Layer):
         self.lateral_conv2 = BaseConv(in_ch, out_ch, 1, 1, act=act)  # 384->256
         self.route_conv2 = BaseConv(
             self.in_channels[1], out_ch, 1, 1, act=act)  # 512->256
-        self.elan_fpn2 = ELANLayer(
+        self.elan_fpn2 = ELANBlock(
             out_ch * 2,
             mid_ch1,
             mid_ch2,
@@ -1356,7 +1357,7 @@ class ELANFPNP6(nn.Layer):
         self.lateral_conv3 = BaseConv(in_ch, out_ch, 1, 1, act=act)  # 256->128
         self.route_conv3 = BaseConv(
             self.in_channels[0], out_ch, 1, 1, act=act)  # 256->128
-        self.elan_fpn3 = ELANLayer(
+        self.elan_fpn3 = ELANBlock(
             out_ch * 2,
             mid_ch1,
             mid_ch2,
@@ -1373,7 +1374,7 @@ class ELANFPNP6(nn.Layer):
             self.down_conv1 = DownC(in_ch, out_ch, 2, act=act)
         else:
             raise AttributeError("Unsupported arch type: {}".format(self.arch))
-        self.elan_pan1 = ELANLayer(
+        self.elan_pan1 = ELANBlock(
             out_ch * 2,
             mid_ch1,
             mid_ch2,
@@ -1390,7 +1391,7 @@ class ELANFPNP6(nn.Layer):
             self.down_conv2 = DownC(in_ch, out_ch, 2, act=act)
         else:
             raise AttributeError("Unsupported arch type: {}".format(self.arch))
-        self.elan_pan2 = ELANLayer(
+        self.elan_pan2 = ELANBlock(
             out_ch * 2,
             mid_ch1,
             mid_ch2,
@@ -1407,7 +1408,7 @@ class ELANFPNP6(nn.Layer):
             self.down_conv3 = DownC(in_ch, out_ch, 2, act=act)
         else:
             raise AttributeError("Unsupported arch type: {}".format(self.arch))
-        self.elan_pan3 = ELANLayer(
+        self.elan_pan3 = ELANBlock(
             out_ch + self.in_channels[3],  # concat([pan_out2_down, c6], 1)
             mid_ch1,
             mid_ch2,

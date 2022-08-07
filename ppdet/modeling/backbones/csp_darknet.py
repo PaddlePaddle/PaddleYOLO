@@ -483,6 +483,31 @@ class ELANLayer(nn.Layer):
         return y
 
 
+class ELAN2Layer(nn.Layer):
+    """ELAN2 layer used in YOLOv7-E6E"""
+
+    def __init__(self,
+                 in_channels,
+                 mid_channels1,
+                 mid_channels2,
+                 out_channels,
+                 num_blocks=4,
+                 concat_list=[-1, -3, -5, -6],
+                 depthwise=False,
+                 bias=False,
+                 act="silu"):
+        super(ELAN2Layer, self).__init__()
+        self.elan_layer1 = ELANLayer(in_channels, mid_channels1, mid_channels2,
+                                     out_channels, num_blocks, concat_list,
+                                     depthwise, bias, act)
+        self.elan_layer2 = ELANLayer(in_channels, mid_channels1, mid_channels2,
+                                     out_channels, num_blocks, concat_list,
+                                     depthwise, bias, act)
+
+    def forward(self, x):
+        return self.elan_layer1(x) + self.elan_layer2(x)
+
+
 class MPConvLayer(nn.Layer):
     """MPConvLayer used in YOLOv7"""
 
@@ -878,7 +903,7 @@ class ELANNet(nn.Layer):
         self.return_idx = return_idx
         Conv = DWConv if depthwise else BaseConv
 
-        ch_settings = self.ch_settings[arch]  # * width_mult
+        ch_settings = self.ch_settings[arch]
         mid_ch_settings = self.mid_ch_settings[arch]
         concat_list_settings = self.concat_list_settings[arch]
         num_blocks = self.num_blocks[arch]
@@ -906,14 +931,15 @@ class ELANNet(nn.Layer):
             ])
             layers_num = 2
         elif self.arch in ['W6', 'E6', 'D6', 'E6E']:
+            # ReOrg
             self.stem = Focus(3, ch_out, 3, 1, bias=False, act=act)
             layers_num = 2
         else:
             raise AttributeError("Unsupported arch type: {}".format(self.arch))
 
         self._out_channels = [chs[-1] for chs in ch_settings]
-        self._out_channels[
-            -1] //= 2  # for SPPCSPC(L,X,W6,E6,D6,E6E) or SPPELAN(tiny)
+        # for SPPCSPC(L,X,W6,E6,D6,E6E) or SPPELAN(tiny)
+        self._out_channels[-1] //= 2
         self._out_channels = [self._out_channels[i] for i in self.return_idx]
         self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
 
@@ -993,9 +1019,10 @@ class ELANNet(nn.Layer):
                 elan_in_ch = in_ch * 2
             if self.arch in ['W6', 'E6', 'D6', 'E6E']:
                 elan_in_ch = out_ch
+            ELANBlock = ELAN2Layer if self.arch in ['E6E'] else ELANLayer
             elan_layer = self.add_sublayer(
                 'layers{}.stage{}.elan_layer'.format(layers_num, i + 1),
-                ELANLayer(
+                ELANBlock(
                     elan_in_ch,
                     mid_ch_settings[i][0],
                     mid_ch_settings[i][1],
