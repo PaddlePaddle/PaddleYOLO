@@ -489,11 +489,6 @@ class YOLOv7Loss(nn.Layer):
             pi = pi.reshape((bs, self.na, ch // self.na, h, w)).transpose(
                 (0, 1, 3, 4, 2))
             inputs.append(pi)
-            #print(i, pi.shape, pi.sum())
-            #np.save('p{}.npy'.format(i), pi)
-        # 0 [8, 3, 80, 80, 85] [-91915176.]
-        # 1 [8, 3, 40, 40, 85] [-23893948.]
-        # 2 [8, 3, 20, 20, 85] [-6398980.]
 
         batch_size = head_outs[0].shape[0]
         img_idx = []
@@ -511,8 +506,6 @@ class YOLOv7Loss(nn.Layer):
                 gt_targets['gt_bbox'], axis=0), 'float32')
         targets = paddle.concat(
             [yolov7_gt_index, yolov7_gt_class, yolov7_gt_bbox], 1)
-        #print('targets: ', targets.shape, targets.sum()) # [22, 6] [-6398980.]
-        #np.save('targets.npy', targets)
 
         lcls, lbox, lobj = paddle.zeros([1]), paddle.zeros([1]), paddle.zeros(
             [1])
@@ -547,19 +540,17 @@ class YOLOv7Loss(nn.Layer):
                 lbox += (1.0 - iou).mean()
 
                 # Objectness
-                #tobj[b, a, gj, gi] = (1.0 - self.gr) + self.gr * iou.detach().clamp(0).type(tobj.dtype)  # iou ratio
                 score_iou = paddle.cast(iou.detach().clip(0), tobj.dtype)
                 with paddle.no_grad():
-                    tobj[b, a, gj, gi] = (1.0 - self.gr
-                                          ) + self.gr * score_iou  # iou ratio
+                    tobj[b, a, gj, gi] = (1.0 - self.gr) + self.gr * score_iou
 
                 # Classification
-                selected_tcls = paddle.cast(targets[i][:, 1], 'int64')  #
+                selected_tcls = paddle.cast(targets[i][:, 1], 'int64')
                 if self.num_classes > 1:  # cls loss (only if multiple classes)
                     t = paddle.full_like(ps[:, 5:],
                                          self.cls_neg_label)  # targets
                     t[range(n), selected_tcls] = self.cls_pos_label
-                    lcls += self.BCEcls(ps[:, 5:], t)  # BCE
+                    lcls += self.BCEcls(ps[:, 5:], t)
 
             obji = self.BCEobj(pi[:, :, :, :, 4], tobj)
             lobj += obji * self.balance[i]  # obj loss
@@ -576,17 +567,17 @@ class YOLOv7Loss(nn.Layer):
         return yolo_losses
 
     def xywh2xyxy(self, x):
-        # Convert nx4 boxes from [x, y, w, h] to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
-        y = x.clone()  #if isinstance(x, torch.Tensor) else np.copy(x)
-        y[:, 0] = x[:, 0] - x[:, 2] / 2  # top left x
-        y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
-        y[:, 2] = x[:, 0] + x[:, 2] / 2  # bottom right x
-        y[:, 3] = x[:, 1] + x[:, 3] / 2  # bottom right y
+        # [x, y, w, h] to [x1, y1, x2, y2]
+        y = x.clone()  # Tensor not numpy
+        y[:, 0] = x[:, 0] - x[:, 2] / 2
+        y[:, 1] = x[:, 1] - x[:, 3] / 2
+        y[:, 2] = x[:, 0] + x[:, 2] / 2
+        y[:, 3] = x[:, 1] + x[:, 3] / 2
         return y
 
     def box_iou(self, box1, box2):
         """
-        [N, 4] [M, 4] to get [N, M] ious, boxes in (x1, y1, x2, y2) format.
+        [N, 4] [M, 4] to get [N, M] ious, boxes in [x1, y1, x2, y2] format.
         """
 
         def box_area(box):
@@ -594,14 +585,11 @@ class YOLOv7Loss(nn.Layer):
 
         area1 = box_area(box1.T)
         area2 = box_area(box2.T)
-        # inter(N,M) = (rb(N,M,2) - lt(N,M,2)).clamp(0).prod(2)
         inter = (paddle.minimum(box1[:, None, 2:], box2[:, 2:]) -
                  paddle.maximum(box1[:, None, :2], box2[:, :2])).clip(0).prod(2)
         return inter / (area1[:, None] + area2 - inter)
 
     def build_targets(self, p, targets, imgs, anchors):
-        # [8, 3, 80, 80, 85] [8, 3, 40, 40, 85] [8, 3, 20, 20, 85], targets [22, 6], imgs [8, 3, 640, 640]
-        # [-91915176.] [-23893948.] [-6398980.]
         indices, anch = self.find_3_positive(p, targets, anchors)
 
         matching_bs = [[] for pp in p]
@@ -617,7 +605,7 @@ class YOLOv7Loss(nn.Layer):
             this_target = targets[b_idx]
             if this_target.shape[0] == 0:
                 continue
-            txywh = this_target[:, 2:6] * imgs[batch_idx].shape[1]  # 640
+            txywh = this_target[:, 2:6] * imgs[batch_idx].shape[1]  # get 640
             txyxy = self.xywh2xyxy(txywh)
 
             pxyxys, p_cls, p_obj = [], [], []
@@ -627,13 +615,10 @@ class YOLOv7Loss(nn.Layer):
 
             empty_feats_num = 0
             for i, pi in enumerate(p):
-                #b, a, gj, gi = indices[i]
                 idx = (indices[i][0] == batch_idx)
                 if idx.sum() == 0:
                     empty_feats_num += 1
-                    # print('batch_idx {} level {} empty: '.format(batch_idx, i))
                     continue
-                #b, a, gj, gi = b[idx], a[idx], gj[idx], gi[idx]
                 b, a, gj, gi = indices[i][0][idx], indices[i][1][idx], indices[
                     i][2][idx], indices[i][3][idx]
                 all_b.append(b)
@@ -643,14 +628,10 @@ class YOLOv7Loss(nn.Layer):
                 all_anch.append(anch[i][idx])
                 from_which_layer.append(paddle.ones([len(b)]) * i)
 
-                try:
-                    fg_pred = pi[b, a, gj, gi]  #
-                    if len(fg_pred.shape) == 1:
-                        fg_pred = fg_pred.unsqueeze(0)
-                except:
-                    print('batch_idx: {}, fg_pred = pi[b, a, gj, gi]'.format(
-                        batch_idx), b)
-                    embed()
+                fg_pred = pi[b, a, gj, gi]
+                if len(fg_pred.shape) == 1:  # paddle2.3 index
+                    fg_pred = fg_pred.unsqueeze(0)
+
                 p_obj.append(fg_pred[:, 4:5])
                 p_cls.append(fg_pred[:, 5:])
 
@@ -663,12 +644,12 @@ class YOLOv7Loss(nn.Layer):
                 pxyxy = self.xywh2xyxy(pxywh)
                 pxyxys.append(pxyxy)
 
-            if empty_feats_num == 3:
-                # print('batch_idx: {}, empty_feats_num == 3'.format(batch_idx))
+            if empty_feats_num == 3:  # note
                 continue
             pxyxys = paddle.concat(pxyxys, 0)
             if pxyxys.shape[0] == 0:
                 continue
+
             p_obj = paddle.concat(p_obj, 0)
             p_cls = paddle.concat(p_cls, 0)
             from_which_layer = paddle.concat(from_which_layer, 0)
@@ -678,13 +659,13 @@ class YOLOv7Loss(nn.Layer):
             all_gi = paddle.concat(all_gi, 0)
             all_anch = paddle.concat(all_anch, 0)
 
-            pair_wise_iou = self.box_iou(txyxy, pxyxys)  ###
+            pair_wise_iou = self.box_iou(txyxy, pxyxys)
+            # [N, 4] [M, 4] to get [N, M] ious
 
             pair_wise_iou_loss = -paddle.log(pair_wise_iou + 1e-8)
 
             top_k, _ = paddle.topk(pair_wise_iou,
-                                   min(10, pair_wise_iou.shape[1]),
-                                   1)  # 28.37482071
+                                   min(10, pair_wise_iou.shape[1]), 1)
             dynamic_ks = paddle.clip(
                 paddle.cast(paddle.floor(top_k.sum(1)), 'int32'), min=1)
 
@@ -692,74 +673,44 @@ class YOLOv7Loss(nn.Layer):
                 F.one_hot(
                     paddle.cast(this_target[:, 1], 'int32'),
                     self.num_classes).unsqueeze(1), [1, pxyxys.shape[0], 1]))
-            # [3, 48, 80] 144.
 
             num_gt = this_target.shape[0]
             cls_preds_ = (
                 F.sigmoid(paddle.tile(p_cls.unsqueeze(0), [num_gt, 1, 1])) *
                 F.sigmoid(paddle.tile(p_obj.unsqueeze(0), [num_gt, 1, 1])))
-            # [3, 48, 80] 53.36702728
 
-            y = cls_preds_.sqrt_()  # 83.95690918
+            y = cls_preds_.sqrt_()
             pair_wise_cls_loss = F.binary_cross_entropy_with_logits(
                 paddle.log(y / (1 - y)), gt_cls_per_image,
                 reduction="none").sum(-1)
-            # [3, 48] 671.70153809
             del cls_preds_
 
             cost = (pair_wise_cls_loss + 3.0 * pair_wise_iou_loss)
-            '''
-            matching_matrix = paddle.zeros_like(cost) # [3. 48]
-            for gt_idx in range(num_gt):
-                _, pos_idx = paddle.topk(
-                    cost[gt_idx], k=dynamic_ks[gt_idx].item(), largest=False
-                )
-                matching_matrix[gt_idx, pos_idx] = 1.0 # shit bug, not [gt_idx][pos_idx]
-            del top_k, dynamic_ks
-            anchor_matching_gt = matching_matrix.sum(0)
-            if (anchor_matching_gt > 1).sum() > 0:
-                _, cost_argmin = paddle.min(cost[:, anchor_matching_gt > 1], 0)
-                matching_matrix[:, anchor_matching_gt > 1] *= 0.0
-                matching_matrix[cost_argmin, anchor_matching_gt > 1] = 1.0
-            fg_mask_inboxes = paddle.cast((matching_matrix.sum(0) > 0.0) * 1.0, 'int64') # bool index bug
-            matched_gt_inds = matching_matrix[fg_mask_inboxes].argmax(0)
-            #matched_gt_inds = matching_matrix[paddle.tile(fg_mask_inboxes, [len(fg_mask_inboxes), 1])].argmax(0)
-            paddle.masked_select(matching_matrix, paddle.tile(fg_mask_inboxes.unsqueeze(0), [len(matching_matrix), 1])))
-            paddle.masked_select(matching_matrix, paddle.tile(fg_mask_inboxes.unsqueeze(0), [len(matching_matrix), 1])))
-            paddle.gather(matching_matrix, fg_mask_inboxes.unsqueeze(0))
-            '''
+
             matching_matrix = np.zeros(cost.shape)  # [3. 48]
             for gt_idx in range(num_gt):
                 _, pos_idx = paddle.topk(
                     cost[gt_idx], k=dynamic_ks[gt_idx].item(), largest=False)
                 matching_matrix[gt_idx, pos_idx] = 1.0
-                # an index bug, not [gt_idx][pos_idx]
+                # paddle2.3 index. not [gt_idx][pos_idx], diff with torch
             del top_k, dynamic_ks
 
             anchor_matching_gt = matching_matrix.sum(0)
-            # print('batch_idx: no ifelse {}'.format(batch_idx), cost.shape, cost.sum(), (anchor_matching_gt > 1).sum())
             if (anchor_matching_gt > 1).sum() > 0:
-                try:
-                    # cost.shape [6, 101] # when batch_idx==7
-                    cost_argmin = np.argmin(
-                        cost.numpy()[:, anchor_matching_gt > 1], 0)
-                    #print('batch_idx: {}'.format(batch_idx), cost.shape, cost.sum())
-                except:
-                    print('batch_idx: {}, cost_argmin bug'.format(batch_idx))
-                    embed()
+                cost_argmin = np.argmin(cost.numpy()[:, anchor_matching_gt > 1],
+                                        0)
 
                 matching_matrix[:, anchor_matching_gt > 1] *= 0.0
                 matching_matrix[cost_argmin, anchor_matching_gt > 1] = 1.0
-            fg_mask_inboxes = matching_matrix.sum(0) > 0.0  # [48]
-            matched_gt_inds = matching_matrix[:, fg_mask_inboxes].argmax(
-                0)  # [27]
+            fg_mask_inboxes = matching_matrix.sum(0) > 0.0
+            matched_gt_inds = matching_matrix[:, fg_mask_inboxes].argmax(0)
 
             from_which_layer = from_which_layer[fg_mask_inboxes]
             all_b = all_b[fg_mask_inboxes]
             all_a = all_a[fg_mask_inboxes]
             all_gj = all_gj[fg_mask_inboxes]
             all_gi = all_gi[fg_mask_inboxes]
-            all_anch = all_anch[fg_mask_inboxes]  # [27, 2]
+            all_anch = all_anch[fg_mask_inboxes]
 
             this_target = this_target[matched_gt_inds]
             if len(this_target.shape) == 1:
@@ -767,21 +718,16 @@ class YOLOv7Loss(nn.Layer):
 
             for i in range(nl):
                 layer_idx = from_which_layer == i
-                if layer_idx.sum() == 0:  # single gpu ok, but multi-gpu may bug
-                    #print('layer_idx.sum() == 0:')
-                    #matching_targets[i].append([])
-                    #embed()
+                if layer_idx.sum() == 0:  # note
                     continue
                 matching_bs[i].append(all_b[layer_idx])
                 matching_as[i].append(all_a[layer_idx])
                 matching_gjs[i].append(all_gj[layer_idx])
                 matching_gis[i].append(all_gi[layer_idx])
-                try:
-                    matching_targets[i].append(this_target[layer_idx])
-                    matching_anchs[i].append(all_anch[layer_idx])
-                except:
-                    print('layer_idx = from_which_layer == i')
-                    embed()
+
+                # note: be careful
+                matching_targets[i].append(this_target[layer_idx])
+                matching_anchs[i].append(all_anch[layer_idx])
 
         for i in range(nl):
             if matching_targets[i] != []:
@@ -801,46 +747,38 @@ class YOLOv7Loss(nn.Layer):
 
         return matching_bs, matching_as, matching_gjs, matching_gis, matching_targets, matching_anchs
 
-    def find_3_positive(self, p, targets, all_anchors):  # targets [143, 6]
-        # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
+    def find_3_positive(self, p, targets, all_anchors):
         na, nt = self.na, targets.shape[0]  # number of anchors, targets
         indices, anch = [], []
         gain = paddle.ones([7])  # normalized to gridspace gain
-        #gain = np.ones(7, dtype=np.float32)  # normalized to gridspace gain
         ai = paddle.tile(paddle.arange(na).reshape([na, 1]), [1, nt]) * 1.0
-        # ai = np.tile(
-        #     np.arange(
-        #         na, dtype=np.float32).reshape(na, 1),
-        #     [1, nt])  # same as .repeat_interleave(nt)
         targets = paddle.concat((paddle.tile(targets, [na, 1, 1]),
                                  ai.unsqueeze(-1)), 2)  # append anchor indices
 
         g = 0.5  # bias
         off = paddle.to_tensor(self.off)
 
-        for i in range(len(p)):  # for i in range(self.nl):
+        for i in range(len(p)):
             anchors = all_anchors[i] / self.downsample_ratios[i]
             gain[2:6] = paddle.to_tensor(
                 p[i].shape, dtype=np.float32)[[3, 2, 3, 2]]  # xyxy gain
-            # [1. , 1. , 80., 80., 80., 80., 1. ]
 
             # Match targets to anchors
             t = targets * gain
             if nt:
                 # Matches
-                r = t[:, :, 4:6] / anchors[:, None]  # wh ratio # [3, 22, 2]
+                r = t[:, :, 4:6] / anchors[:, None]  # wh ratio
                 j = paddle.maximum(r, 1. / r).max(2) < self.anchor_t  # compare
                 # j = torch.max(r, 1. / r).max(2)[0]
                 t = t[j]  # filter
 
                 # Offsets
-                gxy = t[:, 2:4]  # grid xy # [3, 2, 7]
+                gxy = t[:, 2:4]  # grid xy
                 gxi = gain[[2, 3]] - gxy  # inverse
                 j, k = ((gxy % 1. < g) & (gxy > 1.)).T
                 l, m = ((gxi % 1. < g) & (gxi > 1.)).T
                 j = np.stack([np.ones_like(j), j, k, l, m])
-                t = paddle.to_tensor(np.tile(t, [5, 1, 1])[j])  # (5, 23, 7)[j]
-                ### todo
+                t = paddle.to_tensor(np.tile(t, [5, 1, 1])[j])
                 offsets = (paddle.zeros_like(gxy)[None] + off[:, None])[j]
             else:
                 t = targets[0]
@@ -855,8 +793,9 @@ class YOLOv7Loss(nn.Layer):
 
             # Append
             a = t[:, 6].astype(np.int64)  # anchor indices
-            indices.append((b, a, gj.clip(0, gain[3] - 1), gi.clip(
-                0, gain[2] - 1)))  # image, anchor, grid indices
-            anch.append(anchors[a])  # anchors
+            indices.append((b, a, gj.clip(0, gain[3] - 1),
+                            gi.clip(0, gain[2] - 1)))
+            # bs, anchor, gj, gi
+            anch.append(anchors[a])
 
         return indices, anch

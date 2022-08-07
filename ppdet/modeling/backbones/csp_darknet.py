@@ -422,11 +422,11 @@ class CSPDarkNet(nn.Layer):
         ]
 
 
-##### yolov7 ####
+##### YOLOv7 ####
 
 
 class ELANLayer(nn.Layer):
-    """ELAN layer used in YOLOv7"""
+    """ELAN layer used in YOLOv7, like CSPLayer(C3) in YOLOv5/YOLOX"""
 
     def __init__(self,
                  in_channels,
@@ -561,7 +561,6 @@ class DownC(nn.Layer):
 
 
 class SPPCSPC(nn.Layer):
-    # CSP https://github.com/WongKinYiu/CrossStagePartialNetworks
     def __init__(self, c1, c2, g=1, e=0.5, k=(5, 9, 13), act='silu'):
         super(SPPCSPC, self).__init__()
         c_ = int(2 * c2 * e)  # hidden channels
@@ -586,7 +585,6 @@ class SPPCSPC(nn.Layer):
 
 
 class SPPELAN(nn.Layer):
-    # CSP https://github.com/WongKinYiu/CrossStagePartialNetworks
     def __init__(self, c1, c2, g=1, e=0.5, k=(5, 9, 13), act='silu'):
         super(SPPELAN, self).__init__()
         c_ = int(2 * c2 * e)  # hidden channels

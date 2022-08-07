@@ -4,10 +4,8 @@ model_type=yolov7
 job_name=yolov7p6_${name}_300e_coco
 config=configs/${model_type}/${job_name}.yml
 log_dir=log_dir/${job_name}
-weights=https://bj.bcebos.com/v1/paddledet/models/yolov7p6_${name}_300e_coco.pdparams
-weights=../yolov7_tools/yolov7p6_${name}_300e_coco.pdparams
-
-#python3.7 dygraph_print.py -c ${config} 2>&1 | tee yolov7_${name}_dy_print.txt
+#weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
+#weights=output/${job_name}/model_final.pdparams
 
 # 1. training
 #CUDA_VISIBLE_DEVICES=0 python3.7 tools/train.py -c ${config} --amp --eval #-r ${weights}
@@ -28,6 +26,8 @@ python3.7 -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6
 # 6. deploy speed
 #CUDA_VISIBLE_DEVICES=3 python3.7 deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU --run_benchmark=True #--run_mode=trt_fp16
 
-# 7. onnx speed
+# 7. onnx
 #paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmodel --params_filename model.pdiparams --opset_version 12 --save_file ${job_name}.onnx
+
+# 8. onnx speed
 #/usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp16

@@ -580,7 +580,10 @@ class YOLOv5Head(nn.Layer):
 
 @register
 class YOLOv7Head(nn.Layer):
-    __shared__ = ['num_classes', 'data_format', 'use_aux', 'trt', 'exclude_nms']
+    __shared__ = [
+        'num_classes', 'data_format', 'use_aux', 'use_implicit', 'trt',
+        'exclude_nms'
+    ]
     __inject__ = ['loss', 'nms']
 
     def __init__(
@@ -592,7 +595,7 @@ class YOLOv7Head(nn.Layer):
             anchor_masks=[[0, 1, 2], [3, 4, 5], [6, 7, 8]],
             stride=[8, 16, 32],
             use_aux=False,
-            use_implicit=False,  # True,
+            use_implicit=False,  # True # TODO
             loss='YOLOv7Loss',
             data_format='NCHW',
             nms='MultiClassNMS',

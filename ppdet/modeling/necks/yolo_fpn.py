@@ -1136,7 +1136,7 @@ class ELANFPN(nn.Layer):
             act='silu',
             trt=False):
         super(ELANFPN, self).__init__()
-        self.in_channels = in_channels  # * width_mult
+        self.in_channels = in_channels
         self.arch = arch
         concat_list = self.concat_list_settings[arch]
         num_blocks = self.num_blocks[arch]
@@ -1219,13 +1219,12 @@ class ELANFPN(nn.Layer):
         [c3, c4, c5] = feats  # 24  37  51
         # [8, 512, 80, 80] [8, 1024, 40, 40] [8, 512, 20, 20]
 
-        # top-down FPN
+        # Top-Down FPN
         p5_lateral = self.lateral_conv1(c5)  # 512->256
         p5_up = self.upsample(p5_lateral)
         route_c4 = self.route_conv1(c4)  # 1024->256 # route
         f_out1 = paddle.concat([route_c4, p5_up], 1)  # 512 # [8, 512, 40, 40]
         fpn_out1 = self.elan_fpn1(f_out1)  # 512 -> 128*4 + 256*2 -> 1024 -> 256
-        # print('63  fpn_out1 ', fpn_out1.shape, fpn_out1.sum())
         # 63
 
         fpn_out1_lateral = self.lateral_conv2(fpn_out1)  # 256->128
@@ -1233,24 +1232,22 @@ class ELANFPN(nn.Layer):
         route_c3 = self.route_conv2(c3)  # 512->128 # route
         f_out2 = paddle.concat([route_c3, fpn_out1_up], 1)  # 256
         fpn_out2 = self.elan_fpn2(f_out2)  # 256 -> 64*4 + 128*2 -> 512 -> 128
-        # 75
+        # layer 75: [8, 128, 80, 80]
 
-        # buttom-up PAN
+        # Buttom-Up PAN
         p_out1_down = self.mp_conv1(fpn_out2)  # 128
         p_out1 = paddle.concat([p_out1_down, fpn_out1], 1)  # 128*2 + 256 -> 512
         pan_out1 = self.elan_pan1(p_out1)  # 512 -> 128*4 + 256*2 -> 1024 -> 256
-        # 88
+        # layer 88: [8, 256, 40, 40]
 
         pan_out1_down = self.mp_conv2(pan_out1)  # 256
         p_out2 = paddle.concat([pan_out1_down, c5], 1)  # 256*2 + 512 -> 1024
         pan_out2 = self.elan_pan2(
             p_out2)  # 1024 -> 256*4 + 512*2 -> 2048 -> 512
-        # 101
+        # layer 101: [8, 512, 20, 20]
 
-        pan_outs = [fpn_out2, pan_out1, pan_out2]  # 75 88 101
-        # for x in pan_outs: print('/// 75 88 101 pan_outs:', x.shape, x.sum())
-        # # [8, 128, 80, 80] [8, 256, 40, 40] [8, 512, 20, 20]
         outputs = []
+        pan_outs = [fpn_out2, pan_out1, pan_out2]  # 75 88 101
         for i, out in enumerate(pan_outs):
             outputs.append(self.repconvs[i](out))
         return outputs
@@ -1309,7 +1306,7 @@ class ELANFPNP6(nn.Layer):
             act='silu',
             trt=False):
         super(ELANFPNP6, self).__init__()
-        self.in_channels = in_channels  # * width_mult
+        self.in_channels = in_channels
         self.arch = arch
         self.use_aux = use_aux
         concat_list = self.concat_list_settings[arch]
@@ -1435,13 +1432,13 @@ class ELANFPNP6(nn.Layer):
         [c3, c4, c5, c6] = feats  # 19 28 37 47
         # [8, 256, 160, 160] [8, 512, 80, 80] [8, 768, 40, 40] [8, 512, 20, 20]
 
-        # top-down FPN
+        # Top-Down FPN
         p6_lateral = self.lateral_conv1(c6)  # 512->384
         p6_up = self.upsample(p6_lateral)
         route_c5 = self.route_conv1(c5)  # 768->384 # route
         f_out1 = paddle.concat([route_c5, p6_up], 1)  # 768 # [8, 768, 40, 40]
         fpn_out1 = self.elan_fpn1(f_out1)  # 768 -> 192*4 + 384*2 -> 1536 -> 384
-        # print('59 fpn_out1 ', fpn_out1.shape, fpn_out1.sum()) # [8, 384, 40, 40]
+        # layer 59: [8, 384, 40, 40]
 
         fpn_out1_lateral = self.lateral_conv2(fpn_out1)  # 384->256
         fpn_out1_up = self.upsample(fpn_out1_lateral)
@@ -1449,43 +1446,40 @@ class ELANFPNP6(nn.Layer):
         f_out2 = paddle.concat([route_c4, fpn_out1_up],
                                1)  # 512 # [8, 512, 80, 80]
         fpn_out2 = self.elan_fpn2(f_out2)  # 512 -> 128*4 + 256*2 -> 1024 -> 256
-        # print('71 fpn_out2 ', fpn_out2.shape, fpn_out2.sum()) # [8, 256, 80, 80]
+        # layer 71: [8, 256, 80, 80]
 
         fpn_out2_lateral = self.lateral_conv3(fpn_out2)  # 256->128
         fpn_out2_up = self.upsample(fpn_out2_lateral)
         route_c3 = self.route_conv3(c3)  # 512->128 # route
         f_out3 = paddle.concat([route_c3, fpn_out2_up], 1)  # 256
         fpn_out3 = self.elan_fpn3(f_out3)  # 256 -> 64*4 + 128*2 -> 512 -> 128
-        # print('83 fpn_out3 ', fpn_out3.shape, fpn_out3.sum()) # [8, 128, 160, 160]
+        # layer 83: [8, 128, 160, 160]
 
-        # buttom-up PAN
+        # Buttom-Up PAN
         p_out1_down = self.down_conv1(fpn_out3)  # 128->256
         p_out1 = paddle.concat([p_out1_down, fpn_out2], 1)  # 256 + 256 -> 512
         pan_out1 = self.elan_pan1(p_out1)  # 512 -> 128*4 + 256*2 -> 1024 -> 256
-        # [8, 256, 80, 80]
-        # 93
+        # layer 93: [8, 256, 80, 80]
 
         pan_out1_down = self.down_conv2(pan_out1)  # 256->384
         p_out2 = paddle.concat([pan_out1_down, fpn_out1], 1)  # 384 + 384 -> 768
         pan_out2 = self.elan_pan2(p_out2)  # 768 -> 192*4 + 384*2 -> 1536 -> 384
-        # [8, 384, 40, 40]
-        # 103
+        # layer 103: [8, 384, 40, 40]
 
         pan_out2_down = self.down_conv3(pan_out2)  # 384->512
         p_out3 = paddle.concat([pan_out2_down, c6], 1)  # 512 + 512 -> 1024
         pan_out3 = self.elan_pan3(
             p_out3)  # 1024 -> 256*4 + 512*2 -> 2048 -> 512
-        # [8, 512, 20, 20]
-        # 113
+        # layer 113: [8, 512, 20, 20]
 
-        pan_outs = [fpn_out3, pan_out1, pan_out2, pan_out3]  # 83 93 103 113
-        # for x in pan_outs: print('/// 83 93 103 113 outs:', x.shape, x.sum())
         outputs = []
+        pan_outs = [fpn_out3, pan_out1, pan_out2, pan_out3]  # 83 93 103 113
         for i, out in enumerate(pan_outs):
             outputs.append(self.repconvs[i](out))
 
         if self.training and self.use_aux:
-            for i, out in enumerate([fpn_out3, fpn_out2, fpn_out1, c6]):
+            aux_outs = [fpn_out3, fpn_out2, fpn_out1, c6]  # 83 71 59 47
+            for i, out in enumerate(aux_outs):
                 outputs.append(self.repconvs_aux[i](out))
         return outputs
 
