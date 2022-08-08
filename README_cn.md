@@ -3,8 +3,8 @@
 此repository是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，包括`PP-YOLOE`,`YOLOX`,`YOLOv5`,`YOLOv7`，其upstream为PaddleDetection的[develop](https://github.com/PaddlePaddle/PaddleDetection/tree/develop)分支，并定期与PaddleDetection同步更新，包括github和gitee的代码，欢迎一起使用和建设！
 
 **注意:**
- - github链接为：https://github.com/nemonameless/PaddleDetection_YOLOv7
- - gitee链接为：https://gitee.com/nemonameless/PaddleDetection_YOLOv7
+ - github链接为：https://github.com/nemonameless/PaddleDetection_YOLOSeries
+ - gitee链接为：https://gitee.com/nemonameless/PaddleDetection_YOLOSeries
 
 
 ## ModelZoo on COCO
