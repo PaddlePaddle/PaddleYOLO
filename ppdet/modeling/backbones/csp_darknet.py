@@ -65,7 +65,7 @@ class BaseConv(nn.Layer):
             momentum=0.97,
             weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
             bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
-        self.act = get_activation(act)
+        # self.act = get_activation(act)
         self._init_weights()
 
     def _init_weights(self):
@@ -74,8 +74,8 @@ class BaseConv(nn.Layer):
     def forward(self, x):
         # use 'x * F.sigmoid(x)' replace 'silu'
         x = self.bn(self.conv(x))
-        y = self.act(x)
-        # y = x * F.sigmoid(x)
+        #y = self.act(x)
+        y = x * F.sigmoid(x)
         return y
 
 
@@ -648,7 +648,7 @@ class RepConv(nn.Layer):
         assert autopad(k, p) == 1
         padding_11 = autopad(k, p) - k // 2
 
-        self.act = get_activation(act)
+        # self.act = get_activation(act)
 
         if deploy:
             self.rbr_reparam = nn.Conv2D(
@@ -671,8 +671,8 @@ class RepConv(nn.Layer):
         # [8, 128, 80, 80] [8, 256, 40, 40] [8, 512, 20, 20]
         if hasattr(self, "rbr_reparam"):
             x = self.rbr_reparam(inputs)
-            y = self.act(x)
-            # y = x * F.sigmoid(x)
+            #y = self.act(x)
+            y = x * F.sigmoid(x)
             return y
 
         if self.rbr_identity is None:
@@ -681,8 +681,8 @@ class RepConv(nn.Layer):
             id_out = self.rbr_identity(inputs)
 
         x = self.rbr_dense(inputs) + self.rbr_1x1(inputs) + id_out
-        y = self.act(x)
-        # y = x * F.sigmoid(x)
+        #y = self.act(x)
+        y = x * F.sigmoid(x)
         return y
 
     def get_equivalent_kernel_bias(self):
