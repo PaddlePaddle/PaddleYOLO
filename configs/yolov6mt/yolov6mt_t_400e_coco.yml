@@ -1,0 +1,13 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  '_base_/optimizer_400e.yml',
+  '_base_/yolov6mt_efficientrep.yml',
+  '_base_/yolov6mt_reader.yml',
+]
+depth_mult: 0.25 # 0.33 in YOLOX-tiny
+width_mult: 0.50 # 0.375 in YOLOX-tiny
+
+log_iter: 100
+snapshot_epoch: 10
+weights: output/yolov6mt_t_400e_coco/model_final
