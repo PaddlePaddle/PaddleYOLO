@@ -51,7 +51,6 @@
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | YOLOv7-L        |  640     |    32      |   300e    |     7.4     |  51.0  | 70.2 |  37.62  | 53.04 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7_l_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_l_300e_coco.yml) |
 | YOLOv7-X        |  640     |    32      |   300e    |     12.2    |  53.0  | 70.8 |  71.34  | 95.04 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_x_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_x_300e_coco.yml) |
-| YOLOv7-l  ConvNeXt|  640   |    8       |   36e     |      -      |  -  | - |  44.58  | 18.79 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_x_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7_x_300e_coco.yml) |
 | YOLOv7P6-W6     |  1280    |    16      |   300e    |     25.5    |  54.4  | 71.8 |  70.43  | 180.13 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_w6_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_w6_300e_coco.yml) |
 | YOLOv7P6-E6     |  1280    |    16      |   300e    |     31.1    |  55.7  | 73.0 |  97.25  | 257.70 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_e6_300e_coco.yml) |
 | YOLOv7P6-D6     |  1280    |    16      |   300e    |     37.4    | 56.1  | 73.3 |  133.81  | 351.46 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_d6_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_d6_300e_coco.yml) |
@@ -74,38 +73,37 @@ PaddleDetection团队提供的下载链接为：[coco](https://bj.bcebos.com/v1/
 
 ### **一键全流程运行**:
 ```
-export FLAGS_allocator_strategy=auto_growth
+model_type=ppyoloe # 可修改，如 yolov7
+job_name=ppyoloe_crn_l_300e_coco # 可修改，如 yolov7_l_300e_coco
 
-model_type=ppyoloe
-job_name=ppyoloe_crn_l_300e_coco
 config=configs/${model_type}/${job_name}.yml
 log_dir=log_dir/${job_name}
-#weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
+# weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
 weights=output/${job_name}/model_final.pdparams
 
-# 1. training
-CUDA_VISIBLE_DEVICES=0 python3.7 tools/train.py -c ${config} --eval --amp
-#python3.7 -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
+# 1.训练（单卡/多卡）
+# CUDA_VISIBLE_DEVICES=0 python3.7 tools/train.py -c ${config} --eval --amp
+python3.7 -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
 
-# 2. eval
+# 2.评估
 CUDA_VISIBLE_DEVICES=0 python3.7 tools/eval.py -c ${config} -o weights=${weights} --classwise
 
-# 3. tools infer
+# 3.直接预测
 CUDA_VISIBLE_DEVICES=0 python3.7 tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg --draw_threshold=0.5
 
-# 4.export model
+# 4.导出模型
 CUDA_VISIBLE_DEVICES=0 python3.7 tools/export_model.py -c ${config} -o weights=${weights} # exclude_nms=True
 
-# 5. deploy infer
+# 5.部署预测
 #CUDA_VISIBLE_DEVICES=0 python3.7 deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
 
-# 6. deploy speed
+# 6.部署测速
 #CUDA_VISIBLE_DEVICES=0 python3.7 deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU --run_benchmark=True # --run_mode=trt_fp16
 
-# 7. onnx
+# 7.onnx导出
 paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmodel --params_filename model.pdiparams --opset_version 12 --save_file ${job_name}.onnx
 
-# 8. onnx speed
+# 8.onnx测速
 /usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp16
 
 ```

@@ -771,6 +771,8 @@ class YOLOv7Loss(nn.Layer):
                 j = paddle.maximum(r, 1. / r).max(2) < self.anchor_t  # compare
                 # j = torch.max(r, 1. / r).max(2)[0]
                 t = t[j]  # filter
+                if len(t.shape) == 1:  # paddle2.3 index
+                    t = t.unsqueeze(0)
 
                 # Offsets
                 gxy = t[:, 2:4]  # grid xy
