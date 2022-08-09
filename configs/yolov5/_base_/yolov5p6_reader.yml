@@ -26,7 +26,7 @@ TrainReader:
 EvalReader:
   sample_transforms:
     - Decode: {}
-    - Resize: {target_size: *input_size, keep_ratio: True}
+    - Resize: {target_size: *input_size, keep_ratio: True, interp: 1}
     - Pad: {size: *input_size, fill_value: [114., 114., 114.]}
     - NormalizeImage: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
     - Permute: {}
@@ -38,7 +38,7 @@ TestReader:
     image_shape: [3, 1280, 1280]
   sample_transforms:
     - Decode: {}
-    - Resize: {target_size: *input_size, keep_ratio: True}
+    - Resize: {target_size: *input_size, keep_ratio: True, interp: 1}
     - Pad: {size: *input_size, fill_value: [114., 114., 114.]}
     - NormalizeImage: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
     - Permute: {}
