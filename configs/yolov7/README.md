@@ -21,9 +21,9 @@
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | YOLOv7P6-W6     |  1280    |    16      |   300e    |     25.5    |  54.4  | 71.8 |  70.43  | 180.13 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_w6_300e_coco.pdparams) | [配置文件](./yolov7p6_w6_300e_coco.yml) |
-| YOLOv7P6-E6     |  1280    |    16      |   300e    |     31.1    |  55.7  | 73.0 |  97.25  | 257.70 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6_300e_coco.pdparams) | [配置文件](./yolov7p6_e6_300e_coco.yml) |
-| YOLOv7P6-D6     |  1280    |    16      |   300e    |     37.4    |  56.1  | 73.3 |  133.81  | 351.46 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_d6_300e_coco.pdparams) | [配置文件](./yolov7p6_d6_300e_coco.yml) |
-| YOLOv7P6-E6E    |  1280    |    16      |   300e    |     48.7    |  56.5  | 73.7 |  151.76  | 421.76 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6e_300e_coco.pdparams) | [配置文件](./yolov7p6_e6e_300e_coco.yml) |
+| YOLOv7P6-E6     |  1280    |    12      |   300e    |     31.1    |  55.7  | 73.0 |  97.25  | 257.70 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6_300e_coco.pdparams) | [配置文件](./yolov7p6_e6_300e_coco.yml) |
+| YOLOv7P6-D6     |  1280    |    8      |   300e    |     37.4    |  56.1  | 73.3 |  133.81  | 351.46 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_d6_300e_coco.pdparams) | [配置文件](./yolov7p6_d6_300e_coco.yml) |
+| YOLOv7P6-E6E    |  1280    |    6      |   300e    |     48.7    |  56.5  | 73.7 |  151.76  | 421.76 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6e_300e_coco.pdparams) | [配置文件](./yolov7p6_e6e_300e_coco.yml) |
 
 
 **注意:**
