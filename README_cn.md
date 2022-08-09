@@ -49,10 +49,10 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| YOLOv6mt-n       |  416     |    32      |   400e    |     -    | 30.5  |    46.8 |  4.74  | 2.58 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_416_400e_coco.pdparams) | [配置文件](configs/yolov6mt/yolov6mt_n_416_400e_coco.yml) |
-| YOLOv6mt-n       |  640     |    32      |   400e    |     -    |  34.7 |    52.7 |  4.74  |  6.10 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_400e_coco.pdparams) | [配置文件](configs/yolov6mt/yolov6mt_n_400e_coco.yml) |
-| YOLOv6mt-t       |  640     |    32      |   400e    |     -    |  40.8 |  60.4 |  16.36  | 19.97 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_400e_coco.pdparams) | [配置文件](configs/yolov6mt/yolov6mt_n_400e_coco.yml) |
-| YOLOv6mt-s       |  640     |    32      |   400e    |     -    | 42.5 |    61.7 |  18.87  | 24.18 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_s_400e_coco.pdparams) | [配置文件](configs/yolov6mt/yolov6mt_s_400e_coco.yml) |
+| YOLOv6mt-n       |  416     |    32      |   400e    |     3.2    | 30.5  |    46.8 |  4.74  | 2.58 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_416_400e_coco.pdparams) | [配置文件](configs/yolov6mt/yolov6mt_n_416_400e_coco.yml) |
+| YOLOv6mt-n       |  640     |    32      |   400e    |     3.8    |  34.7 |    52.7 |  4.74  |  6.10 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_400e_coco.pdparams) | [配置文件](configs/yolov6mt/yolov6mt_n_400e_coco.yml) |
+| YOLOv6mt-t       |  640     |    32      |   400e    |     3.9    |  40.8 |  60.4 |  16.36  | 19.97 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_t_400e_coco.pdparams) | [配置文件](configs/yolov6mt/yolov6mt_t_400e_coco.yml) |
+| YOLOv6mt-s       |  640     |    32      |   400e    |     4.1    | 42.5 |    61.7 |  18.87  | 24.18 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_s_400e_coco.pdparams) | [配置文件](configs/yolov6mt/yolov6mt_s_400e_coco.yml) |
 
 ### [YOLOv7](configs/yolov7)
 
@@ -74,8 +74,9 @@
 **注意:**
  - 训练使用COCO train2017作为训练集，在COCO val2017上验证精度。
  - 具体精度和速度细节请查看[ppyoloe](configs/ppyoloe),[yolox](configs/yolox),[yolov5](configs/yolox),[yolov7](configs/yolov7)。
+- 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡V100，batch size=1，测试环境为**paddlepaddle-2.3.0**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考各自模型主页。
  - [ppyoloe](configs/ppyoloe),[yolov3](configs/yolov3)和[yolox](configs/yolox)推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)里使用。
- - [yolov5](configs/yolox)和[yolov7](configs/yolov7)由于GPL协议而不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)主代码库。
+ - [yolov5](configs/yolox),[yolov7](configs/yolov7)和[mt-yolov6](configs/yolov6mt)由于GPL协议而不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)主代码库。
 
 
 ## 使用指南

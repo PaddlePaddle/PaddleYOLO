@@ -10,17 +10,16 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| YOLOv6mt-n       |  416     |    32      |   400e    |     -    | 30.5  |    46.8 |  4.74  | 2.58 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_416_400e_coco.pdparams) | [配置文件](./yolov6mt_n_416_400e_coco.yml) |
-| YOLOv6mt-n       |  640     |    32      |   400e    |     -    |  34.7 |    52.7 |  4.74  |  6.10 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_400e_coco.pdparams) | [配置文件](./yolov6mt_n_400e_coco.yml) |
-| YOLOv6mt-t       |  640     |    32      |   400e    |     -    |  40.8 |  60.4 |  16.36  | 19.97 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_t_400e_coco.pdparams) | [配置文件](./yolov6mt_t_400e_coco.yml) |
-| YOLOv6mt-s       |  640     |    32      |   400e    |     -    | 42.5 |    61.7 |  18.87  | 24.18 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_s_400e_coco.pdparams) | [配置文件](./yolov6mt_s_400e_coco.yml) |
+| YOLOv6mt-n       |  416     |    32      |   400e    |     3.2    | 30.5  |    46.8 |  4.74  | 2.58 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_416_400e_coco.pdparams) | [配置文件](./yolov6mt_n_416_400e_coco.yml) |
+| YOLOv6mt-n       |  640     |    32      |   400e    |     3.8    |  34.7 |    52.7 |  4.74  |  6.10 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_400e_coco.pdparams) | [配置文件](./yolov6mt_n_400e_coco.yml) |
+| YOLOv6mt-t       |  640     |    32      |   400e    |     3.9    |  40.8 |  60.4 |  16.36  | 19.97 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_t_400e_coco.pdparams) | [配置文件](./yolov6mt_t_400e_coco.yml) |
+| YOLOv6mt-s       |  640     |    32      |   400e    |     4.1    | 42.5 |    61.7 |  18.87  | 24.18 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_s_400e_coco.pdparams) | [配置文件](./yolov6mt_s_400e_coco.yml) |
 
 
 **注意:**
   - YOLOv6mt模型训练使用COCO train2017作为训练集，Box AP为在COCO val2017上的`mAP(IoU=0.5:0.95)`结果；
   - YOLOv6mt模型训练过程中默认使用8 GPUs进行混合精度训练，默认lr为0.01为8卡总batch_size的设置，如果**GPU卡数**或者每卡**batch size**发生了改变，你需要按照公式 **lr<sub>new</sub> = lr<sub>default</sub> * (batch_size<sub>new</sub> * GPU_number<sub>new</sub>) / (batch_size<sub>default</sub> * GPU_number<sub>default</sub>)** 调整学习率；
-  - YOLOv6mt模型推理速度测试采用单卡V100，batch size=1进行测试，使用**CUDA 10.2**, **CUDNN 7.6.5**，TensorRT推理速度测试使用**TensorRT 6.0.1.8**。
-  - 参考[速度测试](#速度测试)以复现YOLOv6mt推理速度测试结果，速度为tensorRT-FP16测速后的最快速度，不包含数据预处理和模型输出后处理(NMS)的耗时。
+  - 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡V100，batch size=1，测试环境为**paddlepaddle-2.3.0**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考[速度测试](#速度测试)。
   - 如果你设置了`--run_benchmark=True`, 你首先需要安装以下依赖`pip install pynvml psutil GPUtil`。
 
 

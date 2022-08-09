@@ -120,7 +120,7 @@ class EffiDeHead(nn.Layer):
         if self.iou_type == 'ciou':
             self.iou_loss = IouLoss(loss_weight=1.0, ciou=True)
         elif self.iou_type == 'siou':
-            self.iou_loss = SIoULoss()
+            self.iou_loss = SIoULoss(splited=False)
         else:
             self.iou_loss = IouLoss(loss_weight=1.0)
         self._initialize_biases()
