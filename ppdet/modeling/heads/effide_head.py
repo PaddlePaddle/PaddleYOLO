@@ -11,9 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-This code is based on https://github.com/meituan/YOLOv6
-"""
 
 import paddle
 import paddle.nn as nn
@@ -21,14 +18,13 @@ import paddle.nn.functional as F
 from paddle import ParamAttr
 from paddle.regularizer import L2Decay
 
-import math
 import numpy as np
 from ..initializer import bias_init_with_prob, constant_
 
 from ..backbones.efficientrep import Conv
 from ppdet.modeling.assigners.simota_assigner import SimOTAAssigner
 from ppdet.modeling.bbox_utils import bbox_overlaps
-from ..losses import IouLoss
+from ..losses import IouLoss, SIoULoss
 from ppdet.modeling.layers import MultiClassNMS
 from ppdet.core.workspace import register, serializable
 from ..shape_spec import ShapeSpec
@@ -63,10 +59,9 @@ class EffiDeHead(nn.Layer):
                      'l1': 1.0,
                      'reg': 5.0,
                  },
-                 iou_type='ciou',
+                 iou_type='siou',
                  trt=False,
-                 exclude_nms=False,
-                 head_layers=None):
+                 exclude_nms=False):
         super().__init__()
         self._dtype = paddle.framework.get_default_dtype()
         self.num_classes = num_classes
@@ -84,16 +79,12 @@ class EffiDeHead(nn.Layer):
             self.nms.trt = trt
         self.exclude_nms = exclude_nms
 
-        self.nc = num_classes  # number of classes
-        self.no = num_classes + 5  # number of outputs per anchor
-        self.nl = num_layers  # number of detection layers
         if isinstance(anchors, (list, tuple)):
             self.na = len(anchors[0]) // 2
         else:
             self.na = anchors
         self.anchors = anchors
         self.grid = [paddle.zeros([1])] * num_layers
-        self.prior_prob = 1e-2
         self.stride = paddle.to_tensor(fpn_strides)
 
         ConvBlock = Conv
@@ -126,8 +117,13 @@ class EffiDeHead(nn.Layer):
                     1,  # reg [x,y,w,h] + obj
                     1,
                     bias_attr=ParamAttr(regularizer=L2Decay(0.0))))
-        self.iou_loss = IouLoss(loss_weight=1.0)
-        # self._initialize_biases()
+        if self.iou_type == 'ciou':
+            self.iou_loss = IouLoss(loss_weight=1.0, ciou=True)
+        elif self.iou_type == 'siou':
+            self.iou_loss = SIoULoss()
+        else:
+            self.iou_loss = IouLoss(loss_weight=1.0)
+        self._initialize_biases()
 
     def _initialize_biases(self):
         bias_init = bias_init_with_prob(0.01)
@@ -174,7 +170,6 @@ class EffiDeHead(nn.Layer):
             cls_score = F.sigmoid(cls_logit)
             cls_score_list.append(cls_score.flatten(2).transpose([0, 2, 1]))
             # reg prediction
-            #reg_xywh, obj_logit = paddle.split(reg_pred, [4, 1], axis=1)
             reg_xywh = reg_xywh.flatten(2).transpose([0, 2, 1])
             reg_pred_list.append(reg_xywh)
             # obj prediction
@@ -212,8 +207,6 @@ class EffiDeHead(nn.Layer):
         gt_labels = targets['gt_class']
         gt_bboxes = targets['gt_bbox']
 
-        #gt_labels = paddle.cast(gt_labels, 'float32')
-        #gt_bboxes = paddle.cast(gt_bboxes, 'float32')
         pred_scores = (pred_cls * pred_obj).sqrt()
         # label assignment
         center_and_strides = paddle.concat(
@@ -222,13 +215,8 @@ class EffiDeHead(nn.Layer):
         for pred_score, pred_bbox, gt_box, gt_label in zip(
                 pred_scores.detach(),
                 pred_bboxes.detach() * stride_tensor, gt_bboxes, gt_labels):
-            ### TODO
-            try:
-                gt_box = paddle.cast(gt_box, 'float32')
-            except:
-                embed()
+            gt_box = paddle.cast(gt_box, 'float32')
             gt_label = paddle.cast(gt_label, 'float32')
-            ###
             pos_num, label, _, bbox_target = self.assigner(
                 pred_score, center_and_strides, pred_bbox, gt_box, gt_label)
             pos_num_list.append(pos_num)
@@ -281,13 +269,9 @@ class EffiDeHead(nn.Layer):
             loss_cls /= num_pos
 
             # 4. l1 loss
-            if 1:  #targets['epoch_id'] >= self.l1_epoch:
-                loss_l1 = F.l1_loss(
-                    pred_bboxes_pos, assigned_bboxes_pos, reduction='sum')
-                loss_l1 /= num_pos
-            else:
-                loss_l1 = paddle.zeros([1])
-                loss_l1.stop_gradient = False
+            loss_l1 = F.l1_loss(
+                pred_bboxes_pos, assigned_bboxes_pos, reduction='sum')
+            loss_l1 /= num_pos
         else:
             loss_cls = paddle.zeros([1])
             loss_iou = paddle.zeros([1])
@@ -298,10 +282,8 @@ class EffiDeHead(nn.Layer):
 
         loss = self.loss_weight['obj'] * loss_obj + \
                self.loss_weight['cls'] * loss_cls + \
-               self.loss_weight['iou'] * loss_iou * self.loss_weight['reg']
-
-        if 1:  #targets['epoch_id'] >= self.l1_epoch:
-            loss += (self.loss_weight['l1'] * loss_l1)
+               self.loss_weight['iou'] * loss_iou * self.loss_weight['reg'] + \
+               self.loss_weight['l1'] * loss_l1
 
         yolox_losses = {
             'loss': loss,

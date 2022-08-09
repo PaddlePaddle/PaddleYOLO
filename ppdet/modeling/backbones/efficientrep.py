@@ -26,6 +26,18 @@ from ..shape_spec import ShapeSpec
 __all__ = ['RepVGGBlock', 'RepBlock', 'SimSPPF']
 
 
+def get_activation(name="silu"):
+    if name == "silu":
+        module = nn.Silu()
+    elif name == "relu":
+        module = nn.ReLU()
+    elif name in ["LeakyReLU", 'leakyrelu', 'lrelu']:
+        module = nn.LeakyReLU(0.1)
+    else:
+        raise AttributeError("Unsupported act type: {}".format(name))
+    return module
+
+
 class Conv(nn.Layer):
     '''Normal Conv with SiLU activation'''
 
@@ -35,7 +47,8 @@ class Conv(nn.Layer):
                  kernel_size,
                  stride,
                  groups=1,
-                 bias=False):
+                 bias=False,
+                 act='silu'):
         super().__init__()
         padding = kernel_size // 2
         self.conv = nn.Conv2D(
@@ -45,15 +58,15 @@ class Conv(nn.Layer):
             stride=stride,
             padding=padding,
             groups=groups,
-            bias_attr=bias, )
+            bias_attr=bias)
         self.bn = nn.BatchNorm2D(out_channels, epsilon=1e-3, momentum=0.97)
-        #self.act = nn.SiLU()
+        # self.act = get_activation(act)
 
     def forward(self, x):
-        return F.silu(self.bn(self.conv(x)))
-
-    def forward_fuse(self, x):
-        return F.silu(self.conv(x))
+        x = self.bn(self.conv(x))
+        # y = self.act(x)
+        y = x * F.sigmoid(x)
+        return y
 
 
 def conv_bn(in_channels, out_channels, kernel_size, stride, padding, groups=1):
@@ -68,10 +81,11 @@ def conv_bn(in_channels, out_channels, kernel_size, stride, padding, groups=1):
             stride=stride,
             padding=padding,
             groups=groups,
-            bias_attr=False, ), )
+            bias_attr=False))
     result.add_sublayer(
-        "bn", nn.BatchNorm2D(
-            num_features=out_channels))  #, epsilon=1e-3, momentum=0.97))
+        "bn",
+        nn.BatchNorm2D(
+            num_features=out_channels, epsilon=1e-3, momentum=0.97))
     return result
 
 
@@ -99,18 +113,17 @@ class RepVGGBlock(nn.Layer):
     This code is based on https://github.com/DingXiaoH/RepVGG/blob/main/repvgg.py
     """
 
-    def __init__(
-            self,
-            in_channels,
-            out_channels,
-            kernel_size=3,
-            stride=1,
-            padding=1,
-            dilation=1,
-            groups=1,
-            padding_mode="zeros",
-            deploy=False,
-            use_se=False, ):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size=3,
+                 stride=1,
+                 padding=1,
+                 dilation=1,
+                 groups=1,
+                 padding_mode="zeros",
+                 deploy=False,
+                 use_se=False):
         super(RepVGGBlock, self).__init__()
         """ Intialization of the class.
         Args:
@@ -154,10 +167,11 @@ class RepVGGBlock(nn.Layer):
                 dilation=dilation,
                 groups=groups,
                 bias_attr=True,
-                padding_mode=padding_mode, )
+                padding_mode=padding_mode)
 
         else:
-            self.rbr_identity = (nn.BatchNorm2D(num_features=in_channels)
+            self.rbr_identity = (nn.BatchNorm2D(
+                num_features=in_channels, epsilon=1e-3, momentum=0.97)
                                  if out_channels == in_channels and stride == 1
                                  else None)
             self.rbr_dense = conv_bn(
@@ -166,14 +180,14 @@ class RepVGGBlock(nn.Layer):
                 kernel_size=kernel_size,
                 stride=stride,
                 padding=padding,
-                groups=groups, )
+                groups=groups)
             self.rbr_1x1 = conv_bn(
                 in_channels=in_channels,
                 out_channels=out_channels,
                 kernel_size=1,
                 stride=stride,
                 padding=padding_11,
-                groups=groups, )
+                groups=groups)
 
     def forward(self, inputs):
         """Forward process"""
@@ -192,9 +206,8 @@ class RepVGGBlock(nn.Layer):
         kernel3x3, bias3x3 = self._fuse_bn_tensor(self.rbr_dense)
         kernel1x1, bias1x1 = self._fuse_bn_tensor(self.rbr_1x1)
         kernelid, biasid = self._fuse_bn_tensor(self.rbr_identity)
-        return (
-            kernel3x3 + self._pad_1x1_to_3x3_tensor(kernel1x1) + kernelid,
-            bias3x3 + bias1x1 + biasid, )
+        return (kernel3x3 + self._pad_1x1_to_3x3_tensor(kernel1x1) + kernelid,
+                bias3x3 + bias1x1 + biasid)
 
     def _pad_1x1_to_3x3_tensor(self, kernel1x1):
         if kernel1x1 is None:
@@ -220,9 +233,7 @@ class RepVGGBlock(nn.Layer):
                     (self.in_channels, input_dim, 3, 3), dtype=np.float32)
                 for i in range(self.in_channels):
                     kernel_value[i, i % input_dim, 1, 1] = 1
-                #self.id_tensor = torch.from_numpy(kernel_value).to(branch.weight.device)
-                self.id_tensor = paddle.to_tensor(
-                    kernel_value)  #.to(branch.weight.device)
+                self.id_tensor = paddle.to_tensor(kernel_value)
             kernel = self.id_tensor
             running_mean = branch.running_mean
             running_var = branch.running_var
@@ -245,7 +256,7 @@ class RepVGGBlock(nn.Layer):
             padding=self.rbr_dense.conv.padding,
             dilation=self.rbr_dense.conv.dilation,
             groups=self.rbr_dense.conv.groups,
-            bias_attr=True, )
+            bias_attr=True)
         self.rbr_reparam.weight.data = kernel
         self.rbr_reparam.bias.data = bias
         for para in self.parameters():
@@ -278,15 +289,12 @@ class SimConv(nn.Layer):
             stride=stride,
             padding=padding,
             groups=groups,
-            bias_attr=bias, )
-        self.bn = nn.BatchNorm2D(out_channels)
+            bias_attr=bias)
+        self.bn = nn.BatchNorm2D(out_channels, epsilon=1e-3, momentum=0.97)
         self.act = nn.ReLU()
 
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
-
-    def forward_fuse(self, x):
-        return self.act(self.conv(x))
 
 
 class SimSPPF(nn.Layer):
@@ -302,7 +310,6 @@ class SimSPPF(nn.Layer):
 
     def forward(self, x):
         x = self.cv1(x)
-
         y1 = self.m(x)
         y2 = self.m(y1)
         return self.cv2(paddle.concat([x, y1, y2, self.m(y2)], 1))
@@ -325,7 +332,6 @@ class Transpose(nn.Layer):
 
 
 def make_divisible(x, divisor):
-    # Upward revision the value x to make it evenly divisible by the divisor.
     return math.ceil(x / divisor) * divisor
 
 
@@ -335,12 +341,12 @@ class EfficientRep(nn.Layer):
     __shared__ = ['width_mult', 'depth_mult', 'trt']
 
     def __init__(self,
+                 width_mult=1.0,
+                 depth_mult=1.0,
                  num_repeats=[1, 6, 12, 18, 6],
                  channels_list=[64, 128, 256, 512, 1024],
                  return_idx=[2, 3, 4],
                  depthwise=False,
-                 width_mult=1.0,
-                 depth_mult=1.0,
                  trt=False):
         super().__init__()
         in_channels = 3
@@ -398,7 +404,7 @@ class EfficientRep(nn.Layer):
                 in_channels=channels_list[3],
                 out_channels=channels_list[4],
                 kernel_size=3,
-                stride=2, ),
+                stride=2),
             RepBlock(
                 in_channels=channels_list[4],
                 out_channels=channels_list[4],

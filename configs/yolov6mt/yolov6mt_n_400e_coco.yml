@@ -11,3 +11,7 @@ width_mult: 0.25
 log_iter: 100
 snapshot_epoch: 10
 weights: output/yolov6mt_n_400e_coco/model_final
+
+
+EffiDeHead:
+  iou_type: 'ciou'

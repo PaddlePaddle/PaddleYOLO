@@ -11,3 +11,7 @@ width_mult: 0.50 # 0.375 in YOLOX-tiny
 log_iter: 100
 snapshot_epoch: 10
 weights: output/yolov6mt_t_400e_coco/model_final
+
+
+EffiDeHead:
+  iou_type: 'ciou'

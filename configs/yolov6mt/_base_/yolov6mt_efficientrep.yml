@@ -24,6 +24,7 @@ RepPANNeck:
 
 EffiDeHead:
   depthwise: false
+  iou_type: 'siou'
   assigner:
     name: SimOTAAssigner
     candidate_topk: 10
