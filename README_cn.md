@@ -63,7 +63,7 @@
 | YOLOv7P6-W6     |  1280    |    16      |   300e    |     25.5    |  54.4  | 71.8 |  70.43  | 180.13 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_w6_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_w6_300e_coco.yml) |
 | YOLOv7P6-E6     |  1280    |    16      |   300e    |     31.1    |  55.7  | 73.0 |  97.25  | 257.70 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_e6_300e_coco.yml) |
 | YOLOv7P6-D6     |  1280    |    16      |   300e    |     37.4    | 56.1  | 73.3 |  133.81  | 351.46 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_d6_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_d6_300e_coco.yml) |
-| YOLOv7P6-E6E    |  1280    |    16      |   300e    |     -    |  56.5  | 73.7 |  151.76  | 421.76 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6e_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_e6e_300e_coco.yml) |
+| YOLOv7P6-E6E    |  1280    |    16      |   300e    |     48.7    |  56.5  | 73.7 |  151.76  | 421.76 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7p6_e6e_300e_coco.pdparams) | [配置文件](configs/yolov7/yolov7p6_e6e_300e_coco.yml) |
 
 
 **注意:**
@@ -611,9 +611,6 @@ job_name=yolov7_l_300e_coco
 
 版本更新内容请参考[版本更新文档](docs/CHANGELOG.md)
 
-## <img title="" src="https://user-images.githubusercontent.com/48054808/157835345-f5d24128-abaf-4813-b793-d2e5bdc70e5a.png" alt="" width="20"> 许可证书
-
-本项目的发布受[Apache 2.0 license](LICENSE)许可认证。
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157835796-08d4ffbc-87d9-4622-89d8-cf11a44260fc.png" width="20"/> 贡献代码
 
