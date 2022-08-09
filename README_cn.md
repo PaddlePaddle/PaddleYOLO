@@ -1,8 +1,12 @@
 ## 简介
 
-此代码库是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，支持`PP-YOLOE`,`YOLOv3`,`YOLOX`,`YOLOv5`,`MT-YOLOv6`,`YOLOv7`等模型，其upstream为PaddleDetection的[develop](https://github.com/PaddlePaddle/PaddleDetection/tree/develop)分支，并与PaddleDetection同步更新包括github和gitee的代码，欢迎一起使用和建设！
+此代码库是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，支持`PP-YOLOE`,`YOLOv3`,`YOLOX`,`YOLOv5`,`MT-YOLOv6`,`YOLOv7`等模型，其upstream为PaddleDetection的[develop](https://github.com/PaddlePaddle/PaddleDetection/tree/develop)分支，并与PaddleDetection主代码库分支同步更新，包括github和gitee的代码，欢迎一起使用和建设！
+
+**注意:**
  - github链接为：https://github.com/nemonameless/PaddleDetection_YOLOSeries
  - gitee链接为：https://gitee.com/nemonameless/PaddleDetection_YOLOSeries
+ - [PP-YOLOE](configs/ppyoloe),[PP-YOLO](configs/ppyolo),[PP-YOLOv2](configs/ppyolo),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)等模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用。
+ - [YOLOv5](configs/yolox),[YOLOv7](configs/yolov7)和[MT-YOLOv6](configs/yolov6mt)模型推荐在此代码库中使用，由于GPL开源协议不合入PaddleDetection主代码库。
 
 
 ## ModelZoo on COCO
@@ -148,15 +152,6 @@ python3.7 -m paddle.distributed.launch --log_dir=./log_dir --gpus 0,1,2,3,4,5,6,
 **注意:**
 - fintune训练一般会提示head分类分支最后一层卷积的通道数没对应上，属于正常情况，是由于自定义数据集一般和COCO数据集种类数不一致；
 - fintune训练一般epoch数可以设置更少，lr设置也更小点如1/10，最高精度可能出现在中间某个epoch；
-
-
-## TODO
-  - [ ] Transformer modules
-  - [ ] 更多Data Augmentation、Attention Module、Loss
-  - [ ] 精简代码只保留YOLO系列模型(YOLOv3、PP-YOLO、PP-YOLOv2、PP-YOLOE、YOLOX、YOLOv5、YOLOv7)
-  - [ ] Objects365预训练
-  - [ ] Pose Estimation(Keypoint Detection)
-  - [ ] Instance Segmentation
 
 
 ======================================================
