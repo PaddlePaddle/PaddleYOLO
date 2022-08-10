@@ -74,6 +74,8 @@
 - 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡V100，batch size=1，测试环境为**paddlepaddle-2.3.0**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考各自模型主页。
  - [PP-YOLOE](configs/ppyoloe),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)里使用。
  - [YOLOv5](configs/yolox),[YOLOv7](configs/yolov7)和[MT-YOLOv6](configs/yolov6mt)由于GPL协议而不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)主代码库。
+ - 各模型导出后的权重以及ONNX，分为带不带后处理NMS，都提供了下载链接，请参考各自模型主页下载。
+ - paddlepaddle版本推荐使用2.3.0以上。
 
 
 ## 使用指南
@@ -121,11 +123,11 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 ```
 
 **注意:**
-- 如果想切换模型，只要修改如下两行即可:
+- 将以上命令写在一个脚本文件里如```run.sh```，一键运行命令为：```sh run.sh```，也可命令行一句句去运行。
+- 如果想切换模型，只要修改开头两行即可，如:
   ```
   model_type=yolov7
   job_name=yolov7_l_300e_coco
-  ...
   ```
 
 ### 自定义数据集训练：
@@ -153,6 +155,21 @@ python3.7 -m paddle.distributed.launch --log_dir=./log_dir --gpus 0,1,2,3,4,5,6,
 - fintune训练一般会提示head分类分支最后一层卷积的通道数没对应上，属于正常情况，是由于自定义数据集一般和COCO数据集种类数不一致；
 - fintune训练一般epoch数可以设置更少，lr设置也更小点如1/10，最高精度可能出现在中间某个epoch；
 
+#### 预测和导出：
+
+使用自定义数据集预测和导出模型时，如果TestDataset数据集路径设置不正确会默认使用COCO 80类。
+除了TestDataset数据集路径设置正确外，也可以自行修改和添加对应的label_list.txt文件(一行记录一个对应种类)，TestDataset中的anno_path也可设置为绝对路径，如：
+```
+TestDataset:
+  !ImageFolder
+    anno_path: label_list.txt # 如不使用dataset_dir，则anno_path即为相对于PaddleDetection主目录的相对路径
+    # dataset_dir: dataset/my_coco # 如使用dataset_dir，则dataset_dir/anno_path作为新的anno_path
+```
+label_list.txt里的一行记录一个对应种类，如下所示：
+```
+person
+vehicle
+```
 
 ======================================================
 
