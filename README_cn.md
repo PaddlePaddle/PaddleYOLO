@@ -22,8 +22,8 @@
 | PP-YOLOE-m   |      640  |    28    |  300e    |    6.0    |       49.0        |        49.1         |   23.43   |  49.91   | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_m_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_m_300e_coco.yml)                   |
 | PP-YOLOE-l   |      640  |    20    |  300e    |    8.7    |       51.4        |        65.9         |   52.20   |  110.07 | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_l_300e_coco.yml)                   |
 | PP-YOLOE-x   |      640  |    16    |  300e    |    14.9   |       **52.3**    |        **69.5**     |   98.42   |  206.59  |[model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_x_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_x_300e_coco.yml)  
-| PP-YOLOE-ConvNeXt-tiny | 640 |    16      |   36e    | -   |       44.6        |        63.3         |   33.04   |  **13.87** | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_convnext_tiny_36e_coco.pdparams) | [config](configs/convnext/ppyoloe_convnext_tiny_36e_coco.yml) |
- 
+| PP-YOLOE-tiny ConvNeXt| 640 |    16      |   36e    | -   |       44.6        |        63.3         |   33.04   |  **13.87** | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_convnext_tiny_36e_coco.pdparams) | [config](configs/convnext/ppyoloe_convnext_tiny_36e_coco.yml) |
+
 - Deploy models
 
 | Model     | Input size | Exported Model(w/o postprocess) | ONNX(w/o postprocess)  |
@@ -46,7 +46,7 @@
 | YOLOX-x        |  640     |    8      |   300e    |     16.6   |  **51.8**  |  **70.6** |  99.1  |  281.9 | [model](https://paddledet.bj.bcebos.com/models/yolox_x_300e_coco.pdparams) | [config](configs/yolox/yolox_x_300e_coco.yml) |
  YOLOX-cdn-tiny    |  416     |    8      |   300e    |     1.9    |  32.4  |  50.2 |  5.03 |  6.33  | [model](https://paddledet.bj.bcebos.com/models/yolox_cdn_tiny_300e_coco.pdparams) | [config](configs/yolox/yolox_cdn_tiny_300e_coco.yml) |
 | YOLOX-crn-s     |  640     |    8      |   300e    |     3.0    |  40.4  |  59.6 |  7.7  |  24.69 | [model](https://paddledet.bj.bcebos.com/models/yolox_crn_s_300e_coco.pdparams) | [config](configs/yolox/yolox_crn_s_300e_coco.yml) |
-| YOLOX-ConvNeXt-s|  640     |    8      |   36e     |     -      |  44.6  |  65.3 |  36.2 |  27.52 | [model](https://paddledet.bj.bcebos.com/models/yolox_convnext_s_36e_coco.pdparams) | [config](configs/convnext/yolox_convnext_s_36e_coco.yml) |
+| YOLOX-s ConvNeXt|  640     |    8      |   36e     |     -      |  44.6  |  65.3 |  36.2 |  27.52 | [model](https://paddledet.bj.bcebos.com/models/yolox_convnext_s_36e_coco.pdparams) | [config](configs/convnext/yolox_convnext_s_36e_coco.yml) |
 
 ### [YOLOv5](configs/yolov5)
 
@@ -57,7 +57,7 @@
 | YOLOv5-m        |  640     |    8      |   300e    |     5.2    |  45.3  | 63.8 |  21.19  | 49.08 | [model](https://paddledet.bj.bcebos.com/models/yolov5_m_300e_coco.pdparams) | [config](configs/yolov5/yolov5_m_300e_coco.yml) |
 | YOLOv5-l        |  640     |    8      |   300e    |     7.9    |  48.6  | 66.9 |  46.56  | 109.32 | [model](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) | [config](configs/yolov5/yolov5_l_300e_coco.yml) |
 | YOLOv5-x        |  640     |    8      |   300e    |     13.7    |  **50.6**  | **68.7** |  86.75  | 205.92 | [model](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [config](configs/yolov5/yolov5_x_300e_coco.yml) |
-| YOLOv5-ConvNeXt-s|  640    |    8      |   36e     |     -      |  42.4  |  65.3  |  34.54 |  17.96 | [model](https://paddledet.bj.bcebos.com/models/yolov5_convnext_s_36e_coco.pdparams) | [config](configs/yolov5/yolov5_convnext_s_36e_coco.yml) |
+| YOLOv5-s ConvNeXt|  640    |    8      |   36e     |     -      |  42.4  |  65.3  |  34.54 |  17.96 | [model](https://paddledet.bj.bcebos.com/models/yolov5_convnext_s_36e_coco.pdparams) | [config](configs/yolov5/yolov5_convnext_s_36e_coco.yml) |
 
 ### [MT-YOLOv6](configs/yolov6mt)
 
@@ -87,6 +87,7 @@
  - [PP-YOLOE](configs/ppyoloe),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)里使用。
  - [YOLOv5](configs/yolox),[YOLOv7](configs/yolov7)和[MT-YOLOv6](configs/yolov6mt)由于GPL协议而不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)主代码库。
  - 各模型导出后的权重以及ONNX，分为带不带后处理NMS，都提供了下载链接，请参考各自模型主页下载。
+ - 基于PaddleSlim对YOLO系列模型进行量化训练，可以实现精度基本无损，速度普遍提升30%以上，请参照[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/example/auto_compression)。
  - paddlepaddle版本推荐使用2.3.0以上。
 
 

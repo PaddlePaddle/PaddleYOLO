@@ -1,4 +1,4 @@
-# YOLOv6mt
+# MT-YOLOv6
 
 ## 内容
 - [模型库](#模型库)
@@ -6,19 +6,19 @@
 - [速度测试](#速度测试)
 
 ## 模型库
-### YOLOv6mt on COCO
+### MT-YOLOv6 on COCO
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| YOLOv6mt-n       |  416     |    32      |   400e    |     2.5    | 30.5  |    46.8 |  4.74  | 2.58 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_416_400e_coco.pdparams) | [配置文件](./yolov6mt_n_416_400e_coco.yml) |
-| YOLOv6mt-n       |  640     |    32      |   400e    |     2.8    |  34.7 |    52.7 |  4.74  |  6.10 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_400e_coco.pdparams) | [配置文件](./yolov6mt_n_400e_coco.yml) |
-| YOLOv6mt-t       |  640     |    32      |   400e    |     2.9    |  40.8 |  60.4 |  16.36  | 19.97 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_t_400e_coco.pdparams) | [配置文件](./yolov6mt_t_400e_coco.yml) |
-| YOLOv6mt-s       |  640     |    32      |   400e    |     3.0    | 42.5 |    61.7 |  18.87  | 24.18 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_s_400e_coco.pdparams) | [配置文件](./yolov6mt_s_400e_coco.yml) |
+| YOLOv6mt-n       |  416     |    32      |   400e    |     2.5    | 30.5  |    46.8 |  4.74  | 5.16 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_416_400e_coco.pdparams) | [配置文件](./yolov6mt_n_416_400e_coco.yml) |
+| YOLOv6mt-n       |  640     |    32      |   400e    |     2.8    |  34.7 |    52.7 |  4.74  | 12.2 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_400e_coco.pdparams) | [配置文件](./yolov6mt_n_400e_coco.yml) |
+| YOLOv6mt-t       |  640     |    32      |   400e    |     2.9    |  40.8 |  60.4 |  16.36  | 39.94 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_t_400e_coco.pdparams) | [配置文件](./yolov6mt_t_400e_coco.yml) |
+| YOLOv6mt-s       |  640     |    32      |   400e    |     3.0    | 42.5 |    61.7 |  18.87  | 48.36 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_s_400e_coco.pdparams) | [配置文件](./yolov6mt_s_400e_coco.yml) |
 
 
 **注意:**
-  - YOLOv6mt模型训练使用COCO train2017作为训练集，Box AP为在COCO val2017上的`mAP(IoU=0.5:0.95)`结果；
-  - YOLOv6mt模型训练过程中默认使用8 GPUs进行混合精度训练，默认lr为0.01为8卡总batch_size的设置，如果**GPU卡数**或者每卡**batch size**发生了改变，你需要按照公式 **lr<sub>new</sub> = lr<sub>default</sub> * (batch_size<sub>new</sub> * GPU_number<sub>new</sub>) / (batch_size<sub>default</sub> * GPU_number<sub>default</sub>)** 调整学习率；
+  - MT-YOLOv6模型训练使用COCO train2017作为训练集，Box AP为在COCO val2017上的`mAP(IoU=0.5:0.95)`结果；
+  - MT-YOLOv6模型训练过程中默认使用8 GPUs进行混合精度训练，默认lr为0.01为8卡总batch_size的设置，如果**GPU卡数**或者每卡**batch size**发生改动，也不需要改动学习率，但为了保证高精度最好使用**总batch size大于64**的配置去训练；
   - 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡V100，batch size=1，测试环境为**paddlepaddle-2.3.0**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考[速度测试](#速度测试)。
   - 如果你设置了`--run_benchmark=True`, 你首先需要安装以下依赖`pip install pynvml psutil GPUtil`。
 
@@ -26,7 +26,7 @@
 ## 使用教程
 
 ### 1. 训练
-执行以下指令使用混合精度训练YOLOv6mt
+执行以下指令使用混合精度训练MT-YOLOv6
 ```bash
 python -m paddle.distributed.launch --gpus 0,1,2,3,4,5,6,7 tools/train.py -c configs/yolov6mt/yolov6mt_s_400e_coco.yml --amp --eval
 ```
@@ -50,7 +50,7 @@ CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c configs/yolov6mt/yolov6mt_s_400e
 ```
 
 ### 4.导出模型
-YOLOv6mt在GPU上推理部署或benchmark测速等需要通过`tools/export_model.py`导出模型。
+在GPU上推理部署或benchmark测速等需要通过`tools/export_model.py`导出模型。
 
 当你**使用Paddle Inference但不使用TensorRT**时，运行以下的命令导出模型
 
@@ -64,7 +64,7 @@ python tools/export_model.py -c configs/yolov6mt/yolov6mt_s_400e_coco.yml -o wei
 python tools/export_model.py -c configs/yolov6mt/yolov6mt_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov6mt_s_400e_coco.pdparams trt=True
 ```
 
-如果你想将YOLOv6mt模型导出为**ONNX格式**，参考
+如果你想将MT-YOLOv6模型导出为**ONNX格式**，参考
 [PaddleDetection模型导出为ONNX格式教程](../../deploy/EXPORT_ONNX_MODEL.md)，运行以下命令：
 
 ```bash
@@ -83,7 +83,7 @@ paddle2onnx --model_dir output_inference/yolov6mt_s_400e_coco --model_filename m
 
 
 ### 5.推理部署
-YOLOv6mt可以使用以下方式进行部署：
+MT-YOLOv6可以使用以下方式进行部署：
   - Paddle Inference [Python](../../deploy/python) & [C++](../../deploy/cpp)
   - [Paddle-TensorRT](../../deploy/TENSOR_RT.md)
   - [PaddleServing](https://github.com/PaddlePaddle/Serving)
