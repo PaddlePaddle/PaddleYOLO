@@ -6,7 +6,7 @@
  - github链接为：https://github.com/nemonameless/PaddleDetection_YOLOSeries
  - gitee链接为：https://gitee.com/nemonameless/PaddleDetection_YOLOSeries
  - [PP-YOLOE](configs/ppyoloe),[PP-YOLO](configs/ppyolo),[PP-YOLOv2](configs/ppyolo),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)等模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用。
- - [YOLOv5](configs/yolox),[YOLOv7](configs/yolov7)和[MT-YOLOv6](configs/yolov6mt)模型推荐在此代码库中使用，由于GPL开源协议不合入PaddleDetection主代码库。
+ - [YOLOv5](configs/yolox),[YOLOv7](configs/yolov7)和[MT-YOLOv6](configs/yolov6mt)模型推荐在此代码库中使用，由于GPL开源协议而不合入PaddleDetection主代码库。
 
 
 ## ModelZoo on COCO
@@ -75,8 +75,8 @@
  - [PP-YOLOE](configs/ppyoloe),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)里使用。
  - [YOLOv5](configs/yolox),[YOLOv7](configs/yolov7)和[MT-YOLOv6](configs/yolov6mt)由于GPL协议而不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)主代码库。
  - 各模型导出后的权重以及ONNX，分为带不带后处理NMS，都提供了下载链接，请参考各自模型主页下载。
- - 基于PaddleSlim对YOLO系列模型进行量化训练，可以实现精度基本无损，速度普遍提升30%以上，请参照[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/example/auto_compression)。
- - paddlepaddle版本推荐使用2.3.0以上。
+ - 基于[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim)对YOLO系列模型进行量化训练，可以实现精度基本无损，速度普遍提升30%以上，具体请参照[模型自动化压缩工具ACT](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/example/auto_compression)。
+ - paddlepaddle版本推荐使用2.3.0版本以上。
 
 
 ## 使用指南
@@ -130,6 +130,15 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
   model_type=yolov7
   job_name=yolov7_l_300e_coco
   ```
+- 统计参数量Params(M)，可以将以下代码插入[trainer.py](https://github.com/nemonameless/PaddleDetection_YOLOSeries/blob/develop/ppdet/engine/trainer.py#L150)。
+  ```python
+  params = sum([
+      p.numel() for n, p in self.model.named_parameters()
+      if all([x not in n for x in ['_mean', '_variance']])
+  ]) # exclude BatchNorm running status
+  print('Params: ', params / 1e6)
+  ```
+- 统计FLOPs(G)，首先安装PaddleSlim, `pip install paddleslim`，然后设置[runtime.yml](configs/runtime.yml)里`print_flops: True`，并且注意确保是单尺度下，打印的是MACs，FLOPs=2*MACs。
 
 ### 自定义数据集训练：
 
