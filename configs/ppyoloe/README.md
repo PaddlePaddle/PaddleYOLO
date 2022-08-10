@@ -133,6 +133,16 @@ paddle2onnx --model_dir output_inference/ppyoloe_crn_l_300e_coco --model_filenam
 
 **Notes:** ONNX model only supports batch_size=1 now
 
+- **Deploy models**
+
+| Model     | Input size | Exported Model(w/o postprocess) | ONNX(w/o postprocess)  |
+| :-------- | :--------: | :---------------------: | :----------------: |
+| PP-YOLOE-s(400epoch) |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_s_400e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_s_400e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_s_400e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_s_400e_coco.onnx) |
+| PP-YOLOE-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_s_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_s_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_s_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_s_300e_coco.onnx) |
+| PP-YOLOE-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_m_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_m_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_m_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_m_300e_coco.onnx) |
+| PP-YOLOE-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_l_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_l_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_l_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_l_300e_coco.onnx) |
+| PP-YOLOE-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_x_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_x_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_x_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_x_300e_coco.onnx) |
+
 ### Speed testing
 
 For fair comparison, the speed in [Model Zoo](#Model-Zoo) do not contains the time cost of data reading and post-processing(NMS), which is same as [YOLOv4(AlexyAB)](https://github.com/AlexeyAB/darknet) in testing method. Thus, you should export model with extra `-o exclude_nms=True` setting.
