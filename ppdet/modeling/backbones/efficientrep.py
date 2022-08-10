@@ -67,7 +67,7 @@ class BaseConv(nn.Layer):
             momentum=0.97,
             weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
             bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
-        # self.act = get_activation(act)
+        # self.act = get_activation(act) # silu
         self._init_weights()
 
     def _init_weights(self):
@@ -76,31 +76,15 @@ class BaseConv(nn.Layer):
     def forward(self, x):
         x = self.bn(self.conv(x))
         # y = self.act(x)
-        y = x * F.sigmoid(x)
+        if self.training:
+            y = self.act(x)
+        else:
+            y = x * F.sigmoid(x)
         return y
 
 
-class RepLayer(nn.Layer):
-    """
-    RepLayer with RepConvs, like CSPLayer(C3) in YOLOv5/YOLOX
-    """
-
-    def __init__(self, in_channels, out_channels, num_repeats=1):
-        super().__init__()
-        self.conv1 = RepConv(in_channels, out_channels)
-        self.blocks = (nn.Sequential(*(RepConv(out_channels, out_channels)
-                                       for _ in range(num_repeats - 1)))
-                       if num_repeats > 1 else None)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        if self.blocks is not None:
-            x = self.blocks(x)
-        return x
-
-
 class RepConv(nn.Layer):
-    # RepVGG Conv BN Block, see https://arxiv.org/abs/2101.03697
+    # RepVGG Conv BN Relu Block, see https://arxiv.org/abs/2101.03697
     def __init__(self,
                  in_channels,
                  out_channels,
@@ -120,7 +104,7 @@ class RepConv(nn.Layer):
         padding_11 = padding - kernel_size // 2
         self.stride = stride  # not always 1
 
-        self.act = get_activation(act)
+        self.act = nn.ReLU()  # get_activation(act)
 
         if self.deploy:
             self.rbr_reparam = nn.Conv2D(
@@ -238,6 +222,25 @@ class RepConv(nn.Layer):
         if hasattr(self, "id_tensor"):
             self.__delattr__("id_tensor")
         self.deploy = True
+
+
+class RepLayer(nn.Layer):
+    """
+    RepLayer with RepConvs, like CSPLayer(C3) in YOLOv5/YOLOX
+    """
+
+    def __init__(self, in_channels, out_channels, num_repeats=1):
+        super().__init__()
+        self.conv1 = RepConv(in_channels, out_channels)
+        self.blocks = (nn.Sequential(*(RepConv(out_channels, out_channels)
+                                       for _ in range(num_repeats - 1)))
+                       if num_repeats > 1 else None)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        if self.blocks is not None:
+            x = self.blocks(x)
+        return x
 
 
 class SimConv(nn.Layer):

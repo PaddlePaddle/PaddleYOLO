@@ -73,8 +73,10 @@ class BaseConv(nn.Layer):
 
     def forward(self, x):
         x = self.bn(self.conv(x))
-        y = self.act(x)
-        # y = x * F.sigmoid(x)
+        if self.training:
+            y = self.act(x)
+        else:
+            y = x * F.sigmoid(x)  # silu
         return y
 
 
@@ -628,36 +630,29 @@ class ImplicitM(nn.Layer):
         return self.im * x
 
 
-def autopad(k, p=None):  # kernel, padding
-    # Pad to 'same'
-    if p is None:
-        p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # auto-pad
-    return p
-
-
 class RepConv(nn.Layer):
     # RepVGG, see https://arxiv.org/abs/2101.03697
-    def __init__(self, c1, c2, k=3, s=1, p=None, g=1, act=True, deploy=False):
+    def __init__(self, c1, c2, k=3, s=1, p=1, g=1, act='silu', deploy=False):
         super(RepConv, self).__init__()
         self.deploy = deploy
         self.groups = g
         self.in_channels = c1
         self.out_channels = c2
         assert k == 3
-        assert autopad(k, p) == 1
-        padding_11 = autopad(k, p) - k // 2
+        assert p == 1
+        padding_11 = p - k // 2
 
         self.act = get_activation(act)
 
         if deploy:
             self.rbr_reparam = nn.Conv2D(
-                c1, c2, k, s, autopad(k, p), groups=g, bias_attr=True)
+                c1, c2, k, s, p, groups=g, bias_attr=True)
         else:
             self.rbr_identity = (nn.BatchNorm2D(c1)
                                  if c2 == c1 and s == 1 else None)
             self.rbr_dense = nn.Sequential(* [
                 nn.Conv2D(
-                    c1, c2, k, s, autopad(k, p), groups=g, bias_attr=False),
+                    c1, c2, k, s, p, groups=g, bias_attr=False),
                 nn.BatchNorm2D(c2),
             ])
             self.rbr_1x1 = nn.Sequential(* [
@@ -669,8 +664,10 @@ class RepConv(nn.Layer):
     def forward(self, inputs):
         if hasattr(self, "rbr_reparam"):
             x = self.rbr_reparam(inputs)
-            y = self.act(x)
-            # y = x * F.sigmoid(x)
+            if self.training:
+                y = self.act(x)
+            else:
+                y = x * F.sigmoid(x)  # silu
             return y
 
         if self.rbr_identity is None:
@@ -679,8 +676,10 @@ class RepConv(nn.Layer):
             id_out = self.rbr_identity(inputs)
 
         x = self.rbr_dense(inputs) + self.rbr_1x1(inputs) + id_out
-        y = self.act(x)
-        # y = x * F.sigmoid(x)
+        if self.training:
+            y = self.act(x)
+        else:
+            y = x * F.sigmoid(x)  # silu
         return y
 
     def get_equivalent_kernel_bias(self):

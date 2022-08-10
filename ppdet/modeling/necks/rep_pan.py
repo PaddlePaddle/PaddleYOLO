@@ -38,7 +38,7 @@ class RepPAN(nn.Layer):
                  out_channels=[256, 512, 1024],
                  num_repeats=[12, 12, 12, 12],
                  depthwise=False,
-                 act='silu',
+                 act='relu',
                  trt=False):
         super(RepPAN, self).__init__()
         backbone_ch_list = [64, 128, 256, 512, 1024]
@@ -52,32 +52,22 @@ class RepPAN(nn.Layer):
         in_ch, out_ch = self.in_channels[2], ch_list[5]
         self.lateral_conv1 = SimConv(in_ch, out_ch, 1, 1)
         self.up1 = Transpose(out_ch, out_ch)
-        self.rep_fpn1 = RepLayer(
-            self.in_channels[1] + out_ch,  # 512+256
-            out_ch,  # 256
-            num_repeats[0])
+        self.rep_fpn1 = RepLayer(self.in_channels[1] + out_ch, out_ch,
+                                 num_repeats[0])
 
         in_ch, out_ch = ch_list[5], ch_list[6]
         self.lateral_conv2 = SimConv(in_ch, out_ch, 1, 1)
         self.up2 = Transpose(out_ch, out_ch)
-        self.rep_fpn2 = RepLayer(
-            self.in_channels[0] + out_ch,  # 128+64
-            out_ch,  # 64
-            num_repeats[1])
+        self.rep_fpn2 = RepLayer(self.in_channels[0] + out_ch, out_ch,
+                                 num_repeats[1])
 
         in_ch, out_ch1, out_ch2 = ch_list[6], ch_list[7], ch_list[8]
         self.down_conv1 = SimConv(in_ch, out_ch1, 3, 2)
-        self.rep_pan1 = RepLayer(
-            in_ch + out_ch1,  # 64+64
-            out_ch2,  # 128
-            num_repeats[2])
+        self.rep_pan1 = RepLayer(in_ch + out_ch1, out_ch2, num_repeats[2])
 
         in_ch, out_ch1, out_ch2 = ch_list[8], ch_list[9], ch_list[10]
         self.down_conv2 = SimConv(in_ch, out_ch1, 3, 2)
-        self.rep_pan2 = RepLayer(
-            ch_list[5] + out_ch1,  # 128+128
-            out_ch2,  # 256
-            num_repeats[3])
+        self.rep_pan2 = RepLayer(ch_list[5] + out_ch1, out_ch2, num_repeats[3])
 
     def forward(self, feats, for_mot=False):
         assert len(feats) == len(self.in_channels)
