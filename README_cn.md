@@ -13,8 +13,6 @@
 
 ### [PP-YOLOE](configs/ppyoloe)
 
-- model zoo
-
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | PP-YOLOE-s   |     640   |    32    |  400e    |    2.9    |       43.4        |        60.0         |   7.93    |  17.36   | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_s_400e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_s_400e_coco.yml)                   |
@@ -23,17 +21,6 @@
 | PP-YOLOE-l   |      640  |    20    |  300e    |    8.7    |       51.4        |        65.9         |   52.20   |  110.07 | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_l_300e_coco.yml)                   |
 | PP-YOLOE-x   |      640  |    16    |  300e    |    14.9   |       **52.3**    |        **69.5**     |   98.42   |  206.59  |[model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_x_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_x_300e_coco.yml)  
 | PP-YOLOE-ConvNeXt-tiny | 640 |    16      |   36e    | -   |       44.6        |        63.3         |   33.04   |  **13.87** | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_convnext_tiny_36e_coco.pdparams) | [config](configs/convnext/ppyoloe_convnext_tiny_36e_coco.yml) |
-
- 
-- 部署模型
- 
-| 模型     | 输入尺寸 | 导出后的模型(w/o 后处理) | ONNX(w/o 后处理) |
-| :-------- | :--------: | :---------------------: | :----------------: |
-| PP-YOLOE-s(400epoch) |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_s_400e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_s_400e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_s_400e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_s_400e_coco.onnx) |
-| PP-YOLOE-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_s_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_s_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_s_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_s_300e_coco.onnx) |
-| PP-YOLOE-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_m_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_m_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_m_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_m_300e_coco.onnx) |
-| PP-YOLOE-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_l_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_l_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_l_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_l_300e_coco.onnx) |
-| PP-YOLOE-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_x_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_x_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_x_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_x_300e_coco.onnx) |
  
 ### [YOLOX](configs/yolox)
 
