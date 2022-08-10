@@ -17,9 +17,9 @@
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | PP-YOLOE-s   |     640   |    32    |  400e    |    2.9    |       43.4        |        60.0         |   7.93    |  17.36   | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_s_400e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_s_400e_coco.yml)                   |
 | PP-YOLOE-s   |     640   |    32    |  300e    |    2.9    |       43.0        |        59.6         |   7.93    |  17.36   | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_s_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_s_300e_coco.yml)                   |
-| PP-YOLOE-m   |      640  |    32    |  300e    |    6.0    |       49.0        |        49.1         |   23.43   |  49.91   | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_m_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_m_300e_coco.yml)                   |
-| PP-YOLOE-l   |      640  |    32    |  300e    |    8.7    |       51.4        |        65.9         |   52.20   |  110.07 | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_l_300e_coco.yml)                   |
-| PP-YOLOE-x   |      640  |    32    |  300e    |    14.9   |       **52.3**    |        **69.5**     |   98.42   |  206.59  |[model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_x_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_x_300e_coco.yml)  
+| PP-YOLOE-m   |      640  |    28    |  300e    |    6.0    |       49.0        |        49.1         |   23.43   |  49.91   | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_m_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_m_300e_coco.yml)                   |
+| PP-YOLOE-l   |      640  |    20    |  300e    |    8.7    |       51.4        |        65.9         |   52.20   |  110.07 | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_l_300e_coco.yml)                   |
+| PP-YOLOE-x   |      640  |    16    |  300e    |    14.9   |       **52.3**    |        **69.5**     |   98.42   |  206.59  |[model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_x_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_x_300e_coco.yml)  
 | PP-YOLOE-ConvNeXt-tiny | 640 |    16      |   36e    | -   |       44.6        |        63.3         |   33.04   |  **13.87** | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_convnext_tiny_36e_coco.pdparams) | [config](configs/convnext/ppyoloe_convnext_tiny_36e_coco.yml) |
 
 ### [YOLOX](configs/yolox)
@@ -51,10 +51,10 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 推理耗时(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| *YOLOv6mt-n       |  416     |    32      |   400e    |     3.2    | 30.5  |    46.8 |  4.74  | 2.58 |[model](https://paddledet.bj.bcebos.com/models/yolov6mt_n_416_400e_coco.pdparams) | [config](configs/yolov6mt/yolov6mt_n_416_400e_coco.yml) |
-| *YOLOv6mt-n       |  640     |    32      |   400e    |     3.8    |  34.7 |    52.7 |  4.74  |  6.10 |[model](https://paddledet.bj.bcebos.com/models/yolov6mt_n_400e_coco.pdparams) | [config](configs/yolov6mt/yolov6mt_n_400e_coco.yml) |
-| *YOLOv6mt-t       |  640     |    32      |   400e    |     3.9    |  40.8 |  60.4 |  16.36  | 19.97 |[model](https://paddledet.bj.bcebos.com/models/yolov6mt_t_400e_coco.pdparams) | [config](configs/yolov6mt/yolov6mt_t_400e_coco.yml) |
-| *YOLOv6mt-s       |  640     |    32      |   400e    |     4.1    | 42.5 |    61.7 |  18.87  | 24.18 |[model](https://paddledet.bj.bcebos.com/models/yolov6mt_s_400e_coco.pdparams) | [config](configs/yolov6mt/yolov6mt_s_400e_coco.yml) |
+| *YOLOv6mt-n       |  416     |    32      |   400e    |     2.5    | 30.5  |    46.8 |  4.74  | 2.58 |[model](https://paddledet.bj.bcebos.com/models/yolov6mt_n_416_400e_coco.pdparams) | [config](configs/yolov6mt/yolov6mt_n_416_400e_coco.yml) |
+| *YOLOv6mt-n       |  640     |    32      |   400e    |     2.8    |  34.7 |    52.7 |  4.74  |  6.10 |[model](https://paddledet.bj.bcebos.com/models/yolov6mt_n_400e_coco.pdparams) | [config](configs/yolov6mt/yolov6mt_n_400e_coco.yml) |
+| *YOLOv6mt-t       |  640     |    32      |   400e    |     2.9    |  40.8 |  60.4 |  16.36  | 19.97 |[model](https://paddledet.bj.bcebos.com/models/yolov6mt_t_400e_coco.pdparams) | [config](configs/yolov6mt/yolov6mt_t_400e_coco.yml) |
+| *YOLOv6mt-s       |  640     |    32      |   400e    |     3.0    | 42.5 |    61.7 |  18.87  | 24.18 |[model](https://paddledet.bj.bcebos.com/models/yolov6mt_s_400e_coco.pdparams) | [config](configs/yolov6mt/yolov6mt_s_400e_coco.yml) |
 
 ### [YOLOv7](configs/yolov7)
 
@@ -63,7 +63,7 @@
 | YOLOv7-L        |  640     |    32      |   300e    |     7.4     |  51.0  | 70.2 |  37.62  | 53.04 |[model](https://paddledet.bj.bcebos.com/models/yolov7_l_300e_coco.pdparams) | [config](configs/yolov7/yolov7_l_300e_coco.yml) |
 | *YOLOv7-X        |  640     |    32      |   300e    |     12.2    |  53.0  | 70.8 |  71.34  | 95.04 | [model](https://paddledet.bj.bcebos.com/models/yolov7_x_300e_coco.pdparams) | [config](configs/yolov7/yolov7_x_300e_coco.yml) |
 | *YOLOv7P6-W6     |  1280    |    16      |   300e    |     25.5    |  54.4  | 71.8 |  70.43  | 180.13 | [model](https://paddledet.bj.bcebos.com/models/yolov7p6_w6_300e_coco.pdparams) | [config](configs/yolov7/yolov7p6_w6_300e_coco.yml) |
-| *YOLOv7P6-E6     |  1280    |    12      |   300e    |     31.1    |  55.7  | 73.0 |  97.25  | 257.70 | [model](https://paddledet.bj.bcebos.com/models/yolov7p6_e6_300e_coco.pdparams) | [config](configs/yolov7/yolov7p6_e6_300e_coco.yml) |
+| *YOLOv7P6-E6     |  1280    |    10      |   300e    |     31.1    |  55.7  | 73.0 |  97.25  | 257.70 | [model](https://paddledet.bj.bcebos.com/models/yolov7p6_e6_300e_coco.pdparams) | [config](configs/yolov7/yolov7p6_e6_300e_coco.yml) |
 | *YOLOv7P6-D6     |  1280    |    8      |   300e    |     37.4    | 56.1  | 73.3 |  133.81  | 351.46 | [model](https://paddledet.bj.bcebos.com/models/yolov7p6_d6_300e_coco.pdparams) | [config](configs/yolov7/yolov7p6_d6_300e_coco.yml) |
 | *YOLOv7P6-E6E    |  1280    |    6      |   300e    |     48.7    |  56.5  | 73.7 |  151.76  | 421.76 | [model](https://paddledet.bj.bcebos.com/models/yolov7p6_e6e_300e_coco.pdparams) | [config](configs/yolov7/yolov7p6_e6e_300e_coco.yml) |
 

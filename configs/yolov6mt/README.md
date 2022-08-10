@@ -10,10 +10,10 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| YOLOv6mt-n       |  416     |    32      |   400e    |     3.2    | 30.5  |    46.8 |  4.74  | 2.58 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_416_400e_coco.pdparams) | [配置文件](./yolov6mt_n_416_400e_coco.yml) |
-| YOLOv6mt-n       |  640     |    32      |   400e    |     3.8    |  34.7 |    52.7 |  4.74  |  6.10 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_400e_coco.pdparams) | [配置文件](./yolov6mt_n_400e_coco.yml) |
-| YOLOv6mt-t       |  640     |    32      |   400e    |     3.9    |  40.8 |  60.4 |  16.36  | 19.97 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_t_400e_coco.pdparams) | [配置文件](./yolov6mt_t_400e_coco.yml) |
-| YOLOv6mt-s       |  640     |    32      |   400e    |     4.1    | 42.5 |    61.7 |  18.87  | 24.18 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_s_400e_coco.pdparams) | [配置文件](./yolov6mt_s_400e_coco.yml) |
+| YOLOv6mt-n       |  416     |    32      |   400e    |     2.5    | 30.5  |    46.8 |  4.74  | 2.58 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_416_400e_coco.pdparams) | [配置文件](./yolov6mt_n_416_400e_coco.yml) |
+| YOLOv6mt-n       |  640     |    32      |   400e    |     2.8    |  34.7 |    52.7 |  4.74  |  6.10 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_n_400e_coco.pdparams) | [配置文件](./yolov6mt_n_400e_coco.yml) |
+| YOLOv6mt-t       |  640     |    32      |   400e    |     2.9    |  40.8 |  60.4 |  16.36  | 19.97 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_t_400e_coco.pdparams) | [配置文件](./yolov6mt_t_400e_coco.yml) |
+| YOLOv6mt-s       |  640     |    32      |   400e    |     3.0    | 42.5 |    61.7 |  18.87  | 24.18 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6mt_s_400e_coco.pdparams) | [配置文件](./yolov6mt_s_400e_coco.yml) |
 
 
 **注意:**

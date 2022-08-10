@@ -67,7 +67,7 @@ class BaseConv(nn.Layer):
             momentum=0.97,
             weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
             bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
-        # self.act = get_activation(act) # silu
+        self.act = get_activation(act)  # silu
         self._init_weights()
 
     def _init_weights(self):
@@ -75,7 +75,6 @@ class BaseConv(nn.Layer):
 
     def forward(self, x):
         x = self.bn(self.conv(x))
-        # y = self.act(x)
         if self.training:
             y = self.act(x)
         else:

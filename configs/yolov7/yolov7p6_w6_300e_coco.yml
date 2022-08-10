@@ -10,6 +10,7 @@ snapshot_epoch: 10
 weights: output/yolov7p6_w6_300e_coco/model_final
 
 arch: 'W6'
+use_aux: True
 
 TrainReader:
   batch_size: 16
