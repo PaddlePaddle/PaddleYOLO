@@ -140,6 +140,11 @@ class RandomHSV(BaseOperator):
 class MosaicPerspective(BaseOperator):
     """
     Mosaic Data Augmentation and Perspective
+    The code is based on https://github.com/WongKinYiu/yolov7
+
+    1. get mosaic coords, _mosaic_preprocess, get mosaic_labels
+    2. random_perspective augment
+    3. copy_paste,mixup,paste_in
     """
 
     def __init__(self,
@@ -216,7 +221,6 @@ class MosaicPerspective(BaseOperator):
             image[y1a:y2a, x1a:x2a] = im[y1b:y2b, x1b:x2b]
             padw = x1a - x1b
             padh = y1a - y1b
-            #gt_bboxes[i] = self.xywhn2xyxy(gt_bboxes[i], w, h, padw, padh)
             gt_bboxes[i][:, 0] = scale * gt_bboxes[i][:, 0] + padw
             gt_bboxes[i][:, 1] = scale * gt_bboxes[i][:, 1] + padh
             gt_bboxes[i][:, 2] = scale * gt_bboxes[i][:, 2] + padw
@@ -264,9 +268,6 @@ class MosaicPerspective(BaseOperator):
                            shear=10,
                            perspective=0.0,
                            border=(0, 0)):
-        # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(0.1, 0.1), scale=(0.9, 1.1), shear=(-10, 10))
-        # targets = [cls, xyxy]
-
         targets = np.concatenate((gt_classes, gt_box), 1)
         height = im.shape[0] + border[0] * 2  # shape(h,w,c)
         width = im.shape[1] + border[1] * 2

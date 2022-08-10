@@ -21,15 +21,13 @@ import paddle.nn.functional as F
 from paddle import ParamAttr
 from ppdet.core.workspace import register, serializable
 from ..shape_spec import ShapeSpec
-from ..backbones.efficientrep import RepBlock, SimConv, Transpose, make_divisible
+from ..backbones.efficientrep import make_divisible, SimConv, Transpose, RepLayer
 
 
 @register
 @serializable
-class RepPANNeck(nn.Layer):
-    """RepPANNeck Module
-    EfficientRep is the default backbone of this model.
-    RepPANNeck has the balance of feature fusion ability and hardware efficiency.
+class RepPAN(nn.Layer):
+    """RepPAN of MT-YOLOv6
     """
     __shared__ = ['depth_mult', 'width_mult', 'act', 'trt']
 
@@ -37,80 +35,74 @@ class RepPANNeck(nn.Layer):
                  depth_mult=1.0,
                  width_mult=1.0,
                  in_channels=[256, 512, 1024],
-                 out_channels=[1024, 512, 256],
+                 out_channels=[256, 512, 1024],
                  num_repeats=[12, 12, 12, 12],
                  depthwise=False,
-                 data_format='NCHW',
                  act='silu',
                  trt=False):
-        super().__init__()
-        channels_list = [64, 128, 256, 512, 1024] + [
-            256, 128, 128, 256, 256, 512
-        ]
+        super(RepPAN, self).__init__()
+        backbone_ch_list = [64, 128, 256, 512, 1024]
+        ch_list = backbone_ch_list + [256, 128, 128, 256, 256, 512]
         num_repeats = [(max(round(i * depth_mult), 1) if i > 1 else i)
                        for i in (num_repeats)]
-        channels_list = [
-            make_divisible(i * width_mult, 8) for i in (channels_list)
-        ]
+        ch_list = [make_divisible(i * width_mult, 8) for i in (ch_list)]
         self.in_channels = in_channels
-        self._out_channels = in_channels
+        self._out_channels = ch_list[6], ch_list[8], ch_list[10]
 
-        # top-down FPN
-        self.reduce_layer0 = SimConv(
-            channels_list[4], channels_list[5], kernel_size=1, stride=1)
-        self.upsample0 = Transpose(channels_list[5], channels_list[5])
-        self.Rep_p4 = RepBlock(
-            channels_list[3] + channels_list[5],  # 256+128
-            out_channels=channels_list[5],  # 128
-            n=num_repeats[0], )
+        in_ch, out_ch = self.in_channels[2], ch_list[5]
+        self.lateral_conv1 = SimConv(in_ch, out_ch, 1, 1)
+        self.up1 = Transpose(out_ch, out_ch)
+        self.rep_fpn1 = RepLayer(
+            self.in_channels[1] + out_ch,  # 512+256
+            out_ch,  # 256
+            num_repeats[0])
 
-        self.reduce_layer1 = SimConv(
-            channels_list[5], channels_list[6], kernel_size=1, stride=1)
-        self.upsample1 = Transpose(channels_list[6], channels_list[6])
-        self.Rep_p3 = RepBlock(
-            in_channels=channels_list[2] + channels_list[6],  # 128+64
-            out_channels=channels_list[6],  # 64
-            n=num_repeats[1])
+        in_ch, out_ch = ch_list[5], ch_list[6]
+        self.lateral_conv2 = SimConv(in_ch, out_ch, 1, 1)
+        self.up2 = Transpose(out_ch, out_ch)
+        self.rep_fpn2 = RepLayer(
+            self.in_channels[0] + out_ch,  # 128+64
+            out_ch,  # 64
+            num_repeats[1])
 
-        # bottom-up PAN
-        self.downsample2 = SimConv(
-            channels_list[6], channels_list[7], kernel_size=3, stride=2)
-        self.Rep_n3 = RepBlock(
-            in_channels=channels_list[6] + channels_list[7],  # 64+64
-            out_channels=channels_list[8],  # 128
-            n=num_repeats[2], )
+        in_ch, out_ch1, out_ch2 = ch_list[6], ch_list[7], ch_list[8]
+        self.down_conv1 = SimConv(in_ch, out_ch1, 3, 2)
+        self.rep_pan1 = RepLayer(
+            in_ch + out_ch1,  # 64+64
+            out_ch2,  # 128
+            num_repeats[2])
 
-        self.downsample1 = SimConv(
-            channels_list[8], channels_list[9], kernel_size=3, stride=2)
-        self.Rep_n4 = RepBlock(
-            in_channels=channels_list[5] + channels_list[9],  # 128+128
-            out_channels=channels_list[10],  # 256
-            n=num_repeats[3])
+        in_ch, out_ch1, out_ch2 = ch_list[8], ch_list[9], ch_list[10]
+        self.down_conv2 = SimConv(in_ch, out_ch1, 3, 2)
+        self.rep_pan2 = RepLayer(
+            ch_list[5] + out_ch1,  # 128+128
+            out_ch2,  # 256
+            num_repeats[3])
 
     def forward(self, feats, for_mot=False):
         assert len(feats) == len(self.in_channels)
-        [x2, x1, x0] = feats
+        [c3, c4, c5] = feats
         # [8, 128, 80, 80] [8, 256, 40, 40] [8, 512, 20, 20]
 
         # top-down FPN
-        fpn_out0 = self.reduce_layer0(x0)
-        upsample_feat0 = self.upsample0(fpn_out0)
-        f_concat_layer0 = paddle.concat([upsample_feat0, x1], 1)
-        f_out0 = self.Rep_p4(f_concat_layer0)
+        fpn_out1 = self.lateral_conv1(c5)
+        up_feat1 = self.up1(fpn_out1)
+        f_concat1 = paddle.concat([up_feat1, c4], 1)
+        f_out1 = self.rep_fpn1(f_concat1)
 
-        fpn_out1 = self.reduce_layer1(f_out0)
-        upsample_feat1 = self.upsample1(fpn_out1)
-        f_concat_layer1 = paddle.concat([upsample_feat1, x2], 1)
-        pan_out2 = self.Rep_p3(f_concat_layer1)
+        fpn_out2 = self.lateral_conv2(f_out1)
+        up_feat2 = self.up2(fpn_out2)
+        f_concat2 = paddle.concat([up_feat2, c3], 1)
+        pan_out2 = self.rep_fpn2(f_concat2)
 
         # bottom-up PAN
-        down_feat1 = self.downsample2(pan_out2)
-        p_concat_layer1 = paddle.concat([down_feat1, fpn_out1], 1)
-        pan_out1 = self.Rep_n3(p_concat_layer1)
+        down_feat1 = self.down_conv1(pan_out2)
+        p_concat1 = paddle.concat([down_feat1, fpn_out2], 1)
+        pan_out1 = self.rep_pan1(p_concat1)
 
-        down_feat0 = self.downsample1(pan_out1)
-        p_concat_layer2 = paddle.concat([down_feat0, fpn_out0], 1)
-        pan_out0 = self.Rep_n4(p_concat_layer2)
+        down_feat2 = self.down_conv2(pan_out1)
+        p_concat2 = paddle.concat([down_feat2, fpn_out1], 1)
+        pan_out0 = self.rep_pan2(p_concat2)
 
         return [pan_out2, pan_out1, pan_out0]
 

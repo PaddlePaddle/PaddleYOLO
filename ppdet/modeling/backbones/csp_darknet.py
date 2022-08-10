@@ -667,7 +667,6 @@ class RepConv(nn.Layer):
             ])
 
     def forward(self, inputs):
-        # [8, 128, 80, 80] [8, 256, 40, 40] [8, 512, 20, 20]
         if hasattr(self, "rbr_reparam"):
             x = self.rbr_reparam(inputs)
             y = self.act(x)
@@ -730,10 +729,9 @@ class RepConv(nn.Layer):
     def convert_to_deploy(self):
         if hasattr(self, 'rbr_reparam'):
             return
-        print(f"RepConv_OREPA.switch_to_deploy")
         kernel, bias = self.get_equivalent_kernel_bias()
         if not hasattr(self, 'rbr_reparam'):
-            self.conv = nn.Conv2D(
+            self.rbr_reparam = nn.Conv2D(
                 self.in_channels,
                 self.out_channels,
                 3,
@@ -741,88 +739,15 @@ class RepConv(nn.Layer):
                 1,
                 groups=self.groups,
                 bias_attr=True)
-        return (kernel.numpy(), bias.numpy())
-
-    def fuse_conv_bn(self, conv, bn):
-        std = (bn.running_var + bn.eps).sqrt()
-        bias = bn.bias - bn.running_mean * bn.weight / std
-        t = (bn.weight / std).reshape(-1, 1, 1, 1)
-        weights = conv.weight * t
-        bn = nn.Identity()
-        conv = nn.Conv2D(
-            in_channels=conv.in_channels,
-            out_channels=conv.out_channels,
-            kernel_size=conv.kernel_size,
-            stride=conv.stride,
-            padding=conv.padding,
-            dilation=conv.dilation,
-            groups=conv.groups,
-            bias=True,
-            padding_mode=conv.padding_mode)
-        conv.weight.set_value(weights)
-        conv.bias.set_value(bias)
-        return conv
-
-    def fuse_repvgg_block(self):
-        if self.deploy:
-            return
-        print(f"RepConv.fuse_repvgg_block")
-        self.rbr_dense = self.fuse_conv_bn(self.rbr_dense[0], self.rbr_dense[1])
-        self.rbr_1x1 = self.fuse_conv_bn(self.rbr_1x1[0], self.rbr_1x1[1])
-        rbr_1x1_bias = self.rbr_1x1.bias
-        weight_1x1_expanded = nn.functional.pad(self.rbr_1x1.weight,
-                                                [1, 1, 1, 1])
-
-        # Fuse self.rbr_identity
-        if isinstance(self.rbr_identity, nn.BatchNorm2D):
-            identity_conv_1x1 = nn.Conv2D(
-                in_channels=self.in_channels,
-                out_channels=self.out_channels,
-                kernel_size=1,
-                stride=1,
-                padding=0,
-                groups=self.groups,
-                bias=False)
-            identity_conv_1x1.weight.data = identity_conv_1x1.weight.data.to(
-                self.rbr_1x1.weight.data.device)
-            identity_conv_1x1.weight.data = identity_conv_1x1.weight.data.squeeze(
-            ).squeeze()
-            identity_conv_1x1.weight.data.fill_(0.0)
-            identity_conv_1x1.weight.data.fill_diagonal_(1.0)
-            identity_conv_1x1.weight.data = identity_conv_1x1.weight.data.unsqueeze(
-                2).unsqueeze(3)
-
-            identity_conv_1x1 = self.fuse_conv_bn(identity_conv_1x1,
-                                                  self.rbr_identity)
-            bias_identity_expanded = identity_conv_1x1.bias
-            weight_identity_expanded = nn.functional.pad(
-                identity_conv_1x1.weight, [1, 1, 1, 1])
-        else:
-            bias_identity_expanded = nn.Parameter(
-                paddle.zeros_like(rbr_1x1_bias))
-            weight_identity_expanded = nn.Parameter(
-                paddle.zeros_like(weight_1x1_expanded))
-
-        self.rbr_dense.weight = nn.Parameter(self.rbr_dense.weight +
-                                             weight_1x1_expanded +
-                                             weight_identity_expanded)
-        self.rbr_dense.bias = nn.Parameter(self.rbr_dense.bias + rbr_1x1_bias +
-                                           bias_identity_expanded)
-
-        self.rbr_reparam = self.rbr_dense
+        self.rbr_reparam.weight.set_value(kernel)
+        self.rbr_reparam.bias.set_value(bias)
+        self.__delattr__("rbr_dense")
+        self.__delattr__("rbr_1x1")
+        if hasattr(self, "rbr_identity"):
+            self.__delattr__("rbr_identity")
+        if hasattr(self, "id_tensor"):
+            self.__delattr__("id_tensor")
         self.deploy = True
-
-        if self.rbr_identity is not None:
-            del self.rbr_identity
-            self.rbr_identity = None
-
-        if self.rbr_1x1 is not None:
-            del self.rbr_1x1
-            self.rbr_1x1 = None
-
-        if self.rbr_dense is not None:
-            del self.rbr_dense
-            self.rbr_dense = None
 
 
 @register

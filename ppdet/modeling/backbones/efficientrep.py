@@ -20,10 +20,15 @@ import numpy as np
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
+from paddle import ParamAttr
+from paddle.regularizer import L2Decay
+from paddle.nn.initializer import Constant
+from ppdet.modeling.initializer import conv_init_, normal_
+
 from ppdet.core.workspace import register, serializable
 from ..shape_spec import ShapeSpec
 
-__all__ = ['RepVGGBlock', 'RepBlock', 'SimSPPF']
+__all__ = ['RepConv', 'RepLayer', 'SimSPPF', 'EfficientRep']
 
 
 def get_activation(name="silu"):
@@ -38,29 +43,35 @@ def get_activation(name="silu"):
     return module
 
 
-class Conv(nn.Layer):
-    '''Normal Conv with SiLU activation'''
-
+class BaseConv(nn.Layer):
     def __init__(self,
                  in_channels,
                  out_channels,
-                 kernel_size,
+                 ksize,
                  stride,
                  groups=1,
                  bias=False,
-                 act='silu'):
-        super().__init__()
-        padding = kernel_size // 2
+                 act="silu"):
+        super(BaseConv, self).__init__()
         self.conv = nn.Conv2D(
             in_channels,
             out_channels,
-            kernel_size=kernel_size,
+            kernel_size=ksize,
             stride=stride,
-            padding=padding,
+            padding=(ksize - 1) // 2,
             groups=groups,
             bias_attr=bias)
-        self.bn = nn.BatchNorm2D(out_channels, epsilon=1e-3, momentum=0.97)
+        self.bn = nn.BatchNorm2D(
+            out_channels,
+            epsilon=1e-3,  # for amp(fp16)
+            momentum=0.97,
+            weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
+            bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
         # self.act = get_activation(act)
+        self._init_weights()
+
+    def _init_weights(self):
+        conv_init_(self.conv)
 
     def forward(self, x):
         x = self.bn(self.conv(x))
@@ -69,145 +80,107 @@ class Conv(nn.Layer):
         return y
 
 
-def conv_bn(in_channels, out_channels, kernel_size, stride, padding, groups=1):
-    """Basic cell for rep-style block, including conv and bn"""
-    result = nn.Sequential()
-    result.add_sublayer(
-        "conv",
-        nn.Conv2D(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            kernel_size=kernel_size,
-            stride=stride,
-            padding=padding,
-            groups=groups,
-            bias_attr=False))
-    result.add_sublayer(
-        "bn",
-        nn.BatchNorm2D(
-            num_features=out_channels, epsilon=1e-3, momentum=0.97))
-    return result
-
-
-class RepBlock(nn.Layer):
+class RepLayer(nn.Layer):
     """
-    RepBlock is a stage block with rep-style basic block
+    RepLayer with RepConvs, like CSPLayer(C3) in YOLOv5/YOLOX
     """
 
-    def __init__(self, in_channels, out_channels, n=1):
+    def __init__(self, in_channels, out_channels, num_repeats=1):
         super().__init__()
-        self.conv1 = RepVGGBlock(in_channels, out_channels)
-        self.block = (nn.Sequential(*(RepVGGBlock(out_channels, out_channels)
-                                      for _ in range(n - 1)))
-                      if n > 1 else None)
+        self.conv1 = RepConv(in_channels, out_channels)
+        self.blocks = (nn.Sequential(*(RepConv(out_channels, out_channels)
+                                       for _ in range(num_repeats - 1)))
+                       if num_repeats > 1 else None)
 
     def forward(self, x):
         x = self.conv1(x)
-        if self.block is not None:
-            x = self.block(x)
+        if self.blocks is not None:
+            x = self.blocks(x)
         return x
 
 
-class RepVGGBlock(nn.Layer):
-    """RepVGGBlock is a basic rep-style block, including training and deploy status
-    This code is based on https://github.com/DingXiaoH/RepVGG/blob/main/repvgg.py
-    """
-
+class RepConv(nn.Layer):
+    # RepVGG Conv BN Block, see https://arxiv.org/abs/2101.03697
     def __init__(self,
                  in_channels,
                  out_channels,
                  kernel_size=3,
                  stride=1,
                  padding=1,
-                 dilation=1,
                  groups=1,
-                 padding_mode="zeros",
-                 deploy=False,
-                 use_se=False):
-        super(RepVGGBlock, self).__init__()
-        """ Intialization of the class.
-        Args:
-            in_channels (int): Number of channels in the input image
-            out_channels (int): Number of channels produced by the convolution
-            kernel_size (int or tuple): Size of the convolving kernel
-            stride (int or tuple, optional): Stride of the convolution. Default: 1
-            padding (int or tuple, optional): Zero-padding added to both sides of
-                the input. Default: 1
-            dilation (int or tuple, optional): Spacing between kernel elements. Default: 1
-            groups (int, optional): Number of blocked connections from input
-                channels to output channels. Default: 1
-            padding_mode (string, optional): Default: 'zeros'
-            deploy: Whether to be deploy status or training status. Default: False
-            use_se: Whether to use se. Default: False
-        """
+                 act='relu',
+                 deploy=False):
+        super(RepConv, self).__init__()
         self.deploy = deploy
         self.groups = groups
         self.in_channels = in_channels
         self.out_channels = out_channels
-
         assert kernel_size == 3
         assert padding == 1
-
         padding_11 = padding - kernel_size // 2
+        self.stride = stride  # not always 1
 
-        self.nonlinearity = nn.ReLU()
+        self.act = get_activation(act)
 
-        if use_se:
-            raise NotImplementedError("se block not supported yet")
-        else:
-            self.se = nn.Identity()
-
-        if deploy:
+        if self.deploy:
             self.rbr_reparam = nn.Conv2D(
-                in_channels=in_channels,
-                out_channels=out_channels,
+                in_channels,
+                out_channels,
                 kernel_size=kernel_size,
                 stride=stride,
                 padding=padding,
-                dilation=dilation,
                 groups=groups,
-                bias_attr=True,
-                padding_mode=padding_mode)
-
+                bias_attr=True)
         else:
             self.rbr_identity = (nn.BatchNorm2D(
-                num_features=in_channels, epsilon=1e-3, momentum=0.97)
+                in_channels, epsilon=1e-3, momentum=0.97)
                                  if out_channels == in_channels and stride == 1
                                  else None)
-            self.rbr_dense = conv_bn(
-                in_channels=in_channels,
-                out_channels=out_channels,
-                kernel_size=kernel_size,
-                stride=stride,
-                padding=padding,
-                groups=groups)
-            self.rbr_1x1 = conv_bn(
-                in_channels=in_channels,
-                out_channels=out_channels,
-                kernel_size=1,
-                stride=stride,
-                padding=padding_11,
-                groups=groups)
+            self.rbr_dense = nn.Sequential(* [
+                nn.Conv2D(
+                    in_channels,
+                    out_channels,
+                    kernel_size,
+                    stride,
+                    padding,
+                    groups=groups,
+                    bias_attr=False),
+                nn.BatchNorm2D(out_channels),
+            ])
+            self.rbr_1x1 = nn.Sequential(* [
+                nn.Conv2D(
+                    in_channels,
+                    out_channels,
+                    1,
+                    stride,
+                    padding_11,
+                    groups=groups,
+                    bias_attr=False),
+                nn.BatchNorm2D(out_channels),
+            ])
 
     def forward(self, inputs):
-        """Forward process"""
         if hasattr(self, "rbr_reparam"):
-            return self.nonlinearity(self.se(self.rbr_reparam(inputs)))
+            x = self.rbr_reparam(inputs)
+            y = self.act(x)
+            return y
 
         if self.rbr_identity is None:
             id_out = 0
         else:
             id_out = self.rbr_identity(inputs)
 
-        return self.nonlinearity(
-            self.se(self.rbr_dense(inputs) + self.rbr_1x1(inputs) + id_out))
+        x = self.rbr_dense(inputs) + self.rbr_1x1(inputs) + id_out
+        y = self.act(x)
+        return y
 
     def get_equivalent_kernel_bias(self):
         kernel3x3, bias3x3 = self._fuse_bn_tensor(self.rbr_dense)
         kernel1x1, bias1x1 = self._fuse_bn_tensor(self.rbr_1x1)
         kernelid, biasid = self._fuse_bn_tensor(self.rbr_identity)
-        return (kernel3x3 + self._pad_1x1_to_3x3_tensor(kernel1x1) + kernelid,
-                bias3x3 + bias1x1 + biasid)
+        return (
+            kernel3x3 + self._pad_1x1_to_3x3_tensor(kernel1x1) + kernelid,
+            bias3x3 + bias1x1 + biasid, )
 
     def _pad_1x1_to_3x3_tensor(self, kernel1x1):
         if kernel1x1 is None:
@@ -219,48 +192,45 @@ class RepVGGBlock(nn.Layer):
         if branch is None:
             return 0, 0
         if isinstance(branch, nn.Sequential):
-            kernel = branch.conv.weight
-            running_mean = branch.bn.running_mean
-            running_var = branch.bn.running_var
-            gamma = branch.bn.weight
-            beta = branch.bn.bias
-            eps = branch.bn.eps
+            kernel = branch[0].weight
+            running_mean = branch[1]._mean
+            running_var = branch[1]._variance
+            gamma = branch[1].weight
+            beta = branch[1].bias
+            eps = branch[1]._epsilon
         else:
             assert isinstance(branch, nn.BatchNorm2D)
             if not hasattr(self, "id_tensor"):
                 input_dim = self.in_channels // self.groups
-                kernel_value = np.zeros(
-                    (self.in_channels, input_dim, 3, 3), dtype=np.float32)
+                kernel_value = paddle.zeros([self.in_channels, input_dim, 3, 3])
+
                 for i in range(self.in_channels):
                     kernel_value[i, i % input_dim, 1, 1] = 1
-                self.id_tensor = paddle.to_tensor(kernel_value)
+                self.id_tensor = kernel_value
             kernel = self.id_tensor
-            running_mean = branch.running_mean
-            running_var = branch.running_var
+            running_mean = branch._mean
+            running_var = branch._variance
             gamma = branch.weight
             beta = branch.bias
-            eps = branch.eps
+            eps = branch._epsilon
         std = (running_var + eps).sqrt()
-        t = (gamma / std).reshape(-1, 1, 1, 1)
+        t = (gamma / std).reshape((-1, 1, 1, 1))
         return kernel * t, beta - running_mean * gamma / std
 
-    def switch_to_deploy(self):
+    def convert_to_deploy(self):
         if hasattr(self, "rbr_reparam"):
             return
         kernel, bias = self.get_equivalent_kernel_bias()
         self.rbr_reparam = nn.Conv2D(
-            in_channels=self.rbr_dense.conv.in_channels,
-            out_channels=self.rbr_dense.conv.out_channels,
-            kernel_size=self.rbr_dense.conv.kernel_size,
-            stride=self.rbr_dense.conv.stride,
-            padding=self.rbr_dense.conv.padding,
-            dilation=self.rbr_dense.conv.dilation,
-            groups=self.rbr_dense.conv.groups,
+            self.in_channels,
+            self.out_channels,
+            3,
+            self.stride,
+            padding=1,
+            groups=self.groups,
             bias_attr=True)
-        self.rbr_reparam.weight.data = kernel
-        self.rbr_reparam.bias.data = bias
-        for para in self.parameters():
-            para.detach_()
+        self.rbr_reparam.weight.set_value(kernel)
+        self.rbr_reparam.bias.set_value(bias)
         self.__delattr__("rbr_dense")
         self.__delattr__("rbr_1x1")
         if hasattr(self, "rbr_identity"):
@@ -271,7 +241,7 @@ class RepVGGBlock(nn.Layer):
 
 
 class SimConv(nn.Layer):
-    """Normal Conv with ReLU activation"""
+    """Simplified Conv BN ReLU"""
 
     def __init__(self,
                  in_channels,
@@ -280,7 +250,7 @@ class SimConv(nn.Layer):
                  stride,
                  groups=1,
                  bias=False):
-        super().__init__()
+        super(SimConv, self).__init__()
         padding = kernel_size // 2
         self.conv = nn.Conv2D(
             in_channels,
@@ -290,29 +260,40 @@ class SimConv(nn.Layer):
             padding=padding,
             groups=groups,
             bias_attr=bias)
-        self.bn = nn.BatchNorm2D(out_channels, epsilon=1e-3, momentum=0.97)
+        self.bn = nn.BatchNorm2D(
+            out_channels,
+            epsilon=1e-3,
+            momentum=0.97,
+            weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
+            bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
         self.act = nn.ReLU()
+        self._init_weights()
+
+    def _init_weights(self):
+        conv_init_(self.conv)
 
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
 
 
 class SimSPPF(nn.Layer):
-    """Simplified SPPF with ReLU activation"""
+    """Simplified SPPF with SimConv"""
 
     def __init__(self, in_channels, out_channels, kernel_size=5):
-        super().__init__()
-        c_ = in_channels // 2  # hidden channels
-        self.cv1 = SimConv(in_channels, c_, 1, 1)
-        self.cv2 = SimConv(c_ * 4, out_channels, 1, 1)
-        self.m = nn.MaxPool2D(
+        super(SimSPPF, self).__init__()
+        hidden_channels = in_channels // 2
+        self.conv1 = SimConv(in_channels, hidden_channels, 1, 1)
+        self.mp = nn.MaxPool2D(
             kernel_size=kernel_size, stride=1, padding=kernel_size // 2)
+        self.conv2 = SimConv(hidden_channels * 4, out_channels, 1, 1)
 
     def forward(self, x):
-        x = self.cv1(x)
-        y1 = self.m(x)
-        y2 = self.m(y1)
-        return self.cv2(paddle.concat([x, y1, y2, self.m(y2)], 1))
+        x = self.conv1(x)
+        y1 = self.mp(x)
+        y2 = self.mp(y1)
+        y3 = self.mp(y2)
+        concats = paddle.concat([x, y1, y2, y3], 1)
+        return self.conv2(concats)
 
 
 class Transpose(nn.Layer):
@@ -321,8 +302,8 @@ class Transpose(nn.Layer):
     def __init__(self, in_channels, out_channels, kernel_size=2, stride=2):
         super().__init__()
         self.upsample_transpose = nn.Conv2DTranspose(
-            in_channels=in_channels,
-            out_channels=out_channels,
+            in_channels,
+            out_channels,
             kernel_size=kernel_size,
             stride=stride,
             bias_attr=True)
@@ -338,6 +319,7 @@ def make_divisible(x, divisor):
 @register
 @serializable
 class EfficientRep(nn.Layer):
+    """EfficientRep backbone of MT-YOLOv6"""
     __shared__ = ['width_mult', 'depth_mult', 'trt']
 
     def __init__(self,
@@ -348,89 +330,54 @@ class EfficientRep(nn.Layer):
                  return_idx=[2, 3, 4],
                  depthwise=False,
                  trt=False):
-        super().__init__()
-        in_channels = 3
+        super(EfficientRep, self).__init__()
         num_repeats = [(max(round(i * depth_mult), 1) if i > 1 else i)
                        for i in (num_repeats)]
         channels_list = [
             make_divisible(i * width_mult, 8) for i in (channels_list)
         ]
-
-        self._out_channels = channels_list[1:]
-        self._out_strides = [4, 8, 16, 32]
         self.return_idx = return_idx
+        self._out_channels = [channels_list[i] for i in self.return_idx]
+        self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
 
-        self.stem = RepVGGBlock(
-            in_channels=in_channels,
-            out_channels=channels_list[0],
-            kernel_size=3,
-            stride=2)
+        self.stem = RepConv(3, channels_list[0], 3, 2)
+        self.blocks = []
+        for i, (out_ch,
+                num_repeat) in enumerate(zip(channels_list, num_repeats)):
+            if i == 0: continue
+            in_ch = channels_list[i - 1]
+            stage = []
 
-        self.ERBlock_2 = nn.Sequential(
-            RepVGGBlock(
-                in_channels=channels_list[0],
-                out_channels=channels_list[1],
-                kernel_size=3,
-                stride=2),
-            RepBlock(
-                in_channels=channels_list[1],
-                out_channels=channels_list[1],
-                n=num_repeats[1]))
+            repconv = self.add_sublayer('stage{}.repconv'.format(i + 1),
+                                        RepConv(in_ch, out_ch, 3, 2))
+            stage.append(repconv)
 
-        self.ERBlock_3 = nn.Sequential(
-            RepVGGBlock(
-                in_channels=channels_list[1],
-                out_channels=channels_list[2],
-                kernel_size=3,
-                stride=2),
-            RepBlock(
-                in_channels=channels_list[2],
-                out_channels=channels_list[2],
-                n=num_repeats[2]))
+            replayer = self.add_sublayer('stage{}.replayer'.format(i + 1),
+                                         RepLayer(out_ch, out_ch, num_repeat))
+            stage.append(replayer)
 
-        self.ERBlock_4 = nn.Sequential(
-            RepVGGBlock(
-                in_channels=channels_list[2],
-                out_channels=channels_list[3],
-                kernel_size=3,
-                stride=2),
-            RepBlock(
-                in_channels=channels_list[3],
-                out_channels=channels_list[3],
-                n=num_repeats[3]))
-
-        self.ERBlock_5 = nn.Sequential(
-            RepVGGBlock(
-                in_channels=channels_list[3],
-                out_channels=channels_list[4],
-                kernel_size=3,
-                stride=2),
-            RepBlock(
-                in_channels=channels_list[4],
-                out_channels=channels_list[4],
-                n=num_repeats[4]),
-            SimSPPF(
-                in_channels=channels_list[4],
-                out_channels=channels_list[4],
-                kernel_size=5))
+            if i == len(channels_list) - 1:
+                simsppf_layer = self.add_sublayer(
+                    'stage{}.simsppf'.format(i + 1),
+                    SimSPPF(
+                        out_ch, out_ch, kernel_size=5))
+                stage.append(simsppf_layer)
+            self.blocks.append(nn.Sequential(*stage))
 
     def forward(self, inputs):
         x = inputs['image']
-        x = self.stem(x)
         outputs = []
-        x = self.ERBlock_2(x)
-        x = self.ERBlock_3(x)
-        outputs.append(x)
-        x = self.ERBlock_4(x)
-        outputs.append(x)
-        x = self.ERBlock_5(x)
-        outputs.append(x)
+        x = self.stem(x)
+        for i, layer in enumerate(self.blocks):
+            x = layer(x)
+            if i + 1 in self.return_idx:
+                outputs.append(x)
         return outputs
 
     @property
     def out_shape(self):
         return [
             ShapeSpec(
-                channels=self._out_channels[i], stride=self._out_strides[i])
-            for i in self.return_idx
+                channels=c, stride=s)
+            for c, s in zip(self._out_channels, self.strides)
         ]

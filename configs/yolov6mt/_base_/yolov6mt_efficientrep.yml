@@ -11,15 +11,15 @@ width_mult: 1.0
 
 YOLOv5:
   backbone: EfficientRep
-  neck: RepPANNeck
+  neck: RepPAN
   yolo_head: EffiDeHead
   post_process: ~
 
 EfficientRep:
-  return_idx: [1, 2, 3]
+  return_idx: [2, 3, 4]
   depthwise: false
 
-RepPANNeck:
+RepPAN:
   depthwise: false
 
 EffiDeHead:

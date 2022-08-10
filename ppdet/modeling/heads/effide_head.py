@@ -21,7 +21,7 @@ from paddle.regularizer import L2Decay
 import numpy as np
 from ..initializer import bias_init_with_prob, constant_
 
-from ..backbones.efficientrep import Conv
+from ..backbones.efficientrep import BaseConv
 from ppdet.modeling.assigners.simota_assigner import SimOTAAssigner
 from ppdet.modeling.bbox_utils import bbox_overlaps
 from ..losses import IouLoss, SIoULoss
@@ -47,9 +47,7 @@ class EffiDeHead(nn.Layer):
                  depthwise=False,
                  in_channels=[128, 256, 512],
                  fpn_strides=[8, 16, 32],
-                 anchors=1,
-                 num_layers=3,
-                 act='silu',
+                 act='relu',
                  assigner=SimOTAAssigner(use_vfl=False),
                  nms='MultiClassNMS',
                  loss_weight={
@@ -62,40 +60,31 @@ class EffiDeHead(nn.Layer):
                  iou_type='siou',
                  trt=False,
                  exclude_nms=False):
-        super().__init__()
+        super(EffiDeHead, self).__init__()
         self._dtype = paddle.framework.get_default_dtype()
         self.num_classes = num_classes
         assert len(in_channels) > 0, "in_channels length should > 0"
         self.in_channels = [int(in_c * width_mult) for in_c in in_channels]
         feat_channels = self.in_channels
         self.fpn_strides = fpn_strides
-
-        self.loss_weight = loss_weight
-        self.iou_type = iou_type
-
+        self.act = act
         self.assigner = assigner
         self.nms = nms
         if isinstance(self.nms, MultiClassNMS) and trt:
             self.nms.trt = trt
+        self.loss_weight = loss_weight
+        self.iou_type = iou_type
         self.exclude_nms = exclude_nms
 
-        if isinstance(anchors, (list, tuple)):
-            self.na = len(anchors[0]) // 2
-        else:
-            self.na = anchors
-        self.anchors = anchors
-        self.grid = [paddle.zeros([1])] * num_layers
-        self.stride = paddle.to_tensor(fpn_strides)
-
-        ConvBlock = Conv
+        ConvBlock = BaseConv  # todo: depthwise
         self.stem_conv = nn.LayerList()
         self.cls_convs = nn.LayerList()
-        self.reg_convs = nn.LayerList()  # reg [x,y,w,h] + obj
+        self.reg_convs = nn.LayerList()
         self.cls_preds = nn.LayerList()
         self.reg_preds = nn.LayerList()
         self.obj_preds = nn.LayerList()
         for in_c, feat_c in zip(self.in_channels, feat_channels):
-            self.stem_conv.append(Conv(in_c, feat_c, 1, 1))
+            self.stem_conv.append(BaseConv(in_c, feat_c, 1, 1))
             self.cls_convs.append(ConvBlock(feat_c, feat_c, 3, 1))
             self.reg_convs.append(ConvBlock(feat_c, feat_c, 3, 1))
 
@@ -108,13 +97,13 @@ class EffiDeHead(nn.Layer):
             self.reg_preds.append(
                 nn.Conv2D(
                     feat_c,
-                    4,  # reg [x,y,w,h] + obj
+                    4,  # reg [x,y,w,h]
                     1,
                     bias_attr=ParamAttr(regularizer=L2Decay(0.0))))
             self.obj_preds.append(
                 nn.Conv2D(
                     feat_c,
-                    1,  # reg [x,y,w,h] + obj
+                    1,  # obj
                     1,
                     bias_attr=ParamAttr(regularizer=L2Decay(0.0))))
         if self.iou_type == 'ciou':
