@@ -24,6 +24,15 @@
   - 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡V100，batch size=1，测试环境为**paddlepaddle-2.3.0**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考[速度测试](#速度测试)。
   - 如果你设置了`--run_benchmark=True`, 你首先需要安装以下依赖`pip install pynvml psutil GPUtil`。
 
+- 部署模型
+
+| 网络模型     | 输入尺寸 | 导出后的权重(w/o NMS) | ONNX(w/o NMS)  |
+| :-------- | :--------: | :---------------------: | :----------------: |
+| YOLOv5-n |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_n_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_n_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_n_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_n_300e_coco.onnx) |
+| YOLOv5-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_s_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_s_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_s_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_s_300e_coco.onnx) |
+| YOLOv5-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_m_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_m_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_m_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_m_300e_coco.onnx) |
+| YOLOv5-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_l_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_l_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_l_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_l_300e_coco.onnx) |
+| YOLOv5-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_x_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_x_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_x_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_x_300e_coco.onnx) |
 
 ## 使用教程
 

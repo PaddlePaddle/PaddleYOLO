@@ -35,6 +35,14 @@
   - 如果你设置了`--run_benchmark=True`, 你首先需要安装以下依赖`pip install pynvml psutil GPUtil`。
 
 
+- 部署模型
+
+| 网络模型     | 输入尺寸 | 导出后的权重(w/o NMS) | ONNX(w/o NMS)  |
+| :-------- | :--------: | :---------------------: | :----------------: |
+| YOLOv7-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_w_nms/yolov7_l_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_wo_nms/yolov7_l_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_w_nms/yolov7_l_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_wo_nms/yolov7_l_300e_coco.onnx) |
+| YOLOv7-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_w_nms/yolov7_x_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_wo_nms/yolov7_x_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_w_nms/yolov7_x_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_wo_nms/yolov7_x_300e_coco.onnx) |
+
+
 ## 使用教程
 
 ### 1. 训练

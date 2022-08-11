@@ -13,9 +13,7 @@
 
 ### [PP-YOLOE](configs/ppyoloe)
 
-- model zoo
-
-| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| 网络模型        | 输入尺寸   | 图片数/GPU | 学习率策略 | 推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | PP-YOLOE-s   |     640   |    32    |  400e    |    2.9    |       43.4        |        60.0         |   7.93    |  17.36   | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_s_400e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_s_400e_coco.yml)                   |
 | PP-YOLOE-s   |     640   |    32    |  300e    |    2.9    |       43.0        |        59.6         |   7.93    |  17.36   | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_s_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_s_300e_coco.yml)                   |
@@ -24,19 +22,19 @@
 | PP-YOLOE-x   |      640  |    16    |  300e    |    14.9   |       **52.3**    |        **69.5**     |   98.42   |  206.59  |[model](https://paddledet.bj.bcebos.com/models/ppyoloe_crn_x_300e_coco.pdparams) | [config](configs/ppyoloe/ppyoloe_crn_x_300e_coco.yml)  
 | PP-YOLOE-tiny ConvNeXt| 640 |    16      |   36e    | -   |       44.6        |        63.3         |   33.04   |  **13.87** | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_convnext_tiny_36e_coco.pdparams) | [config](configs/convnext/ppyoloe_convnext_tiny_36e_coco.yml) |
 
-- Deploy models
+- 部署模型
 
-| Model     | Input size | Exported Model(w/o postprocess) | ONNX(w/o postprocess)  |
+| 网络模型     | 输入尺寸 | 导出后的权重(w/o NMS) | ONNX(w/o NMS)  |
 | :-------- | :--------: | :---------------------: | :----------------: |
-| PP-YOLOE-s(400epoch) |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_s_400e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_s_400e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_s_400e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_s_400e_coco.onnx) |
-| PP-YOLOE-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_s_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_s_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_s_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_s_300e_coco.onnx) |
-| PP-YOLOE-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_m_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_m_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_m_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_m_300e_coco.onnx) |
-| PP-YOLOE-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_l_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_l_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_l_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_l_300e_coco.onnx) |
-| PP-YOLOE-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_x_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_x_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_x_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_crn_x_300e_coco.onnx) | 
+| PP-YOLOE-s(400epoch) |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_s_400e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_s_400e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_s_400e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_s_400e_coco.onnx) |
+| PP-YOLOE-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_s_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_s_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_s_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_s_300e_coco.onnx) |
+| PP-YOLOE-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_m_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_m_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_m_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_m_300e_coco.onnx) |
+| PP-YOLOE-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_l_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_l_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_l_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_l_300e_coco.onnx) |
+| PP-YOLOE-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_x_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_x_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_w_nms/ppyoloe_crn_x_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/ppyoloe_wo_nms/ppyoloe_crn_x_300e_coco.onnx) |
 
 ### [YOLOX](configs/yolox)
 
-| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| 网络模型        | 输入尺寸   | 图片数/GPU | 学习率策略 | 推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | YOLOX-nano     |  416     |    8      |   300e    |     2.3    |  26.1  |  42.0 |  0.91  |  1.08 | [model](https://paddledet.bj.bcebos.com/models/yolox_nano_300e_coco.pdparams) | [config](configs/yolox/yolox_nano_300e_coco.yml) |
 | YOLOX-tiny     |  416     |    8      |   300e    |     2.8    |  32.9  |  50.4 |  5.06  |  6.45 | [model](https://paddledet.bj.bcebos.com/models/yolox_tiny_300e_coco.pdparams) | [config](configs/yolox/yolox_tiny_300e_coco.yml) |
@@ -48,9 +46,20 @@
 | YOLOX-crn-s     |  640     |    8      |   300e    |     3.0    |  40.4  |  59.6 |  7.7  |  24.69 | [model](https://paddledet.bj.bcebos.com/models/yolox_crn_s_300e_coco.pdparams) | [config](configs/yolox/yolox_crn_s_300e_coco.yml) |
 | YOLOX-s ConvNeXt|  640     |    8      |   36e     |     -      |  44.6  |  65.3 |  36.2 |  27.52 | [model](https://paddledet.bj.bcebos.com/models/yolox_convnext_s_36e_coco.pdparams) | [config](configs/convnext/yolox_convnext_s_36e_coco.yml) |
 
+- 部署模型
+
+| 网络模型     | 输入尺寸 | 导出后的权重(w/o NMS) | ONNX(w/o NMS)  |
+| :-------- | :--------: | :---------------------: | :----------------: |
+| YOLOx-nano |  416   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolox_w_nms/yolox_nano_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolox_wo_nms/yolox_nano_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolox_w_nms/yolox_nano_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolox_wo_nms/yolox_nano_300e_coco.onnx) |
+| YOLOx-tiny |  416   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolox_w_nms/yolox_tiny_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolox_wo_nms/yolox_tiny_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolox_w_nms/yolox_tiny_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolox_wo_nms/yolox_tiny_300e_coco.onnx) |
+| YOLOx-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolox_w_nms/yolox_s_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolox_wo_nms/yolox_s_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolox_w_nms/yolox_s_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolox_wo_nms/yolox_s_300e_coco.onnx) |
+| YOLOx-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolox_w_nms/yolox_m_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolox_wo_nms/yolox_m_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolox_w_nms/yolox_m_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolox_wo_nms/yolox_m_300e_coco.onnx) |
+| YOLOx-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolox_w_nms/yolox_l_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolox_wo_nms/yolox_l_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolox_w_nms/yolox_l_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolox_wo_nms/yolox_l_300e_coco.onnx) |
+| YOLOx-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolox_w_nms/yolox_x_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolox_wo_nms/yolox_x_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolox_w_nms/yolox_x_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolox_wo_nms/yolox_x_300e_coco.onnx) |
+
 ### [YOLOv5](configs/yolov5)
 
-| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| 网络模型        | 输入尺寸   | 图片数/GPU | 学习率策略 | 推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | YOLOv5-n        |  640     |    16     |   300e    |     2.6    |  28.0  | 45.7 |  1.87  | 4.52 | [model](https://paddledet.bj.bcebos.com/models/yolov5_n_300e_coco.pdparams) | [config](configs/yolov5/yolov5_n_300e_coco.yml) |
 | YOLOv5-s        |  640     |    8      |   300e    |     3.2    |  37.0  | 55.9 |  7.24  | 16.54 | [model](https://paddledet.bj.bcebos.com/models/yolov5_s_300e_coco.pdparams) | [config](configs/yolov5/yolov5_s_300e_coco.yml) |
@@ -59,9 +68,19 @@
 | YOLOv5-x        |  640     |    8      |   300e    |     13.7    |  **50.6**  | **68.7** |  86.75  | 205.92 | [model](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [config](configs/yolov5/yolov5_x_300e_coco.yml) |
 | YOLOv5-s ConvNeXt|  640    |    8      |   36e     |     -      |  42.4  |  65.3  |  34.54 |  17.96 | [model](https://paddledet.bj.bcebos.com/models/yolov5_convnext_s_36e_coco.pdparams) | [config](configs/yolov5/yolov5_convnext_s_36e_coco.yml) |
 
+- 部署模型
+
+| 网络模型     | 输入尺寸 | 导出后的权重(w/o NMS) | ONNX(w/o NMS)  |
+| :-------- | :--------: | :---------------------: | :----------------: |
+| YOLOv5-n |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_n_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_n_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_n_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_n_300e_coco.onnx) |
+| YOLOv5-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_s_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_s_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_s_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_s_300e_coco.onnx) |
+| YOLOv5-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_m_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_m_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_m_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_m_300e_coco.onnx) |
+| YOLOv5-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_l_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_l_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_l_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_l_300e_coco.onnx) |
+| YOLOv5-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_x_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_x_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_w_nms/yolov5_x_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov5_wo_nms/yolov5_x_300e_coco.onnx) |
+
 ### [MT-YOLOv6](configs/yolov6mt)
 
-| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 推理耗时(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
+| 网络模型        | 输入尺寸   | 图片数/GPU | 学习率策略 | 推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
 | *YOLOv6mt-n       |  416     |    32      |   400e    |     2.5    | 30.5  |    46.8 |  4.74  | 5.16 |[model](https://paddledet.bj.bcebos.com/models/yolov6mt_n_416_400e_coco.pdparams) | [config](configs/yolov6mt/yolov6mt_n_416_400e_coco.yml) |
 | *YOLOv6mt-n       |  640     |    32      |   400e    |     2.8    |  34.7 |    52.7 |  4.74  |  12.2 |[model](https://paddledet.bj.bcebos.com/models/yolov6mt_n_400e_coco.pdparams) | [config](configs/yolov6mt/yolov6mt_n_400e_coco.yml) |
@@ -70,7 +89,7 @@
 
 ### [YOLOv7](configs/yolov7)
 
-| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| 网络模型        | 输入尺寸   | 图片数/GPU | 学习率策略 | 推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | YOLOv7-L        |  640     |    32      |   300e    |     7.4     |  51.0  | 70.2 |  37.62  | 106.08 |[model](https://paddledet.bj.bcebos.com/models/yolov7_l_300e_coco.pdparams) | [config](configs/yolov7/yolov7_l_300e_coco.yml) |
 | *YOLOv7-X        |  640     |    32      |   300e    |     12.2    |  53.0  | 70.8 |  71.34  | 190.08 | [model](https://paddledet.bj.bcebos.com/models/yolov7_x_300e_coco.pdparams) | [config](configs/yolov7/yolov7_x_300e_coco.yml) |
@@ -78,6 +97,13 @@
 | *YOLOv7P6-E6     |  1280    |    10      |   300e    |     31.1    |  55.7  | 73.0 |  97.25  | 515.4 | [model](https://paddledet.bj.bcebos.com/models/yolov7p6_e6_300e_coco.pdparams) | [config](configs/yolov7/yolov7p6_e6_300e_coco.yml) |
 | *YOLOv7P6-D6     |  1280    |    8      |   300e    |     37.4    | 56.1  | 73.3 |  133.81  | 702.92 | [model](https://paddledet.bj.bcebos.com/models/yolov7p6_d6_300e_coco.pdparams) | [config](configs/yolov7/yolov7p6_d6_300e_coco.yml) |
 | *YOLOv7P6-E6E    |  1280    |    6      |   300e    |     48.7    |  56.5  | 73.7 |  151.76  | 843.52 | [model](https://paddledet.bj.bcebos.com/models/yolov7p6_e6e_300e_coco.pdparams) | [config](configs/yolov7/yolov7p6_e6e_300e_coco.yml) |
+
+- 部署模型
+
+| 网络模型     | 输入尺寸 | 导出后的权重(w/o NMS) | ONNX(w/o NMS)  |
+| :-------- | :--------: | :---------------------: | :----------------: |
+| YOLOv7-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_w_nms/yolov7_l_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_wo_nms/yolov7_l_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_w_nms/yolov7_l_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_wo_nms/yolov7_l_300e_coco.onnx) |
+| YOLOv7-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_w_nms/yolov7_x_300e_coco.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_wo_nms/yolov7_x_300e_coco.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_w_nms/yolov7_x_300e_coco_postprocessed.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yolov7_wo_nms/yolov7_x_300e_coco.onnx) |
 
 
 **注意:**
