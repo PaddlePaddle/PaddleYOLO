@@ -6,13 +6,13 @@ mosaic_epoch: &mosaic_epoch 300
 worker_num: 4
 TrainReader:
   sample_transforms:
-    - DecodeNormResize: {target_size: *input_size, mosaic: True}
-    - MosaicPerspective: {mosaic_prob: 1.0, target_size: 1280}
+    - Decode: {}
+    - MosaicPerspective: {target_size: *input_size, mosaic_prob: 1.0}
     - RandomHSV: {hgain: 0.015, sgain: 0.7, vgain: 0.4}
     - RandomFlip: {}
     - BboxXYXY2XYWH: {}
     - NormalizeBox: {}
-    - NormalizeImage: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
+    - NormalizeImageQuick: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
     - RGBReverse: {} # bgr->rgb
     - Permute: {}
   batch_size: 8
@@ -28,7 +28,7 @@ EvalReader:
     - Decode: {}
     - Resize: {target_size: *input_size, keep_ratio: True, interp: 1}
     - Pad: {size: *input_size, fill_value: [114., 114., 114.]}
-    - NormalizeImage: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
+    - NormalizeImageQuick: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
     - Permute: {}
   batch_size: 8
 
