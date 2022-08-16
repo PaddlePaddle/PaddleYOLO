@@ -774,14 +774,18 @@ class YOLOv7Loss(nn.Layer):
                 if len(t.shape) == 1:  # paddle2.3 index
                     t = t.unsqueeze(0)
 
-                # Offsets
-                gxy = t[:, 2:4]  # grid xy
-                gxi = gain[[2, 3]] - gxy  # inverse
-                j, k = ((gxy % 1. < g) & (gxy > 1.)).T
-                l, m = ((gxi % 1. < g) & (gxi > 1.)).T
-                j = np.stack([np.ones_like(j), j, k, l, m])
-                t = paddle.to_tensor(np.tile(t, [5, 1, 1])[j])
-                offsets = (paddle.zeros_like(gxy)[None] + off[:, None])[j]
+                if len(t.shape) == 0:
+                    t = targets[0]
+                    offsets = 0
+                else:
+                    # Offsets
+                    gxy = t[:, 2:4]  # grid xy
+                    gxi = gain[[2, 3]] - gxy  # inverse
+                    j, k = ((gxy % 1. < g) & (gxy > 1.)).T
+                    l, m = ((gxi % 1. < g) & (gxi > 1.)).T
+                    j = np.stack([np.ones_like(j), j, k, l, m])
+                    t = paddle.to_tensor(np.tile(t, [5, 1, 1])[j])
+                    offsets = (paddle.zeros_like(gxy)[None] + off[:, None])[j]
             else:
                 t = targets[0]
                 offsets = 0
