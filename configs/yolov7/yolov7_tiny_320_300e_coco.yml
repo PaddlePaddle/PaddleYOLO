@@ -1,0 +1,36 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  '_base_/optimizer_300e.yml',
+  '_base_/yolov7_elannet.yml',
+  '_base_/yolov7_tiny_reader.yml',
+]
+log_iter: 100
+snapshot_epoch: 10
+weights: output/yolov7_tiny_320_300e_coco/model_final
+
+arch: 'tiny'
+act: 'LeakyReLU'
+
+
+EvalReader:
+  sample_transforms:
+    - Decode: {}
+    - Resize: {target_size: [320, 320], keep_ratio: True, interp: 1}
+    - Pad: {size: [320, 320], fill_value: [114., 114., 114.]}
+    - NormalizeImageQuick: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
+    - Permute: {}
+  batch_size: 8
+
+
+TestReader:
+  inputs_def:
+    image_shape: [3, 320, 320]
+  sample_transforms:
+    - Decode: {}
+    - Resize: {target_size: [320, 320], keep_ratio: True, interp: 1}
+    - Pad: {size: [320, 320], fill_value: [114., 114., 114.]}
+    - NormalizeImage: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
+    - Permute: {}
+  batch_size: 1
+  fuse_normalize: True

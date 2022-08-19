@@ -46,6 +46,7 @@ import ppdet.utils.stats as stats
 from ppdet.utils.fuse_utils import fuse_conv_bn
 from ppdet.utils import profiler
 from ppdet.modeling.initializer import reset_initialized_parameter
+from ppdet.modeling.heads import YOLOv7Head
 
 from .callbacks import Callback, ComposeCallback, LogPrinter, Checkpointer, WiferFaceEval, VisualDLWriter, SniperProposalsGenerator, WandbCallback
 from .export_utils import _dump_infer_config, _prune_input_spec
@@ -147,6 +148,12 @@ class Trainer(object):
                 self.loader = create(reader_name)(self.dataset, cfg.worker_num,
                                                   self._eval_batch_sampler)
         # TestDataset build after user set images, skip loader creation here
+
+        params = sum([
+            p.numel() for n, p in self.model.named_parameters()
+            if all([x not in n for x in ['_mean', '_variance']])
+        ])  # exclude BatchNorm running status
+        print('Params: ', params / 1e6)
 
         # build optimizer in train mode
         if self.mode == 'train':
@@ -365,6 +372,10 @@ class Trainer(object):
         self.start_epoch = 0
         load_pretrain_weight(self.model, weights)
         logger.debug("Load weights {} to start training".format(weights))
+
+        if self.mode in ['eval', 'test'] and self.cfg.architecture == 'YOLOv5':
+            if isinstance(self.model.yolo_head, YOLOv7Head):
+                self.model.yolo_head.fuse()
 
     def load_weights_sde(self, det_weights, reid_weights):
         if self.model.detector:

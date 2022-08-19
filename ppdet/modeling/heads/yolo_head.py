@@ -641,7 +641,7 @@ class YOLOv7Head(nn.Layer):
         self.num_out_ch = self.num_classes + 5  # self.no
 
         self.yolo_outputs = []
-        if self.training and self.use_aux:
+        if self.use_aux:
             self.yolo_outputs_aux = []
         if self.use_implicit:
             self.ia, self.im = [], []
@@ -661,7 +661,7 @@ class YOLOv7Head(nn.Layer):
             yolo_output = self.add_sublayer(name, conv)
             self.yolo_outputs.append(yolo_output)
 
-            if self.training and self.use_aux:
+            if self.use_aux:
                 name_aux = 'yolo_output_aux.{}'.format(i)
                 conv_aux = nn.Conv2D(
                     in_channels=self.in_channels[i + self.num_levels],
@@ -676,12 +676,40 @@ class YOLOv7Head(nn.Layer):
                 self.yolo_outputs_aux.append(yolo_output_aux)
 
             if self.use_implicit:
-                self.ia.append(ImplicitA(self.in_channels[i]))
-                self.im.append(ImplicitM(num_filters))
+                ia = ImplicitA(self.in_channels[i])
+                yolo_output_ia = self.add_sublayer(
+                    'yolo_output_ia.{}'.format(i), ia)
+                self.ia.append(yolo_output_ia)
+
+                im = ImplicitM(num_filters)
+                yolo_output_im = self.add_sublayer(
+                    'yolo_output_im.{}'.format(i), im)
+                self.im.append(yolo_output_im)
 
         self._initialize_biases(self.yolo_outputs)
-        if self.training and self.use_aux:
+        if self.use_aux:
             self._initialize_biases(self.yolo_outputs_aux)
+
+    def fuse(self):
+        if self.use_implicit:
+            # fuse ImplicitA and Convolution
+            for i in range(len(self.yolo_outputs)):
+                c1, c2, _, _ = self.yolo_outputs[
+                    i].weight.shape  # [255, 256, 1, 1]
+                c1_, c2_, _, _ = self.ia[i].ia.shape  # [1, 256, 1, 1]
+                cc = paddle.matmul(self.yolo_outputs[i].weight.reshape(
+                    [c1, c2]), self.ia[i].ia.reshape([c2_, c1_])).squeeze(1)
+                self.yolo_outputs[i].bias.set_value(self.yolo_outputs[i].bias +
+                                                    cc)
+
+            # fuse ImplicitM and Convolution
+            for i in range(len(self.yolo_outputs)):
+                c1, c2, _, _ = self.im[i].im.shape  # [1, 255, 1, 1]
+                self.yolo_outputs[i].bias.set_value(self.yolo_outputs[i].bias *
+                                                    self.im[i].im.reshape([c2]))
+                self.yolo_outputs[i].weight.set_value(
+                    self.yolo_outputs[i].weight * paddle.transpose(
+                        self.im[i].im, [1, 0, 2, 3]))
 
     def _initialize_biases(self, convs):
         # initialize biases, see https://arxiv.org/abs/1708.02002 section 3.3

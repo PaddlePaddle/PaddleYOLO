@@ -771,10 +771,8 @@ class YOLOv7Loss(nn.Layer):
                 j = paddle.maximum(r, 1. / r).max(2) < self.anchor_t  # compare
                 # j = torch.max(r, 1. / r).max(2)[0]
                 t = t[j]  # filter
-                if len(t.shape) == 1:  # paddle2.3 index
-                    t = t.unsqueeze(0)
 
-                if len(t.shape) == 0:
+                if t.shape[0] == 0:
                     t = targets[0]
                     offsets = 0
                 else:
@@ -802,6 +800,9 @@ class YOLOv7Loss(nn.Layer):
             indices.append((b, a, gj.clip(0, gain[3] - 1),
                             gi.clip(0, gain[2] - 1)))
             # bs, anchor, gj, gi
-            anch.append(anchors[a])
+            anch_ = anchors[a]
+            if len(anch_.shape) == 1:
+                anch_ = anch_.unsqueeze(0)
+            anch.append(anch_)
 
         return indices, anch

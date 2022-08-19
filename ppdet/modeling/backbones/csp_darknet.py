@@ -41,6 +41,12 @@ def get_activation(name="silu"):
     return module
 
 
+class SiLU(nn.Layer):
+    @staticmethod
+    def forward(x):
+        return x * F.sigmoid(x)
+
+
 class BaseConv(nn.Layer):
     def __init__(self,
                  in_channels,
@@ -76,7 +82,9 @@ class BaseConv(nn.Layer):
         if self.training:
             y = self.act(x)
         else:
-            y = x * F.sigmoid(x)  # silu
+            if isinstance(self.act, nn.Silu):
+                self.act = SiLU()
+            y = self.act(x)
         return y
 
 
@@ -667,7 +675,9 @@ class RepConv(nn.Layer):
             if self.training:
                 y = self.act(x)
             else:
-                y = x * F.sigmoid(x)  # silu
+                if isinstance(self.act, nn.Silu):
+                    self.act = SiLU()
+                y = self.act(x)
             return y
 
         if self.rbr_identity is None:
@@ -679,7 +689,9 @@ class RepConv(nn.Layer):
         if self.training:
             y = self.act(x)
         else:
-            y = x * F.sigmoid(x)  # silu
+            if isinstance(self.act, nn.Silu):
+                self.act = SiLU()
+            y = self.act(x)
         return y
 
     def get_equivalent_kernel_bias(self):
