@@ -1,12 +1,13 @@
 ## 简介
 
-此代码库是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，支持`PP-YOLOE`,`YOLOv3`,`YOLOX`,`YOLOv5`,`MT-YOLOv6`,`YOLOv7`等模型，其upstream为PaddleDetection的[develop](https://github.com/PaddlePaddle/PaddleDetection/tree/develop)分支，并与PaddleDetection主代码库分支同步更新，包括github和gitee的代码，欢迎一起使用和建设！
+YOLOSeries是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，支持`PP-YOLOE`,`YOLOv3`,`YOLOX`,`YOLOv5`,`MT-YOLOv6`,`YOLOv7`等模型，其upstream为PaddleDetection的[develop](https://github.com/PaddlePaddle/PaddleDetection/tree/develop)分支，并与PaddleDetection主代码库分支同步更新，包括github和gitee的代码，欢迎一起使用和建设！
 
 **注意:**
  - github链接为：https://github.com/nemonameless/PaddleDetection_YOLOSeries
  - gitee链接为：https://gitee.com/nemonameless/PaddleDetection_YOLOSeries
- - [PP-YOLOE](configs/ppyoloe),[PP-YOLO](configs/ppyolo),[PP-YOLOv2](configs/ppyolo),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)等模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用。
+ - [PP-YOLOE](configs/ppyoloe),[PP-YOLO](configs/ppyolo),[PP-YOLOv2](configs/ppyolo),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)等模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用，会最先发布**PP-YOLO系列特色检测模型的最新进展**。
  - [YOLOv5](configs/yolox),[YOLOv7](configs/yolov7)和[MT-YOLOv6](configs/yolov6mt)模型推荐在此代码库中使用，由于GPL开源协议而不合入PaddleDetection主代码库。
+ - 此代码库**推荐使用paddlepaddle-2.3.0及以上的版本**，请参考[官网](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html)下载对应适合版本。
 
 
 ## ModelZoo on COCO

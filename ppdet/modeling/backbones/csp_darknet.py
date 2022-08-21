@@ -42,8 +42,10 @@ def get_activation(name="silu"):
 
 
 class SiLU(nn.Layer):
-    @staticmethod
-    def forward(x):
+    def __init__(self):
+        super(SiLU, self).__init__()
+
+    def forward(self, x):
         return x * F.sigmoid(x)
 
 
