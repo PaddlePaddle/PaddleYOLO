@@ -1,16 +1,9 @@
 _BASE_: [
-  '../datasets/coco_detection.yml',
-  '../runtime.yml',
-  '_base_/optimizer_300e.yml',
-  '_base_/yolov7_elannet.yml',
-  '_base_/yolov7_tiny_reader.yml',
+  'yolov7_tiny_300e_coco.yml',
 ]
 log_iter: 100
 snapshot_epoch: 10
 weights: output/yolov7_tiny_320_300e_coco/model_final
-
-arch: 'tiny'
-act: 'LeakyReLU'
 
 
 EvalReader:

@@ -9,4 +9,8 @@ log_iter: 100
 snapshot_epoch: 10
 weights: output/yolov7_x_300e_coco/model_final
 
-arch: 'X'
+arch: X
+
+
+TrainReader:
+  batch_size: 32

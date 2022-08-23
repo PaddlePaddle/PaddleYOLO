@@ -5,7 +5,7 @@ LearningRate:
   schedulers:
   - !YOLOv5LRDecay
     max_epochs: 300
-    min_lr_ratio: 0.1
+    min_lr_ratio: 0.1 #
   - !ExpWarmup
     epochs: 3
 

@@ -16,3 +16,4 @@ YOLOv5Head:
 
 YOLOv5Loss:
   downsample_ratios: [4, 8, 16, 32]
+  balance: [4.0, 1.0, 0.25, 0.06]
