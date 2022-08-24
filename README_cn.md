@@ -1,11 +1,11 @@
 ## 简介
 
-YOLOSeries是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，支持`PP-YOLOE`,`YOLOv3`,`YOLOX`,`YOLOv5`,`MT-YOLOv6`,`YOLOv7`等模型，其upstream为PaddleDetection的[develop](https://github.com/PaddlePaddle/PaddleDetection/tree/develop)分支，并与PaddleDetection主代码库分支同步更新，包括github和gitee的代码，欢迎一起使用和建设！
+**YOLOSeries**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，支持`PP-YOLOE`,`YOLOv3`,`YOLOX`,`YOLOv5`,`MT-YOLOv6`,`YOLOv7`等模型，其upstream为PaddleDetection的[develop](https://github.com/PaddlePaddle/PaddleDetection/tree/develop)分支，并与PaddleDetection主代码库分支同步更新，包括github和gitee的代码，欢迎一起使用和建设！
 
 **注意:**
  - github链接为：https://github.com/nemonameless/PaddleDetection_YOLOSeries
  - gitee链接为：https://gitee.com/nemonameless/PaddleDetection_YOLOSeries
- - [PP-YOLOE](configs/ppyoloe),[PP-YOLO](configs/ppyolo),[PP-YOLOv2](configs/ppyolo),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)等模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用，会最先发布**PP-YOLO系列特色检测模型的最新进展**。
+ - [PP-YOLOE](configs/ppyoloe),[PP-YOLOE-plus](configs/ppyoloe),[PP-YOLO](configs/ppyolo),[PP-YOLOv2](configs/ppyolo),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)等模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用，会最先发布**PP-YOLO系列特色检测模型的最新进展**。
  - [YOLOv5](configs/yolox),[YOLOv7](configs/yolov7)和[MT-YOLOv6](configs/yolov6mt)模型推荐在此代码库中使用，由于GPL开源协议而不合入PaddleDetection主代码库。
  - 此代码库**推荐使用paddlepaddle-2.3.0及以上的版本**，请参考[官网](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html)下载对应适合版本。
 
@@ -37,10 +37,10 @@ YOLOSeries是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetec
 | PP-YOLOE-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_crn_m_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_crn_m_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_crn_m_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_crn_m_300e_coco_wo_nms.onnx) |
 | PP-YOLOE-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_crn_l_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_crn_l_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_crn_l_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_crn_l_300e_coco_wo_nms.onnx) |
 | PP-YOLOE-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_crn_x_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_crn_x_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_crn_x_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_crn_x_300e_coco_wo_nms.onnx) |
-| PP-YOLOE-plus-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_s_80e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_s_80e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_s_80e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_s_80e_coco_wo_nms.onnx) |
-| PP-YOLOE-plus-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_m_80e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_m_80e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_m_80e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_m_80e_coco_wo_nms.onnx) |
-| PP-YOLOE-plus-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_l_80e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_l_80e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_l_80e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_l_80e_coco_wo_nms.onnx) |
-| PP-YOLOE-plus-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_x_80e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_x_80e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_x_80e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_x_80e_coco_wo_nms.onnx) |
+| **PP-YOLOE-plus-s** |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_s_80e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_s_80e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_s_80e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_s_80e_coco_wo_nms.onnx) |
+| **PP-YOLOE-plus-m** |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_m_80e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_m_80e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_m_80e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_m_80e_coco_wo_nms.onnx) |
+| **PP-YOLOE-plus-l** |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_l_80e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_l_80e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_l_80e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_l_80e_coco_wo_nms.onnx) |
+| **PP-YOLOE-plus-x** |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_x_80e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_x_80e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_x_80e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/ppyoloe/ppyoloe_plus_crn_x_80e_coco_wo_nms.onnx) |
 
 
 ### [YOLOX](configs/yolox)
@@ -74,9 +74,9 @@ YOLOSeries是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetec
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | YOLOv5-n        |  640     |    16     |   300e    |     2.6    |  28.0  | 45.7 |  1.87  | 4.52 | [model](https://paddledet.bj.bcebos.com/models/yolov5_n_300e_coco.pdparams) | [config](configs/yolov5/yolov5_n_300e_coco.yml) |
 | YOLOv5-s        |  640     |    8      |   300e    |     3.2    |  37.0  | 55.9 |  7.24  | 16.54 | [model](https://paddledet.bj.bcebos.com/models/yolov5_s_300e_coco.pdparams) | [config](configs/yolov5/yolov5_s_300e_coco.yml) |
-| YOLOv5-m        |  640     |    8      |   300e    |     5.2    |  45.3  | 63.8 |  21.19  | 49.08 | [model](https://paddledet.bj.bcebos.com/models/yolov5_m_300e_coco.pdparams) | [config](configs/yolov5/yolov5_m_300e_coco.yml) |
-| YOLOv5-l        |  640     |    8      |   300e    |     7.9    |  48.6  | 66.9 |  46.56  | 109.32 | [model](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) | [config](configs/yolov5/yolov5_l_300e_coco.yml) |
-| YOLOv5-x        |  640     |    8      |   300e    |     13.7    |  **50.6**  | **68.7** |  86.75  | 205.92 | [model](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [config](configs/yolov5/yolov5_x_300e_coco.yml) |
+| YOLOv5-m        |  640     |    5      |   300e    |     5.2    |  45.3  | 63.8 |  21.19  | 49.08 | [model](https://paddledet.bj.bcebos.com/models/yolov5_m_300e_coco.pdparams) | [config](configs/yolov5/yolov5_m_300e_coco.yml) |
+| YOLOv5-l        |  640     |    3      |   300e    |     7.9    |  48.6  | 66.9 |  46.56  | 109.32 | [model](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) | [config](configs/yolov5/yolov5_l_300e_coco.yml) |
+| YOLOv5-x        |  640     |    2      |   300e    |     13.7    |  **50.6**  | **68.7** |  86.75  | 205.92 | [model](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [config](configs/yolov5/yolov5_x_300e_coco.yml) |
 | YOLOv5-s ConvNeXt|  640    |    8      |   36e     |     -      |  42.4  |  65.3  |  34.54 |  17.96 | [model](https://paddledet.bj.bcebos.com/models/yolov5_convnext_s_36e_coco.pdparams) | [config](configs/yolov5/yolov5_convnext_s_36e_coco.yml) |
 
 #### 部署模型
@@ -141,7 +141,7 @@ YOLOSeries是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetec
  - 所有模型均使用COCO train2017作为训练集，在COCO val2017上验证精度，模型前带*表示训练更新中。
  - 具体精度和速度细节请查看[PP-YOLOE](configs/ppyoloe),[YOLOX](configs/yolox),[YOLOv5](configs/yolox),[MT-YOLOv6](configs/yolov6mt),[YOLOv7](configs/yolov7)。
 - 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡V100，batch size=1，测试环境为**paddlepaddle-2.3.0**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考各自模型主页。
-- 统计参数量Params(M)，可以将以下代码插入[trainer.py](https://github.com/nemonameless/PaddleDetection_YOLOSeries/blob/develop/ppdet/engine/trainer.py#L150)。
+- **统计参数量Params(M)**，可以将以下代码插入[trainer.py](https://github.com/nemonameless/PaddleDetection_YOLOSeries/blob/develop/ppdet/engine/trainer.py#L150)。
   ```python
   params = sum([
       p.numel() for n, p in self.model.named_parameters()
@@ -149,22 +149,22 @@ YOLOSeries是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetec
   ]) # exclude BatchNorm running status
   print('Params: ', params / 1e6)
   ```
-- 统计FLOPs(G)，首先安装[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`，然后设置[runtime.yml](configs/runtime.yml)里`print_flops: True`，并且注意确保是单尺度下，打印的是MACs，FLOPs=2*MACs。
- - 各模型导出后的权重以及ONNX，分为带不带后处理NMS，都提供了下载链接，请参考各自模型主页下载。`w_nms`表示带NMS后处理，可以直接使用预测出最终检测框结果如```python deploy/python/infer.py --model_dir=ppyoloe_crn_l_300e_coco_w_nms/ --image_file=demo/000000014439.jpg --device=GPU```；`wo_nms`表示不带NMS后处理，是测速时使用，如需预测出检测框结果需要更改head中的代码如下：
+- **统计FLOPs(G)**，首先安装[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`，然后设置[runtime.yml](configs/runtime.yml)里`print_flops: True`，并且注意确保是**单尺度**下如640x640，**打印的是MACs，FLOPs=2*MACs**。
+ - 各模型导出后的权重以及ONNX，分为**带(w)**和**不带(wo)**后处理NMS，都提供了下载链接，请参考各自模型主页下载。`w_nms`表示**带NMS后处理**，可以直接使用预测出最终检测框结果如```python deploy/python/infer.py --model_dir=ppyoloe_crn_l_300e_coco_w_nms/ --image_file=demo/000000014439.jpg --device=GPU```；`wo_nms`表示**不带NMS后处理**，是**测速**时使用，如需预测出检测框结果需要找到**对应head中的后处理相关代码**并修改为如下：
  ```
         if self.exclude_nms:
             # `exclude_nms=True` just use in benchmark for speed test
-            # return pred_bboxes.sum(), pred_scores.sum() # comment this line
-            return pred_bboxes, pred_scores # new added line
+            # return pred_bboxes.sum(), pred_scores.sum() # 原先是这行，现在注释
+            return pred_bboxes, pred_scores # 新加这行，表示保留进NMS前的原始结果
         else:
             bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
             return bbox_pred, bbox_num
  ```
-并重新导出，使用时再另接自己写的NMS后处理。
+并重新导出，使用时再**另接自己写的NMS后处理**。
  - 基于[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim)对YOLO系列模型进行量化训练，可以实现精度基本无损，速度普遍提升30%以上，具体请参照[模型自动化压缩工具ACT](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/example/auto_compression)。
- - [PP-YOLOE](configs/ppyoloe),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)里使用。
+ - [PP-YOLOE](configs/ppyoloe),[PP-YOLOE-plus](configs/ppyoloe),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)里使用，会最先发布**PP-YOLO系列特色检测模型的最新进展**。
  - [YOLOv5](configs/yolox),[YOLOv7](configs/yolov7)和[MT-YOLOv6](configs/yolov6mt)由于GPL协议而不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)主代码库。
- - paddlepaddle版本推荐使用2.3.0版本以上。
+ - **paddlepaddle版本推荐使用2.3.0版本以上**。
 
 
 ## 使用指南
@@ -218,7 +218,7 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
   model_type=yolov7
   job_name=yolov7_l_300e_coco
   ```
-- 统计参数量Params(M)，可以将以下代码插入[trainer.py](https://github.com/nemonameless/PaddleDetection_YOLOSeries/blob/develop/ppdet/engine/trainer.py#L150)。
+- **统计参数量Params(M)**，可以将以下代码插入[trainer.py](https://github.com/nemonameless/PaddleDetection_YOLOSeries/blob/develop/ppdet/engine/trainer.py#L150)。
   ```python
   params = sum([
       p.numel() for n, p in self.model.named_parameters()
@@ -226,7 +226,7 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
   ]) # exclude BatchNorm running status
   print('Params: ', params / 1e6)
   ```
-- 统计FLOPs(G)，首先安装PaddleSlim, `pip install paddleslim`，然后设置[runtime.yml](configs/runtime.yml)里`print_flops: True`，并且注意确保是单尺度下，打印的是MACs，FLOPs=2*MACs。
+- **统计FLOPs(G)**，首先安装[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`，然后设置[runtime.yml](configs/runtime.yml)里`print_flops: True`，并且注意确保是**单尺度**下如640x640，**打印的是MACs，FLOPs=2*MACs**。
 
 ### 自定义数据集训练：
 
