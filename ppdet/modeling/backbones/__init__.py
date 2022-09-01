@@ -35,6 +35,7 @@ from . import convnext
 from . import vision_transformer
 from . import mobileone
 from . import efficientrep
+from . import trans_encoder
 
 from .vgg import *
 from .resnet import *
@@ -57,6 +58,6 @@ from .cspresnet import *
 from .csp_darknet import *
 from .convnext import *
 from .vision_transformer import *
-from .vision_transformer import *
 from .mobileone import *
 from .efficientrep import *
+from .trans_encoder import *

@@ -64,3 +64,4 @@ from .retinanet import *
 from .bytetrack import *
 from .yolox import *
 from .yolov5 import *
+from .pose3d_metro import *

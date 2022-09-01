@@ -331,7 +331,7 @@ def visualize_pose(imgfile,
     plt.close()
 
 
-def visualize_attr(im, results, boxes=None):
+def visualize_attr(im, results, boxes=None, is_mtmct=False):
     if isinstance(im, str):
         im = Image.open(im)
         im = np.ascontiguousarray(np.copy(im))
@@ -348,8 +348,12 @@ def visualize_attr(im, results, boxes=None):
         if boxes is None:
             text_w = 3
             text_h = 1
+        elif is_mtmct:
+            box = boxes[i]  # multi camera, bbox shape is x,y, w,h
+            text_w = int(box[0]) + 3
+            text_h = int(box[1])
         else:
-            box = boxes[i]
+            box = boxes[i]  # single camera, bbox shape is 0, 0, x,y, w,h
             text_w = int(box[2]) + 3
             text_h = int(box[3])
         for text in res:
@@ -414,8 +418,8 @@ def visualize_vehicleplate(im, results, boxes=None):
         im = np.ascontiguousarray(np.copy(im))
 
     im_h, im_w = im.shape[:2]
-    text_scale = max(0.5, im.shape[0] / 3000.)
-    text_thickness = 1
+    text_scale = max(1.0, im.shape[0] / 1600.)
+    text_thickness = 2
 
     line_inter = im.shape[0] / 40.
     for i, res in enumerate(results):
@@ -432,7 +436,7 @@ def visualize_vehicleplate(im, results, boxes=None):
             text_loc = (text_w, text_h)
             cv2.putText(
                 im,
-                text,
+                "LP: " + text,
                 text_loc,
                 cv2.FONT_ITALIC,
                 text_scale, (0, 255, 255),
