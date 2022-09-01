@@ -55,6 +55,8 @@
 python -m paddle.distributed.launch --log_dir=ppyoloe --gpus 0,1,2,3,4,5,6,7 tools/train.py -c configs/mot/bytetrack/detector/ppyoloe_crn_l_36e_640x640_mot17half.yml --eval --amp
 # 或者
 python -m paddle.distributed.launch --log_dir=ppyoloe --gpus 0,1,2,3,4,5,6,7 tools/train.py -c configs/mot/bytetrack/detector/yolox_x_24e_800x1440_mix_det.yml --eval --amp
+# 或者
+python -m paddle.distributed.launch --log_dir=log_yolov7 --gpus 0,1,2,3,4,5,6,7 tools/train.py -c configs/mot/bytetrack/detector/yolov7_x_24e_800x1440_mix_mot_ch.yml --eval --amp
 ```
 
 **注意:**

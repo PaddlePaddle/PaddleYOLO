@@ -1,0 +1,84 @@
+# This config is an assembled config for ByteTrack MOT, used as eval/infer mode for MOT.
+_BASE_: [
+  '../../../yolov7/yolov7_x_300e_coco.yml',
+  '../_base_/mot17.yml',
+]
+weights: output/yolov7_x_24e_800x1440_mix_mot_ch/model_final
+log_iter: 20
+snapshot_epoch: 2
+
+# schedule configuration for fine-tuning
+epoch: 24
+LearningRate:
+  base_lr: 0.001
+  schedulers:
+  - !YOLOv5LRDecay
+    max_epochs: 24
+    min_lr_ratio: 0.1
+  - !ExpWarmup
+    epochs: 1
+
+OptimizerBuilder:
+  optimizer:
+    type: Momentum
+    momentum: 0.937
+    use_nesterov: True
+  regularizer:
+    factor: 0.0005
+    type: L2
+
+
+TrainReader:
+  batch_size: 6
+  mosaic_epoch: 20
+
+# detector configuration
+pretrain_weights: https://bj.bcebos.com/v1/paddledet/models/yolov7_x_300e_coco.pdparams
+architecture: YOLOv5 # YOLOv7 is based on YOLOv5
+norm_type: sync_bn
+use_ema: True
+ema_decay: 0.9999
+ema_decay_type: "exponential"
+act: silu
+find_unused_parameters: True
+
+depth_mult: 1.0 # no use in YOLOv7
+width_mult: 1.0
+
+arch: 'X'
+use_aux: False
+
+
+YOLOv5:
+  backbone: ELANNet
+  neck: ELANFPN
+  yolo_head: YOLOv7Head
+  post_process: ~
+
+ELANNet:
+  return_idx: [2, 3, 4]
+  depthwise: false
+
+ELANFPN:
+  depthwise: false
+
+YOLOv7Head:
+  anchors: [[12, 16], [19, 36], [40, 28],
+            [36, 75], [76, 55], [72, 146],
+            [142, 110], [192, 243], [459, 401]]
+  anchor_masks: [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+  stride: [8, 16, 32]
+  loss: YOLOv7Loss
+  nms:
+    name: MultiClassNMS
+    nms_top_k: 10000
+    keep_top_k: 300
+    score_threshold: 0.001
+    nms_threshold: 0.7
+
+YOLOv7Loss:
+  downsample_ratios: [8, 16, 32]
+  balance: [4.0, 1.0, 0.4]
+  box_weight: 0.05
+  cls_weght: 0.3
+  obj_weight: 0.7
