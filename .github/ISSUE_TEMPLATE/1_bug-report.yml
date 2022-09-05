@@ -21,23 +21,23 @@ body:
           我已经查询[历史issue](https://github.com/PaddlePaddle/PaddleDetection/issues)，没有发现相似的bug。I have searched the [issues](https://github.com/PaddlePaddle/PaddleDetection/issues) and found no similar bug report.
         required: true
 
-  - type: dropdown
-    attributes:
-      label: Bug组件 Bug Component
-      description: |
-        请选择在哪部分代码发现这个bug。Please select the part of PaddleDetection where you found the bug.
-      multiple: true
-      options:
-        - "Training"
-        - "Validation"
-        - "Inference"
-        - "Export"
-        - "Deploy"
-        - "Installation"
-        - "DataProcess"
-        - "Other"
-    validations:
-      required: true
+- type: dropdown
+  attributes:
+    label: Bug组件 Bug Component
+    description: |
+      请选择在哪部分代码发现这个bug。Please select the part of PaddleDetection where you found the bug.
+    multiple: true
+    options:
+      - "Training"
+      - "Validation"
+      - "Inference"
+      - "Export"
+      - "Deploy"
+      - "Installation"
+      - "DataProcess"
+      - "Other"
+  validations:
+    required: true
 
 - type: textarea
   id: code
