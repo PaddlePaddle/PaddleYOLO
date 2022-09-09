@@ -7,12 +7,27 @@
  - gitee链接为：https://gitee.com/nemonameless/PaddleDetection_YOLOSeries
  - 提issue可以在此代码库的[issues](https://github.com/nemonameless/PaddleDetection_YOLOSeries/issues)页面中，也可以在[PaddleDetection issues](https://github.com/PaddlePaddle/PaddleDetection/issues)中，也欢迎提[PR](https://github.com/nemonameless/PaddleDetection_YOLOSeries/pulls)共同建设和维护。
  - [PP-YOLOE](configs/ppyoloe),[PP-YOLOE+](configs/ppyoloe),[PP-YOLO](configs/ppyolo),[PP-YOLOv2](configs/ppyolo),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)等模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用，**会最先发布PP-YOLO系列特色检测模型的最新进展**。
- - [YOLOv5](configs/yolov5),[YOLOv7](configs/yolov7)和[MT-YOLOv6](configs/yolov6mt)模型推荐在此代码库中使用，**由于GPL开源协议而不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)主代码库。
+ - [YOLOv5](configs/yolov5),[YOLOv7](configs/yolov7)和[MT-YOLOv6](configs/yolov6mt)模型推荐在此代码库中使用，**由于GPL开源协议而不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)主代码库**。
  - 此代码库**推荐使用paddlepaddle-2.3.0及以上的版本**，请参考[官网](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html)下载对应适合版本。
 
 
 ## Updates!
 * 【2022/08/23】发布`PaddleDetection_YOLOSeries`代码库: 支持`YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`MT-YOLOv6`,`YOLOv7`等YOLO模型，支持ConvNeXt骨干网络高精度版`PP-YOLOE`,`YOLOX`和`YOLOv5`等模型，支持PaddleSlim无损加速量化训练`PP-YOLOE`,`YOLOv5`,`MT-YOLOv6`和`YOLOv7`等模型，详情可阅读[此文章](https://mp.weixin.qq.com/s/Hki01Zs2lQgvLSLWS0btrA)。
+
+
+## <img title="" src="https://user-images.githubusercontent.com/48054808/157800467-2a9946ad-30d1-49a9-b9db-ba33413d9c90.png" alt="" width="20"> 技术交流
+
+- 如果你发现任何PaddleDetection存在的问题或者是建议, 欢迎通过[GitHub Issues](https://github.com/PaddlePaddle/PaddleDetection/issues)给我们提issues。
+
+- **欢迎加入PaddleDetection 微信用户群（扫码填写问卷即可入群）**
+  - **入群福利 💎：获取PaddleDetection团队整理的重磅学习大礼包🎁**
+    - 📊 福利一：获取飞桨联合业界企业整理的开源数据集
+    - 👨‍🏫 福利二：获取PaddleDetection历次发版直播视频与最新直播咨询
+    - 🗳 福利三：获取垂类场景预训练模型集合，包括工业、安防、交通等5+行业场景
+    - 🗂 福利四：获取10+全流程产业实操范例，覆盖火灾烟雾检测、人流量计数等产业高频场景
+  <div align="center">
+  <img src="https://user-images.githubusercontent.com/34162360/177678712-4655747d-4290-4ad9-b7a1-4564a5418ac6.jpg"  width = "200" />  
+  </div>
 
 
 ## ModelZoo on COCO
