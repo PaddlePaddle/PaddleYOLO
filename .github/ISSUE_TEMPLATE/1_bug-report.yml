@@ -13,7 +13,9 @@ body:
     label: 问题确认 Search before asking
     description: >
       (必选项) 在向PaddleDetection报bug之前，请先查询[历史issue](https://github.com/PaddlePaddle/PaddleDetection/issues)是否报过同样的bug。
+
       (Required) Before submitting a bug, please make sure the issue hasn't been already addressed by searching through [the existing and past issues](https://github.com/PaddlePaddle/PaddleDetection/issues).
+
     options:
       - label: >
           我已经查询[历史issue](https://github.com/PaddlePaddle/PaddleDetection/issues)，没有发现相似的bug。I have searched the [issues](https://github.com/PaddlePaddle/PaddleDetection/issues) and found no similar bug report.
@@ -80,7 +82,9 @@ body:
     label: Bug描述确认 Bug description confirmation
     description: >
       (必选项) 请确认是否提供了详细的Bug描述和环境信息，确认问题是否可以复现。
+
       (Required) Please confirm whether the bug description and environment information are provided, and whether the problem can be reproduced.
+
     options:
       - label: >
           我确认已经提供了Bug复现步骤、代码改动说明、以及环境信息，确认问题是可以复现的。I confirm that the bug replication steps, code change instructions, and environment information have been provided, and the problem can be reproduced.
@@ -91,9 +95,6 @@ body:
     label: 是否愿意提交PR？ Are you willing to submit a PR?
     description: >
       (可选项) 如果你对修复bug有自己的想法，十分鼓励提交[Pull Request](https://github.com/PaddlePaddle/PaddleDetection/pulls)，共同提升PaddleDetection。
-      (Optional) We encourage you to submit a [Pull Request](https://github.com/PaddlePaddle/PaddleDetection/pulls) (PR) to help improve PaddleDetection for everyone, especially if you have a good understanding of how to implement a fix or feature.
-    options:
-      - label: 我愿意提交PR！I'd like to help by submitting a PR!
 
 - type: markdown
   attributes:
