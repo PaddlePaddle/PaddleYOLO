@@ -37,6 +37,7 @@ from . import retinanet
 from . import bytetrack
 from . import yolox
 from . import yolov5
+from . import pose3d_metro
 
 from .meta_arch import *
 from .faster_rcnn import *
