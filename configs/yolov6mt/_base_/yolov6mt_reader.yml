@@ -7,7 +7,14 @@ worker_num: 4
 TrainReader:
   sample_transforms:
     - Decode: {}
-    - MosaicPerspective: {target_size: *input_size, mosaic_prob: 1.0, translate: 0.1, scale: 0.5}
+    - MosaicPerspective:
+        mosaic_prob: 1.0
+        target_size: *input_size
+        degrees: 0.0
+        translate: 0.1
+        scale: 0.5
+        shear: 0.0
+        mixup_prob: 0.0
     - RandomHSV: {hgain: 0.015, sgain: 0.7, vgain: 0.4}
     - RandomFlip: {}
     - BboxXYXY2XYWH: {}

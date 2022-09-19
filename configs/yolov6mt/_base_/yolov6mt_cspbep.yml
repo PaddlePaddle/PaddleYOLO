@@ -6,21 +6,23 @@ ema_decay_type: "exponential"
 act: silu
 find_unused_parameters: True
 
-depth_mult: 0.33 # default: s version
-width_mult: 0.50
+depth_mult: 1.0
+width_mult: 1.0
 
 YOLOv5:
-  backbone: EfficientRep
-  neck: RepPAN
+  backbone: CSPBepBackbone
+  neck: CSPRepPAN
   yolo_head: EffiDeHead
   post_process: ~
 
-EfficientRep:
+CSPBepBackbone:
   return_idx: [2, 3, 4]
   depthwise: false
+  csp_e: 0.5
 
-RepPAN:
+CSPRepPAN:
   depthwise: false
+  csp_e: 0.5
 
 EffiDeHead:
   depthwise: false

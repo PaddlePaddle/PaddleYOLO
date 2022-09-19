@@ -11,3 +11,23 @@ width_mult: 0.50
 log_iter: 100
 snapshot_epoch: 10
 weights: output/yolov6mt_s_400e_coco/model_final
+
+
+EffiDeHead:
+  iou_type: 'giou'
+  use_dfl: False
+
+
+
+TrainDataset:
+  !COCODataSet
+    image_dir: val2017
+    anno_path: annotations/instances_val2017.json
+    dataset_dir: dataset/coco
+    data_fields: ['image', 'gt_bbox', 'gt_class', 'is_crowd']
+
+EvalDataset:
+  !COCODataSet
+    image_dir: val2017
+    anno_path: annotations/instances_val2017_8img.json
+    dataset_dir: dataset/coco

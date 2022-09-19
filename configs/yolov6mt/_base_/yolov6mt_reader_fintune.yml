@@ -1,5 +1,5 @@
-input_height: &input_height 416
-input_width: &input_width 416
+input_height: &input_height 640
+input_width: &input_width 640
 input_size: &input_size [*input_height, *input_width]
 mosaic_epoch: &mosaic_epoch 400
 
@@ -10,12 +10,12 @@ TrainReader:
     - MosaicPerspective:
         mosaic_prob: 1.0
         target_size: *input_size
-        degrees: 0.0
-        translate: 0.1
-        scale: 0.5
-        shear: 0.0
-        mixup_prob: 0.0
-    - RandomHSV: {hgain: 0.015, sgain: 0.7, vgain: 0.4}
+        degrees: 0.373
+        translate: 0.245
+        scale: 0.898
+        shear: 0.602
+        mixup_prob: 0.243
+    - RandomHSV: {hgain: 0.0138, sgain: 0.664, vgain: 0.464}
     - RandomFlip: {}
     - BboxXYXY2XYWH: {}
     - NormalizeBox: {}
@@ -36,12 +36,12 @@ EvalReader:
     - Pad: {size: *input_size, fill_value: [114., 114., 114.]}
     - NormalizeImageQuick: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
     - Permute: {}
-  batch_size: 8
+  batch_size: 1
 
 
 TestReader:
   inputs_def:
-    image_shape: [3, 416, 416]
+    image_shape: [3, 640, 640]
   sample_transforms:
     - Decode: {}
     - Resize: {target_size: *input_size, keep_ratio: True, interp: 1}

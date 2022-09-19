@@ -14,4 +14,32 @@ weights: output/yolov6mt_n_400e_coco/model_final
 
 
 EffiDeHead:
-  iou_type: 'ciou'
+  iou_type: 'siou'
+  use_dfl: False
+
+
+epoch: 400
+LearningRate:
+  base_lr: 0.01
+  schedulers:
+  - !YOLOv5LRDecay
+    max_epochs: 400
+    min_lr_ratio: 0.02 #
+  - !ExpWarmup
+    epochs: 3
+
+OptimizerBuilder:
+  optimizer:
+    type: Momentum
+    momentum: 0.937
+    use_nesterov: True
+  regularizer:
+    factor: 0.0005
+    type: L2
+
+
+EvalDataset:
+  !COCODataSet
+    image_dir: val2017
+    anno_path: annotations/instances_val2017_8img.json
+    dataset_dir: dataset/coco

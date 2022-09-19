@@ -14,4 +14,5 @@ weights: output/yolov6mt_n_416_400e_coco/model_final
 
 
 EffiDeHead:
-  iou_type: 'ciou'
+  iou_type: 'siou'
+  use_dfl: False

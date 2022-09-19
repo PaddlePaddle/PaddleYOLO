@@ -17,7 +17,9 @@ import paddle.nn as nn
 import paddle.nn.functional as F
 from paddle import ParamAttr
 from paddle.regularizer import L2Decay
-
+from IPython import embed
+from ..assigners.utils import generate_anchors_for_grid_cell
+from ..bbox_utils import batch_distance2bbox
 import numpy as np
 from ..initializer import bias_init_with_prob, constant_
 
@@ -57,9 +59,19 @@ class EffiDeHead(nn.Layer):
                      'l1': 1.0,
                      'reg': 5.0,
                  },
+                 distill_weight={
+                     'class': 0.0,
+                     'dfl': 0.0,
+                 },
+                 num_anchors=1,
+                 grid_cell_scale=5.0,
+                 grid_cell_offset=0.5,
+                 reg_max=0,
+                 use_dfl=False,
                  iou_type='siou',
                  trt=False,
-                 exclude_nms=False):
+                 exclude_nms=False,
+                 exclude_post_process=False):
         super(EffiDeHead, self).__init__()
         self._dtype = paddle.framework.get_default_dtype()
         self.num_classes = num_classes
@@ -75,6 +87,7 @@ class EffiDeHead(nn.Layer):
         self.loss_weight = loss_weight
         self.iou_type = iou_type
         self.exclude_nms = exclude_nms
+        self.exclude_post_process = exclude_post_process
 
         ConvBlock = BaseConv  # todo: depthwise
         self.stem_conv = nn.LayerList()
@@ -82,7 +95,14 @@ class EffiDeHead(nn.Layer):
         self.reg_convs = nn.LayerList()
         self.cls_preds = nn.LayerList()
         self.reg_preds = nn.LayerList()
-        self.obj_preds = nn.LayerList()
+
+        self.grid_cell_scale = grid_cell_scale
+        self.grid_cell_offset = grid_cell_offset
+
+        self.reg_max = reg_max
+        self.use_dfl = use_dfl
+        self.num_anchors = num_anchors
+
         for in_c, feat_c in zip(self.in_channels, feat_channels):
             self.stem_conv.append(BaseConv(in_c, feat_c, 1, 1))
             self.cls_convs.append(ConvBlock(feat_c, feat_c, 3, 1))
@@ -97,22 +117,25 @@ class EffiDeHead(nn.Layer):
             self.reg_preds.append(
                 nn.Conv2D(
                     feat_c,
-                    4,  # reg [x,y,w,h]
+                    4 * (self.reg_max + self.num_anchors),  # reg [x,y,w,h]
                     1,
                     bias_attr=ParamAttr(regularizer=L2Decay(0.0))))
-            self.obj_preds.append(
-                nn.Conv2D(
-                    feat_c,
-                    1,  # obj
-                    1,
-                    bias_attr=ParamAttr(regularizer=L2Decay(0.0))))
+
         if self.iou_type == 'ciou':
             self.iou_loss = IouLoss(loss_weight=1.0, ciou=True)
         elif self.iou_type == 'siou':
             self.iou_loss = SIoULoss(splited=False)
+        elif self.iou_type == 'giou':
+            self.iou_loss = SIoULoss(splited=False)
         else:
             self.iou_loss = IouLoss(loss_weight=1.0)
-        self._initialize_biases()
+        # self._initialize_biases()
+
+        # projection conv
+        if self.use_dfl:
+            self.proj_conv = nn.Conv2D(self.reg_max + 1, 1, 1, bias_attr=False)
+            self.proj_conv.skip_quant = True
+        self._init_weights()
 
     def _initialize_biases(self):
         bias_init = bias_init_with_prob(0.01)
@@ -122,73 +145,100 @@ class EffiDeHead(nn.Layer):
             constant_(obj_.weight)
             constant_(obj_.bias, bias_init)
 
-    def _generate_anchor_point(self, feat_sizes, strides, offset=0.):
-        anchor_points, stride_tensor = [], []
-        num_anchors_list = []
-        for feat_size, stride in zip(feat_sizes, strides):
-            h, w = feat_size
-            x = (paddle.arange(w) + offset) * stride
-            y = (paddle.arange(h) + offset) * stride
-            y, x = paddle.meshgrid(y, x)
-            anchor_points.append(paddle.stack([x, y], axis=-1).reshape([-1, 2]))
-            stride_tensor.append(
-                paddle.full(
-                    [len(anchor_points[-1]), 1], stride, dtype=self._dtype))
-            num_anchors_list.append(len(anchor_points[-1]))
-        anchor_points = paddle.concat(anchor_points).astype(self._dtype)
-        anchor_points.stop_gradient = True
+    def _init_weights(self):
+        bias_cls = bias_init_with_prob(0.01)
+        for cls_, reg_ in zip(self.cls_preds, self.reg_preds):
+            constant_(cls_.weight)
+            constant_(cls_.bias, bias_cls)
+            constant_(reg_.weight)
+            constant_(reg_.bias, 1.0)
+
+        # projection conv
+        if self.use_dfl:
+            proj = paddle.linspace(0, self.reg_max, self.reg_max + 1).reshape(
+                [1, self.reg_max + 1, 1, 1])
+            self.proj_conv.weight.set_value(proj)
+            self.proj_conv.weight.stop_gradient = True
+
+    def forward_train(self, feats, targets):
+        anchors, anchor_points, num_anchors_list, stride_tensor = \
+            generate_anchors_for_grid_cell(
+                feats, self.fpn_strides, self.grid_cell_scale,
+                self.grid_cell_offset)
+
+        cls_score_list, reg_distri_list = [], []
+        for i, feat in enumerate(feats):
+            feat = self.stem_conv[i](feat)
+            cls_logit = self.cls_preds[i](self.cls_convs[i](feat))
+            reg_distri = self.reg_preds[i](self.reg_convs[i](feat))
+            # cls and reg
+            cls_score = F.sigmoid(cls_logit)
+            cls_score_list.append(cls_score.flatten(2).transpose([0, 2, 1]))
+            reg_distri_list.append(reg_distri.flatten(2).transpose([0, 2, 1]))
+        cls_score_list = paddle.concat(cls_score_list, axis=1)
+        reg_distri_list = paddle.concat(reg_distri_list, axis=1)
+
+        return self.get_loss([
+            cls_score_list, reg_distri_list, anchors, anchor_points,
+            num_anchors_list, stride_tensor
+        ], targets)
+
+    def _generate_anchors(self, feats=None, dtype='float32'):
+        # just use in eval time
+        anchor_points = []
+        stride_tensor = []
+        for i, stride in enumerate(self.fpn_strides):
+            if feats is not None:
+                _, _, h, w = feats[i].shape
+            else:
+                h = int(self.eval_size[0] / stride)
+                w = int(self.eval_size[1] / stride)
+            shift_x = paddle.arange(end=w) + self.grid_cell_offset
+            shift_y = paddle.arange(end=h) + self.grid_cell_offset
+            shift_y, shift_x = paddle.meshgrid(shift_y, shift_x)
+            anchor_point = paddle.cast(
+                paddle.stack(
+                    [shift_x, shift_y], axis=-1), dtype=dtype)
+            anchor_points.append(anchor_point.reshape([-1, 2]))
+            stride_tensor.append(paddle.full([h * w, 1], stride, dtype=dtype))
+        anchor_points = paddle.concat(anchor_points)
         stride_tensor = paddle.concat(stride_tensor)
-        stride_tensor.stop_gradient = True
-        return anchor_points, stride_tensor, num_anchors_list
+        return anchor_points, stride_tensor
+
+    def forward_eval(self, feats):
+        anchor_points, stride_tensor = self._generate_anchors(feats)
+
+        cls_score_list, reg_dist_list = [], []
+        for i, feat in enumerate(feats):
+            b, _, h, w = feat.shape  # [1, 64, 80, 80] [1, 128, 40, 40] [1, 256, 20, 20]
+            l = h * w
+            feat = self.stem_conv[i](feat)
+            cls_logit = self.cls_preds[i](self.cls_convs[i](feat))
+            reg_dist = self.reg_preds[i](
+                self.reg_convs[i](feat))  # [1, 4, 80, 80]
+
+            if self.use_dfl:
+                reg_dist = reg_dist.reshape(
+                    [-1, 4, self.reg_max + 1, l]).transpose([0, 2, 1, 3])
+                reg_dist = self.proj_conv(F.softmax(reg_dist, axis=1))
+            # cls and reg
+            cls_score = F.sigmoid(cls_logit)
+            cls_score_list.append(cls_score.reshape([b, self.num_classes, l]))
+            reg_dist_list.append(reg_dist.reshape([b, 4, l]))
+
+        cls_score_list = paddle.concat(cls_score_list, axis=-1)
+        reg_dist_list = paddle.concat(reg_dist_list, axis=-1)
+
+        return cls_score_list, reg_dist_list, anchor_points, stride_tensor
 
     def forward(self, feats, targets=None):
         assert len(feats) == len(self.fpn_strides), \
             "The size of feats is not equal to size of fpn_strides"
 
-        feat_sizes = [[f.shape[-2], f.shape[-1]] for f in feats]
-        cls_score_list, reg_pred_list = [], []
-        obj_score_list = []
-        for i, feat in enumerate(feats):
-            feat = self.stem_conv[i](feat)
-            cls_feat = self.cls_convs[i](feat)
-            reg_feat = self.reg_convs[i](feat)
-            cls_logit = self.cls_preds[i](cls_feat)
-            reg_xywh = self.reg_preds[i](reg_feat)
-            obj_logit = self.obj_preds[i](reg_feat)
-            # cls prediction
-            cls_score = F.sigmoid(cls_logit)
-            cls_score_list.append(cls_score.flatten(2).transpose([0, 2, 1]))
-            # reg prediction
-            reg_xywh = reg_xywh.flatten(2).transpose([0, 2, 1])
-            reg_pred_list.append(reg_xywh)
-            # obj prediction
-            obj_score = F.sigmoid(obj_logit)
-            obj_score_list.append(obj_score.flatten(2).transpose([0, 2, 1]))
-
-        cls_score_list = paddle.concat(cls_score_list, axis=1)
-        reg_pred_list = paddle.concat(reg_pred_list, axis=1)
-        obj_score_list = paddle.concat(obj_score_list, axis=1)
-
-        # bbox decode
-        anchor_points, stride_tensor, _ =\
-            self._generate_anchor_point(feat_sizes, self.fpn_strides)
-        reg_xy, reg_wh = paddle.split(reg_pred_list, 2, axis=-1)
-        reg_xy += (anchor_points / stride_tensor)
-        reg_wh = paddle.exp(reg_wh) * 0.5
-        bbox_pred_list = paddle.concat(
-            [reg_xy - reg_wh, reg_xy + reg_wh], axis=-1)
-
         if self.training:
-            anchor_points, stride_tensor, num_anchors_list =\
-                self._generate_anchor_point(feat_sizes, self.fpn_strides, 0.5)
-            yolox_losses = self.get_loss([
-                cls_score_list, bbox_pred_list, obj_score_list, anchor_points,
-                stride_tensor, num_anchors_list
-            ], targets)
-            return yolox_losses
+            return self.forward_train(feats, targets)
         else:
-            pred_scores = (cls_score_list * obj_score_list).sqrt()
-            return pred_scores, bbox_pred_list, stride_tensor
+            return self.forward_eval(feats)
 
     def get_loss(self, head_outs, targets):
         pred_cls, pred_bboxes, pred_obj,\
@@ -284,15 +334,25 @@ class EffiDeHead(nn.Layer):
         return yolox_losses
 
     def post_process(self, head_outs, img_shape, scale_factor):
-        pred_scores, pred_bboxes, stride_tensor = head_outs
-        pred_scores = pred_scores.transpose([0, 2, 1])
+        pred_scores, pred_dist, anchor_points, stride_tensor = head_outs
+        pred_bboxes = batch_distance2bbox(anchor_points,
+                                          pred_dist.transpose(
+                                              [0, 2, 1]))  #, box_format='xywh')
         pred_bboxes *= stride_tensor
-        # scale bbox to origin image
-        scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
-        pred_bboxes /= scale_factor
-        if self.exclude_nms:
-            # `exclude_nms=True` just use in benchmark
-            return pred_bboxes.sum(), pred_scores.sum()
+
+        if self.exclude_post_process:
+            return paddle.concat(
+                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1), None
         else:
-            bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
-            return bbox_pred, bbox_num
+            # scale bbox to origin
+            scale_y, scale_x = paddle.split(scale_factor, 2, axis=-1)
+            scale_factor = paddle.concat(
+                [scale_x, scale_y, scale_x, scale_y],
+                axis=-1).reshape([-1, 1, 4])
+            pred_bboxes /= scale_factor
+            if self.exclude_nms:
+                # `exclude_nms=True` just use in benchmark
+                return pred_bboxes, pred_scores
+            else:
+                bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
+                return bbox_pred, bbox_num

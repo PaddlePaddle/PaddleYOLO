@@ -1,0 +1,29 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  '_base_/optimizer_300e.yml',
+  '_base_/yolov6mt_cspbep.yml',
+  '_base_/yolov6mt_reader_high_aug.yml',
+]
+depth_mult: 1.0
+width_mult: 1.0
+
+log_iter: 100
+snapshot_epoch: 10
+weights: output/yolov6mt_l_300e_coco/model_final
+
+
+EffiDeHead:
+  iou_type: 'giou'
+  reg_max: 16
+  use_dfl: True
+  distill_weight:
+    'class': 2.0
+    'dfl': 1.0
+
+
+EvalDataset:
+  !COCODataSet
+    image_dir: val2017
+    anno_path: annotations/instances_val2017_8img.json
+    dataset_dir: dataset/coco
