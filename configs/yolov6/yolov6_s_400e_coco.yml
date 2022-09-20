@@ -8,7 +8,7 @@ _BASE_: [
 depth_mult: 0.33
 width_mult: 0.50
 
-log_iter: 100
+log_iter: 20
 snapshot_epoch: 10
 weights: output/yolov6_s_400e_coco/model_final
 

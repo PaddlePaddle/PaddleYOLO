@@ -46,8 +46,8 @@ class EffiDeHead(nn.Layer):
             fpn_strides=[8, 16, 32],
             grid_cell_scale=5.0,
             grid_cell_offset=0.5,
-            reg_max=16,
-            use_dfl=False,  # in n/t/s, True in m/l
+            reg_max=16,  # reg_max=0 if use_dfl is False
+            use_dfl=False,  # in n/t/s version, True in m/l version
             static_assigner_epoch=3,  # warmup_epoch
             use_varifocal_loss=True,
             static_assigner='ATSSAssigner',
@@ -58,9 +58,8 @@ class EffiDeHead(nn.Layer):
                 'class': 1.0,
                 'iou': 2.5,
                 'dfl': 0.5,
-                'cwd': 10.0,  # in distill
             },
-            iou_type='giou',
+            iou_type='giou',  # 'siou' in n/t version
             use_distill=False,
             distill_weight={
                 'class': 1.0,
@@ -83,7 +82,6 @@ class EffiDeHead(nn.Layer):
         if iou_type == 'siou':
             self.iou_loss = SIoULoss(splited=False)
         self.loss_weight = loss_weight
-        self.distill_weight = distill_weight
         self.use_varifocal_loss = use_varifocal_loss
         self.eval_size = eval_size
 
@@ -96,6 +94,7 @@ class EffiDeHead(nn.Layer):
         self.exclude_nms = exclude_nms
         self.exclude_post_process = exclude_post_process
 
+        # for distill
         self.use_distill = use_distill
         self.distill_weight = distill_weight
 
@@ -205,14 +204,13 @@ class EffiDeHead(nn.Layer):
         else:
             anchor_points, stride_tensor = self._generate_anchors(feats)
         cls_score_list, reg_dist_list = [], []
-        for i, feat in enumerate(
-                feats):  # [1, 64, 80, 80] [1, 128, 40, 40] [1, 256, 20, 20]
+        for i, feat in enumerate(feats):
             b, _, h, w = feat.shape
             l = h * w
-            feat = self.stem_conv[i](feat)  # [1, 64, 80, 80]
-            cls_logit = self.pred_cls[i](feat)  # [1, 80, 80, 80]
-            reg_dist = self.pred_reg[i](feat)  # [1, 64, 80, 80]
-            if self.use_dfl:  ### diff
+            feat = self.stem_conv[i](feat)
+            cls_logit = self.pred_cls[i](feat)
+            reg_dist = self.pred_reg[i](feat)
+            if self.use_dfl:  ### diff with PPYOLOEHead
                 reg_dist = reg_dist.reshape(
                     [-1, 4, self.reg_max + 1, l]).transpose([0, 2, 1, 3])
                 reg_dist = self.proj_conv(F.softmax(reg_dist, axis=1))
@@ -253,9 +251,12 @@ class EffiDeHead(nn.Layer):
         return loss
 
     def _bbox_decode(self, anchor_points, pred_dist):
-        b, l, _ = get_static_shape(pred_dist)
-        pred_dist = F.softmax(pred_dist.reshape([b, l, 4, self.reg_max + 1
-                                                 ])).matmul(self.proj)
+        ### diff with PPYOLOEHead
+        if self.use_dfl:
+            b, l, _ = get_static_shape(pred_dist)
+            pred_dist = F.softmax(
+                pred_dist.reshape([b, l, 4, self.reg_max + 1])).matmul(
+                    self.proj)
         return batch_distance2bbox(anchor_points, pred_dist)
 
     def _bbox2distance(self, points, bbox):
@@ -294,10 +295,10 @@ class EffiDeHead(nn.Layer):
                                      assigned_bboxes_pos) * bbox_weight
             loss_iou = loss_iou.sum() / assigned_scores_sum
 
-            # l1 loss just see the convergence
+            # l1 loss just see the convergence, same in PPYOLOEHead
             loss_l1 = F.l1_loss(pred_bboxes_pos, assigned_bboxes_pos)
 
-            # dfl loss
+            # dfl loss ### diff with PPYOLOEHead
             if self.use_dfl:
                 dist_mask = mask_positive.unsqueeze(-1).tile(
                     [1, 1, (self.reg_max + 1) * 4])
@@ -408,72 +409,3 @@ class EffiDeHead(nn.Layer):
             else:
                 bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
                 return bbox_pred, bbox_num
-
-    def get_loss_distill(self, head_outs, gt_meta):
-        pred_scores, pred_distri, anchors,\
-        anchor_points, num_anchors_list, stride_tensor = head_outs
-
-        anchor_points_s = anchor_points / stride_tensor
-        pred_bboxes = self._bbox_decode(anchor_points_s, pred_distri)
-
-        gt_labels = gt_meta['gt_class']
-        gt_bboxes = gt_meta['gt_bbox']
-        pad_gt_mask = gt_meta['pad_gt_mask']
-        # label assignment
-        if gt_meta['epoch_id'] < self.static_assigner_epoch:
-            assigned_labels, assigned_bboxes, assigned_scores = \
-                self.static_assigner(
-                    anchors,
-                    num_anchors_list,
-                    gt_labels,
-                    gt_bboxes,
-                    pad_gt_mask,
-                    bg_index=self.num_classes,
-                    pred_bboxes=pred_bboxes.detach() * stride_tensor)
-            alpha_l = 0.25
-        else:
-            assigned_labels, assigned_bboxes, assigned_scores = \
-                self.assigner(
-                pred_scores.detach(),
-                pred_bboxes.detach() * stride_tensor,
-                anchor_points,
-                num_anchors_list,
-                gt_labels,
-                gt_bboxes,
-                pad_gt_mask,
-                bg_index=self.num_classes)
-            alpha_l = -1
-        # rescale bbox
-        assigned_bboxes /= stride_tensor
-        # cls loss
-        if self.use_varifocal_loss:
-            one_hot_label = F.one_hot(assigned_labels,
-                                      self.num_classes + 1)[..., :-1]
-            loss_cls = self._varifocal_loss(pred_scores, assigned_scores,
-                                            one_hot_label)
-        else:
-            loss_cls = self._focal_loss(pred_scores, assigned_scores, alpha_l)
-
-        assigned_scores_sum = assigned_scores.sum()
-        if paddle.distributed.get_world_size() > 1:
-            paddle.distributed.all_reduce(assigned_scores_sum)
-            assigned_scores_sum = paddle.clip(
-                assigned_scores_sum / paddle.distributed.get_world_size(),
-                min=1)
-        loss_cls /= assigned_scores_sum
-
-        loss_l1, loss_iou, loss_dfl = \
-            self._bbox_loss(pred_distri, pred_bboxes, anchor_points_s,
-                            assigned_labels, assigned_bboxes, assigned_scores,
-                            assigned_scores_sum)
-        loss = self.loss_weight['class'] * loss_cls + \
-               self.loss_weight['iou'] * loss_iou + \
-               self.loss_weight['dfl'] * loss_dfl
-        out_dict = {
-            'loss': loss,
-            'loss_cls': loss_cls,
-            'loss_iou': loss_iou,
-            'loss_dfl': loss_dfl,
-            'loss_l1': loss_l1,
-        }
-        return out_dict

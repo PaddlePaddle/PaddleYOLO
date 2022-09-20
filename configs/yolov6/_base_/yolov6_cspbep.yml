@@ -32,9 +32,9 @@ EffiDeHead:
   reg_max: 16
   use_dfl: True # in m/l version
   static_assigner_epoch: 3 # warmup_epoch
-  loss_weight: {class: 1.0, iou: 2.5, dfl: 0.5}
+  loss_weight: {class: 1.0, iou: 2.5, dfl: 0.5, cwd: 10.0}
   iou_type: 'giou'  # 'siou' in n/t version, 'giou' in s/m/l version
-  distill_weight: {class: 0.0, dfl: 0.0}
+  distill_weight: {class: 1.0, dfl: 1.0}
   static_assigner:
     name: ATSSAssigner
     topk: 9

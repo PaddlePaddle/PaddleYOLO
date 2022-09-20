@@ -587,18 +587,15 @@ class CSPBepBackbone(nn.Layer):
 def get_block(mode):
     if mode == 'repvgg':
         return RepConv
-    elif mode == 'conv_relu':
-        return SimConvWrapper
     elif mode == 'conv_silu':
-        return ConvWrapper
+        return ConvBNSiLUBlock
+    elif mode == 'conv_relu':
+        return ConvBNReLUBlock
     else:
-        raise NotImplementedError("Undefied Repblock choice for mode {}".format(
-            mode))
+        raise ValueError('Unsupported mode :{}'.format(mode))
 
 
-class ConvWrapper(nn.Layer):
-    '''Wrapper for normal Conv with SiLU activation'''
-
+class ConvBNSiLUBlock(nn.Layer):
     def __init__(self,
                  in_channels,
                  out_channels,
@@ -614,9 +611,7 @@ class ConvWrapper(nn.Layer):
         return self.base_block(x)
 
 
-class SimConvWrapper(nn.Layer):
-    '''Wrapper for normal Conv with ReLU activation'''
-
+class ConvBNReLUBlock(nn.Layer):
     def __init__(self,
                  in_channels,
                  out_channels,
