@@ -1,0 +1,46 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  '_base_/optimizer_400e.yml',
+  '_base_/yolov6_efficientrep.yml',
+  '_base_/yolov6_reader_416.yml',
+]
+depth_mult: 0.33
+width_mult: 0.25
+
+log_iter: 20
+snapshot_epoch: 10
+weights: output/yolov6_n_416_400e_coco/model_final
+
+
+EffiDeHead:
+  reg_max: 0
+  use_dfl: False
+  iou_type: 'siou' # only in n/t version
+
+
+epoch: 400
+LearningRate:
+  base_lr: 0.01
+  schedulers:
+  - !YOLOv5LRDecay
+    max_epochs: 400
+    min_lr_ratio: 0.02 #
+  - !ExpWarmup
+    epochs: 3
+
+OptimizerBuilder:
+  optimizer:
+    type: Momentum
+    momentum: 0.937
+    use_nesterov: True
+  regularizer:
+    factor: 0.0005
+    type: L2
+
+
+TrainReader:
+  batch_size: 32 # total batch_size = 32 * gpu_num
+
+EvalReader:
+  batch_size: 4
