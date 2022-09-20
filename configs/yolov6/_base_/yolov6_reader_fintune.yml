@@ -7,18 +7,27 @@ worker_num: 4
 TrainReader:
   sample_transforms:
     - Decode: {}
-    - MosaicPerspective: {target_size: *input_size, mosaic_prob: 1.0, translate: 0.1, scale: 0.5}
-    - RandomHSV: {hgain: 0.015, sgain: 0.7, vgain: 0.4}
+    - MosaicPerspective:
+        mosaic_prob: 1.0
+        target_size: *input_size
+        degrees: 0.373
+        translate: 0.245
+        scale: 0.898
+        shear: 0.602
+        mixup_prob: 0.243
+    - RandomHSV: {hgain: 0.0138, sgain: 0.664, vgain: 0.464}
     - RandomFlip: {}
     - BboxXYXY2XYWH: {}
     - NormalizeBox: {}
+  batch_transforms:
     - NormalizeImageQuick: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
     - Permute: {}
+    - PadGT: {}
   batch_size: 32
   shuffle: True
-  drop_last: False
-  use_shared_memory: False
-  collate_batch: False
+  drop_last: True
+  use_shared_memory: True
+  collate_batch: True
   mosaic_epoch: *mosaic_epoch
 
 
@@ -29,12 +38,12 @@ EvalReader:
     - Pad: {size: *input_size, fill_value: [114., 114., 114.]}
     - NormalizeImageQuick: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
     - Permute: {}
-  batch_size: 8
+  batch_size: 4
 
 
 TestReader:
   inputs_def:
-    image_shape: [3, 640, 640]
+    image_shape: [3, *input_height, *input_width]
   sample_transforms:
     - Decode: {}
     - Resize: {target_size: *input_size, keep_ratio: True, interp: 1}

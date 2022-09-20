@@ -24,11 +24,13 @@ from paddle import ParamAttr
 from paddle.regularizer import L2Decay
 from paddle.nn.initializer import Constant
 from ppdet.modeling.initializer import conv_init_, normal_
-
 from ppdet.core.workspace import register, serializable
 from ..shape_spec import ShapeSpec
 
-__all__ = ['RepConv', 'RepLayer', 'SimSPPF', 'EfficientRep']
+__all__ = [
+    'RepConv', 'RepLayer', 'BepC3Layer', 'SimSPPF', 'EfficientRep',
+    'CSPBepBackbone'
+]
 
 
 def get_activation(name="silu"):
@@ -41,6 +43,14 @@ def get_activation(name="silu"):
     else:
         raise AttributeError("Unsupported act type: {}".format(name))
     return module
+
+
+class SiLU(nn.Layer):
+    def __init__(self):
+        super(SiLU, self).__init__()
+
+    def forward(self, x):
+        return x * F.sigmoid(x)
 
 
 class BaseConv(nn.Layer):
@@ -78,12 +88,18 @@ class BaseConv(nn.Layer):
         if self.training:
             y = self.act(x)
         else:
-            y = x * F.sigmoid(x)
+            if isinstance(self.act, nn.Silu):
+                self.act = SiLU()
+            y = self.act(x)
         return y
 
 
 class RepConv(nn.Layer):
-    # RepVGG Conv BN Relu Block, see https://arxiv.org/abs/2101.03697
+    """
+    RepVGG Conv BN Relu Block, see https://arxiv.org/abs/2101.03697
+    named RepVGGBlock in YOLOv6
+    """
+
     def __init__(self,
                  in_channels,
                  out_channels,
@@ -226,20 +242,92 @@ class RepConv(nn.Layer):
 class RepLayer(nn.Layer):
     """
     RepLayer with RepConvs, like CSPLayer(C3) in YOLOv5/YOLOX
+    named RepBlock in YOLOv6
     """
 
-    def __init__(self, in_channels, out_channels, num_repeats=1):
-        super().__init__()
-        self.conv1 = RepConv(in_channels, out_channels)
-        self.blocks = (nn.Sequential(*(RepConv(out_channels, out_channels)
-                                       for _ in range(num_repeats - 1)))
-                       if num_repeats > 1 else None)
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 num_repeats=1,
+                 block=RepConv,
+                 basic_block=RepConv):
+        super(RepLayer, self).__init__()
+        if block == RepConv:
+            # in n/t/s
+            self.conv1 = block(in_channels, out_channels)
+            self.block = (nn.Sequential(*(block(out_channels, out_channels)
+                                          for _ in range(num_repeats - 1)))
+                          if num_repeats > 1 else None)
+
+        elif block == BottleRep:
+            # in m/l
+            self.conv1 = BottleRep(
+                in_channels, out_channels, basic_block=basic_block, alpha=True)
+            num_repeats = num_repeats // 2
+            self.block = nn.Sequential(*(BottleRep(
+                out_channels, out_channels, basic_block=basic_block, alpha=True
+            ) for _ in range(num_repeats - 1))) if num_repeats > 1 else None
 
     def forward(self, x):
         x = self.conv1(x)
-        if self.blocks is not None:
-            x = self.blocks(x)
+        if self.block is not None:
+            x = self.block(x)
         return x
+
+
+class BottleRep(nn.Layer):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 basic_block=RepConv,
+                 alpha=False):
+        super(BottleRep, self).__init__()
+        self.conv1 = basic_block(in_channels, out_channels)
+        self.conv2 = basic_block(out_channels, out_channels)
+        if in_channels != out_channels:
+            self.shortcut = False
+        else:
+            self.shortcut = True
+        if alpha:
+            self.alpha = self.create_parameter(
+                shape=[1],
+                attr=ParamAttr(initializer=Constant(value=1.)),
+                dtype="float32")
+        else:
+            self.alpha = 1.0
+
+    def forward(self, x):
+        outputs = self.conv1(x)
+        outputs = self.conv2(outputs)
+        return outputs + self.alpha * x if self.shortcut else outputs
+
+
+class BepC3Layer(nn.Layer):
+    '''Beer-mug RepC3 Block
+       named BepC3 in YOLOv6
+    '''
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 num_repeats=1,
+                 csp_e=0.5,
+                 block=RepConv,
+                 act='silu'):
+        super(BepC3Layer, self).__init__()
+        c_ = int(out_channels * csp_e)  # hidden channels
+        self.cv1 = BaseConv(in_channels, c_, 1, 1, act="relu")
+        self.cv2 = BaseConv(in_channels, c_, 1, 1, act="relu")
+        self.cv3 = BaseConv(2 * c_, out_channels, 1, 1, act="relu")
+        if act == 'silu':
+            self.cv1 = BaseConv(in_channels, c_, 1, 1)
+            self.cv2 = BaseConv(in_channels, c_, 1, 1)
+            self.cv3 = BaseConv(2 * c_, out_channels, 1, 1)
+        self.m = RepLayer(
+            c_, c_, num_repeats, block=BottleRep, basic_block=block)
+
+    def forward(self, x):
+        return self.cv3(paddle.concat((self.m(self.cv1(x)), self.cv2(x)), 1))
 
 
 class SimConv(nn.Layer):
@@ -279,7 +367,7 @@ class SimConv(nn.Layer):
 
 
 class SimSPPF(nn.Layer):
-    """Simplified SPPF with SimConv"""
+    """Simplified SPPF with SimConv, use relu"""
 
     def __init__(self, in_channels, out_channels, kernel_size=5):
         super(SimSPPF, self).__init__()
@@ -291,6 +379,28 @@ class SimSPPF(nn.Layer):
 
     def forward(self, x):
         x = self.conv1(x)
+        y1 = self.mp(x)
+        y2 = self.mp(y1)
+        y3 = self.mp(y2)
+        concats = paddle.concat([x, y1, y2, y3], 1)
+        return self.conv2(concats)
+
+
+class SPPF(nn.Layer):
+    """SPPF with BaseConv, use silu"""
+
+    def __init__(self, in_channels, out_channels, kernel_size=5, act='silu'):
+        super(SPPF, self).__init__()
+        hidden_channels = in_channels // 2
+        self.cv1 = BaseConv(
+            in_channels, hidden_channels, ksize=1, stride=1, act=act)
+        self.conv2 = BaseConv(
+            hidden_channels * 4, out_channels, ksize=1, stride=1, act=act)
+        self.mp = nn.MaxPool2D(
+            kernel_size=kernel_size, stride=1, padding=kernel_size // 2)
+
+    def forward(self, x):
+        x = self.cv1(x)
         y1 = self.mp(x)
         y2 = self.mp(y1)
         y3 = self.mp(y2)
@@ -321,8 +431,8 @@ def make_divisible(x, divisor):
 @register
 @serializable
 class EfficientRep(nn.Layer):
-    """EfficientRep backbone of MT-YOLOv6"""
-    __shared__ = ['width_mult', 'depth_mult', 'trt']
+    """EfficientRep backbone of YOLOv6 n/t/s """
+    __shared__ = ['width_mult', 'depth_mult', 'trt', 'act', 'training_mode']
 
     def __init__(self,
                  width_mult=1.0,
@@ -330,7 +440,8 @@ class EfficientRep(nn.Layer):
                  num_repeats=[1, 6, 12, 18, 6],
                  channels_list=[64, 128, 256, 512, 1024],
                  return_idx=[2, 3, 4],
-                 depthwise=False,
+                 training_mode='repvgg',
+                 act='relu',
                  trt=False):
         super(EfficientRep, self).__init__()
         num_repeats = [(max(round(i * depth_mult), 1) if i > 1 else i)
@@ -342,7 +453,8 @@ class EfficientRep(nn.Layer):
         self._out_channels = [channels_list[i] for i in self.return_idx]
         self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
 
-        self.stem = RepConv(3, channels_list[0], 3, 2)
+        block = get_block(training_mode)
+        self.stem = block(3, channels_list[0], 3, 2)
         self.blocks = []
         for i, (out_ch,
                 num_repeat) in enumerate(zip(channels_list, num_repeats)):
@@ -351,11 +463,13 @@ class EfficientRep(nn.Layer):
             stage = []
 
             repconv = self.add_sublayer('stage{}.repconv'.format(i + 1),
-                                        RepConv(in_ch, out_ch, 3, 2))
+                                        block(in_ch, out_ch, 3, 2))
             stage.append(repconv)
 
-            replayer = self.add_sublayer('stage{}.replayer'.format(i + 1),
-                                         RepLayer(out_ch, out_ch, num_repeat))
+            replayer = self.add_sublayer(
+                'stage{}.replayer'.format(i + 1),
+                RepLayer(
+                    out_ch, out_ch, num_repeat, block=block))
             stage.append(replayer)
 
             if i == len(channels_list) - 1:
@@ -383,3 +497,136 @@ class EfficientRep(nn.Layer):
                 channels=c, stride=s)
             for c, s in zip(self._out_channels, self.strides)
         ]
+
+
+@register
+@serializable
+class CSPBepBackbone(nn.Layer):
+    """CSPBepBackbone of YOLOv6 m/l """
+    __shared__ = ['width_mult', 'depth_mult', 'trt', 'act', 'training_mode']
+
+    def __init__(self,
+                 width_mult=1.0,
+                 depth_mult=1.0,
+                 num_repeats=[1, 6, 12, 18, 6],
+                 channels_list=[64, 128, 256, 512, 1024],
+                 return_idx=[2, 3, 4],
+                 csp_e=0.5,
+                 training_mode='repvgg',
+                 act='relu',
+                 trt=False):
+        super(CSPBepBackbone, self).__init__()
+        num_repeats = [(max(round(i * depth_mult), 1) if i > 1 else i)
+                       for i in (num_repeats)]
+        channels_list = [
+            make_divisible(i * width_mult, 8) for i in (channels_list)
+        ]
+        self.return_idx = return_idx
+        self._out_channels = [channels_list[i] for i in self.return_idx]
+        self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
+
+        block = get_block(training_mode)
+        self.stem = block(3, channels_list[0], 3, 2)
+        self.blocks = []
+        if csp_e == 0.67: csp_e = float(2) / 3
+        for i, (out_ch,
+                num_repeat) in enumerate(zip(channels_list, num_repeats)):
+            if i == 0: continue
+            in_ch = channels_list[i - 1]
+            stage = []
+
+            repconv = self.add_sublayer('stage{}.repconv'.format(i + 1),
+                                        block(in_ch, out_ch, 3, 2))
+            stage.append(repconv)
+
+            bepc3layer = self.add_sublayer(
+                'stage{}.bepc3layer'.format(i + 1),
+                BepC3Layer(
+                    out_ch,
+                    out_ch,
+                    num_repeat,
+                    csp_e=csp_e,
+                    block=block,
+                    act=act))
+            stage.append(bepc3layer)
+
+            if i == len(channels_list) - 1:
+                if training_mode == 'conv_silu':
+                    sppf_layer = self.add_sublayer(
+                        'stage{}.sppf'.format(i + 1),
+                        SPPF(
+                            out_ch, out_ch, kernel_size=5, act='silu'))
+                    stage.append(sppf_layer)
+                else:
+                    simsppf_layer = self.add_sublayer(
+                        'stage{}.simsppf'.format(i + 1),
+                        SimSPPF(
+                            out_ch, out_ch, kernel_size=5))
+                    stage.append(simsppf_layer)
+            self.blocks.append(nn.Sequential(*stage))
+
+    def forward(self, inputs):
+        x = inputs['image']
+        outputs = []
+        x = self.stem(x)
+        for i, layer in enumerate(self.blocks):
+            x = layer(x)
+            if i + 1 in self.return_idx:
+                outputs.append(x)
+        return outputs
+
+    @property
+    def out_shape(self):
+        return [
+            ShapeSpec(
+                channels=c, stride=s)
+            for c, s in zip(self._out_channels, self.strides)
+        ]
+
+
+def get_block(mode):
+    if mode == 'repvgg':
+        return RepConv
+    elif mode == 'conv_relu':
+        return SimConvWrapper
+    elif mode == 'conv_silu':
+        return ConvWrapper
+    else:
+        raise NotImplementedError("Undefied Repblock choice for mode {}".format(
+            mode))
+
+
+class ConvWrapper(nn.Layer):
+    '''Wrapper for normal Conv with SiLU activation'''
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size=3,
+                 stride=1,
+                 groups=1,
+                 bias=True):
+        super().__init__()
+        self.base_block = BaseConv(in_channels, out_channels, kernel_size,
+                                   stride, groups, bias)
+
+    def forward(self, x):
+        return self.base_block(x)
+
+
+class SimConvWrapper(nn.Layer):
+    '''Wrapper for normal Conv with ReLU activation'''
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size=3,
+                 stride=1,
+                 groups=1,
+                 bias=True):
+        super().__init__()
+        self.base_block = SimConv(in_channels, out_channels, kernel_size,
+                                  stride, groups, bias)
+
+    def forward(self, x):
+        return self.base_block(x)

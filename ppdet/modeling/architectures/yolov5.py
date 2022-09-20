@@ -36,7 +36,7 @@ class YOLOv5(BaseArch):
                  data_format='NCHW',
                  for_mot=False):
         """
-        YOLOv5 and YOLOv7(https://arxiv.org/abs/2207.02696)
+        YOLOv5, YOLOv6(https://arxiv.org/abs/2209.02976) and YOLOv7(https://arxiv.org/abs/2207.02696)
 
         Args:
             backbone (nn.Layer): backbone instance
@@ -74,13 +74,6 @@ class YOLOv5(BaseArch):
         }
 
     def _forward(self):
-        # body_feats = self.backbone(self.inputs)
-        # for i, x in enumerate(body_feats):
-        #    print(i, x.shape, x.sum())
-        # neck_feats = self.neck(body_feats, self.for_mot)
-        # for i, x in enumerate(neck_feats):
-        #    print(i, x.shape, x.sum())
-
         body_feats = self.backbone(self.inputs)
         neck_feats = self.neck(body_feats, self.for_mot)
 
