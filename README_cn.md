@@ -116,13 +116,13 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| *YOLOv6-n       |  416     |    32      |   400e    |     -    |  31.1 |    45.3 |  4.74  | 5.16 |[model](https://paddledet.bj.bcebos.com/models/yolov6_n_416_400e_coco.pdparams) | [config](./yolov6_n_416_400e_coco.yml) |
-| *YOLOv6-n       |  640     |    32      |   400e    |     -    |  36.1 |    51.9 |  4.74  | 12.21 |[model](https://paddledet.bj.bcebos.com/models/yolov6_n_400e_coco.pdparams) | [config](./yolov6_n_400e_coco.yml) |
-| *YOLOv6-t       |  640     |    32      |   400e    |     -    |  40.7 |    57.4 |  10.63  | 27.29 |[model](https://paddledet.bj.bcebos.com/models/yolov6_t_400e_coco.pdparams) | [config](./yolov6_t_400e_coco.yml) |
-| *YOLOv6-s       |  640     |    32      |   400e    |     -    |  43.4 |    60.5 |  18.87  | 48.35 |[model](https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams) | [config](./yolov6_s_400e_coco.yml) |
-| *YOLOv6-m       |  640     |    32      |   300e    |     -    |  49.0 |    66.5 |  37.17  | 88.82 |[model](https://paddledet.bj.bcebos.com/models/yolov6_m_300e_coco.pdparams) | [config](./yolov6_m_300e_coco.yml) |
-| *YOLOv6-l       |  640     |    32      |   300e    |     -    |  51.0 |    68.9 |  63.54  | 155.89 |[model](https://paddledet.bj.bcebos.com/models/yolov6_l_300e_coco.pdparams) | [config](./yolov6_l_300e_coco.yml) |
-| *YOLOv6-l-silu  |  640     |    32      |   300e    |     -    |  51.7 |    69.6 |  58.59  | 142.66 |[model](https://paddledet.bj.bcebos.com/models/yolov6_l_silu_300e_coco.pdparams) | [config](./yolov6_l_silu_300e_coco.yml) |
+| *YOLOv6-n       |  416     |    32      |   400e    |     1.0    |  31.1 |    45.3 |  4.74  | 5.16 |[model](https://paddledet.bj.bcebos.com/models/yolov6_n_416_400e_coco.pdparams) | [config](./yolov6_n_416_400e_coco.yml) |
+| *YOLOv6-n       |  640     |    32      |   400e    |     1.3    |  36.1 |    51.9 |  4.74  | 12.21 |[model](https://paddledet.bj.bcebos.com/models/yolov6_n_400e_coco.pdparams) | [config](./yolov6_n_400e_coco.yml) |
+| *YOLOv6-t       |  640     |    32      |   400e    |     2.1    |  40.7 |    57.4 |  10.63  | 27.29 |[model](https://paddledet.bj.bcebos.com/models/yolov6_t_400e_coco.pdparams) | [config](./yolov6_t_400e_coco.yml) |
+| *YOLOv6-s       |  640     |    32      |   400e    |     2.6    |  43.4 |    60.5 |  18.87  | 48.35 |[model](https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams) | [config](./yolov6_s_400e_coco.yml) |
+| *YOLOv6-m       |  640     |    32      |   300e    |     5.0    |  49.0 |    66.5 |  37.17  | 88.82 |[model](https://paddledet.bj.bcebos.com/models/yolov6_m_300e_coco.pdparams) | [config](./yolov6_m_300e_coco.yml) |
+| *YOLOv6-l       |  640     |    32      |   300e    |     7.9    |  51.0 |    68.9 |  63.54  | 155.89 |[model](https://paddledet.bj.bcebos.com/models/yolov6_l_300e_coco.pdparams) | [config](./yolov6_l_300e_coco.yml) |
+| *YOLOv6-l-silu  |  640     |    32      |   300e    |     9.6    |  51.7 |    69.6 |  58.59  | 142.66 |[model](https://paddledet.bj.bcebos.com/models/yolov6_l_silu_300e_coco.pdparams) | [config](./yolov6_l_silu_300e_coco.yml) |
 
 
 #### 部署模型
