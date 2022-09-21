@@ -2,6 +2,12 @@
 
 **YOLOSeries**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**由PaddleDetection团队成员建设和维护**，支持`YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等模型，其upstream为PaddleDetection的[develop](https://github.com/PaddlePaddle/PaddleDetection/tree/develop)分支，并与PaddleDetection主代码库分支保持同步更新，包括github和gitee的代码，欢迎一起使用和建设！
 
+## Updates!
+* 【2022/09/21】精简代码库只保留主要的YOLO模型相关的代码(release/2.5 branch)；
+* 【2022/09/19】支持[`YOLOv6`](configs/yolov6)新版，包括n/t/s/m/l模型；
+* 【2022/08/23】发布`PaddleDetection_YOLOSeries`代码库: 支持`YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`MT-YOLOv6`,`YOLOv7`等YOLO模型，支持ConvNeXt骨干网络高精度版`PP-YOLOE`,`YOLOX`和`YOLOv5`等模型，支持PaddleSlim无损加速量化训练`PP-YOLOE`,`YOLOv5`,`MT-YOLOv6`和`YOLOv7`等模型，详情可阅读[此文章](https://mp.weixin.qq.com/s/Hki01Zs2lQgvLSLWS0btrA)；
+
+
 **注意:**
  - 此代码库**推荐使用paddlepaddle-2.3.0以上的版本**，请参考[官网](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html)下载对应适合版本，**其中develop分支代码请安装paddle develop版本，其余分支建议安装paddle 2.3.2版本**。
  - github链接为：https://github.com/nemonameless/PaddleDetection_YOLOSeries
@@ -9,11 +15,6 @@
  - 提issue可以在此代码库的[issues](https://github.com/nemonameless/PaddleDetection_YOLOSeries/issues)页面中，也可以在[PaddleDetection issues](https://github.com/PaddlePaddle/PaddleDetection/issues)中，也欢迎提[PR](https://github.com/nemonameless/PaddleDetection_YOLOSeries/pulls)共同建设和维护。
  - [PP-YOLOE](configs/ppyoloe),[PP-YOLOE+](configs/ppyoloe),[PP-YOLO](configs/ppyolo),[PP-YOLOv2](configs/ppyolo),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)等模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用，**会最先发布PP-YOLO系列特色检测模型的最新进展**。
  - [YOLOv5](configs/yolov5),[YOLOv7](configs/yolov7)和[YOLOv6](configs/yolov6)模型推荐在此代码库中使用，**由于GPL开源协议而不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)主代码库**。
-
-
-## Updates!
-* 【2022/09/19】支持[`YOLOv6`](configs/yolov6)新版，包括n/t/s/m/l模型；
-* 【2022/08/23】发布`PaddleDetection_YOLOSeries`代码库: 支持`YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`MT-YOLOv6`,`YOLOv7`等YOLO模型，支持ConvNeXt骨干网络高精度版`PP-YOLOE`,`YOLOX`和`YOLOv5`等模型，支持PaddleSlim无损加速量化训练`PP-YOLOE`,`YOLOv5`,`MT-YOLOv6`和`YOLOv7`等模型，详情可阅读[此文章](https://mp.weixin.qq.com/s/Hki01Zs2lQgvLSLWS0btrA)。
 
 
 ## <img title="" src="https://user-images.githubusercontent.com/48054808/157800467-2a9946ad-30d1-49a9-b9db-ba33413d9c90.png" alt="" width="20"> 技术交流
