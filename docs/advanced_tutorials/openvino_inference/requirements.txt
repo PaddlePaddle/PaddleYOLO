@@ -1,4 +1,0 @@
-numpy
-opencv-python
-openvino == 2021.4.0
-paddledet==2.3.0

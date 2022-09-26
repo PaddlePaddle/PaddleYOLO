@@ -29,25 +29,6 @@ logger = setup_logger('ppdet.engine')
 # Global dictionary
 TRT_MIN_SUBGRAPH = {
     'YOLO': 3,
-    'SSD': 60,
-    'RCNN': 40,
-    'RetinaNet': 40,
-    'S2ANet': 80,
-    'EfficientDet': 40,
-    'Face': 3,
-    'TTFNet': 60,
-    'FCOS': 16,
-    'SOLOv2': 60,
-    'HigherHRNet': 3,
-    'HRNet': 3,
-    'DeepSORT': 3,
-    'ByteTrack': 10,
-    'JDE': 10,
-    'FairMOT': 5,
-    'GFL': 16,
-    'PicoDet': 3,
-    'CenterNet': 5,
-    'TOOD': 5,
     'YOLOX': 8,
     'YOLOv5': 10,
 }
@@ -134,14 +115,12 @@ def _dump_infer_config(config, path, image_shape, model):
     export_onnx = config.get('export_onnx', False)
     export_eb = config.get('export_eb', False)
 
-
     infer_arch = config['architecture']
     if 'RCNN' in infer_arch and export_onnx:
         logger.warning(
             "Exporting RCNN model to ONNX only support batch_size = 1")
         infer_cfg['export_onnx'] = True
         infer_cfg['export_eb'] = export_eb
-
 
     if infer_arch in MOT_ARCH:
         if infer_arch == 'DeepSORT':

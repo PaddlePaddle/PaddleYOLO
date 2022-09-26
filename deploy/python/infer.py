@@ -32,17 +32,15 @@ parent_path = os.path.abspath(os.path.join(__file__, *(['..'])))
 sys.path.insert(0, parent_path)
 
 from benchmark_utils import PaddleInferBenchmark
-from picodet_postprocess import PicoDetPostProcess
-from preprocess import preprocess, Resize, NormalizeImage, Permute, PadStride, LetterBoxResize, WarpAffine, Pad, decode_image
-from keypoint_preprocess import EvalAffine, TopDownEvalAffine, expand_crop
+from preprocess import preprocess, Resize, NormalizeImage, Permute, PadStride, LetterBoxResize, Pad, decode_image
 from visualize import visualize_box_mask
 from utils import argsparser, Timer, get_current_memory_mb, multiclass_nms, coco_clsid2catid
 
 # Global dictionary
 SUPPORT_MODELS = {
-    'YOLO', 'RCNN', 'SSD', 'Face', 'FCOS', 'SOLOv2', 'TTFNet', 'S2ANet', 'JDE',
-    'FairMOT', 'DeepSORT', 'GFL', 'PicoDet', 'CenterNet', 'TOOD', 'RetinaNet',
-    'StrongBaseline', 'STGCN', 'YOLOX', 'PPHGNet', 'PPLCNet', 'YOLOv5',
+    'YOLO',
+    'YOLOX',
+    'YOLOv5',
 }
 
 
@@ -511,173 +509,6 @@ class Detector(object):
             print(f"The mask result is saved to {mask_file}")
 
 
-class DetectorSOLOv2(Detector):
-    """
-    Args:
-        model_dir (str): root path of model.pdiparams, model.pdmodel and infer_cfg.yml
-        device (str): Choose the device you want to run, it can be: CPU/GPU/XPU, default is CPU
-        run_mode (str): mode of running(paddle/trt_fp32/trt_fp16)
-        batch_size (int): size of pre batch in inference
-        trt_min_shape (int): min shape for dynamic shape in trt
-        trt_max_shape (int): max shape for dynamic shape in trt
-        trt_opt_shape (int): opt shape for dynamic shape in trt
-        trt_calib_mode (bool): If the model is produced by TRT offline quantitative
-            calibration, trt_calib_mode need to set True
-        cpu_threads (int): cpu threads
-        enable_mkldnn (bool): whether to open MKLDNN 
-        enable_mkldnn_bfloat16 (bool): Whether to turn on mkldnn bfloat16
-        output_dir (str): The path of output
-        threshold (float): The threshold of score for visualization
-       
-    """
-
-    def __init__(
-            self,
-            model_dir,
-            device='CPU',
-            run_mode='paddle',
-            batch_size=1,
-            trt_min_shape=1,
-            trt_max_shape=1280,
-            trt_opt_shape=640,
-            trt_calib_mode=False,
-            cpu_threads=1,
-            enable_mkldnn=False,
-            enable_mkldnn_bfloat16=False,
-            output_dir='./',
-            threshold=0.5, ):
-        super(DetectorSOLOv2, self).__init__(
-            model_dir=model_dir,
-            device=device,
-            run_mode=run_mode,
-            batch_size=batch_size,
-            trt_min_shape=trt_min_shape,
-            trt_max_shape=trt_max_shape,
-            trt_opt_shape=trt_opt_shape,
-            trt_calib_mode=trt_calib_mode,
-            cpu_threads=cpu_threads,
-            enable_mkldnn=enable_mkldnn,
-            enable_mkldnn_bfloat16=enable_mkldnn_bfloat16,
-            output_dir=output_dir,
-            threshold=threshold, )
-
-    def predict(self, repeats=1):
-        '''
-        Args:
-            repeats (int): repeat number for prediction
-        Returns:
-            result (dict): 'segm': np.ndarray,shape:[N, im_h, im_w]
-                            'cate_label': label of segm, shape:[N]
-                            'cate_score': confidence score of segm, shape:[N]
-        '''
-        np_label, np_score, np_segms = None, None, None
-        for i in range(repeats):
-            self.predictor.run()
-            output_names = self.predictor.get_output_names()
-            np_boxes_num = self.predictor.get_output_handle(output_names[
-                0]).copy_to_cpu()
-            np_label = self.predictor.get_output_handle(output_names[
-                1]).copy_to_cpu()
-            np_score = self.predictor.get_output_handle(output_names[
-                2]).copy_to_cpu()
-            np_segms = self.predictor.get_output_handle(output_names[
-                3]).copy_to_cpu()
-
-        result = dict(
-            segm=np_segms,
-            label=np_label,
-            score=np_score,
-            boxes_num=np_boxes_num)
-        return result
-
-
-class DetectorPicoDet(Detector):
-    """
-    Args:
-        model_dir (str): root path of model.pdiparams, model.pdmodel and infer_cfg.yml
-        device (str): Choose the device you want to run, it can be: CPU/GPU/XPU, default is CPU
-        run_mode (str): mode of running(paddle/trt_fp32/trt_fp16)
-        batch_size (int): size of pre batch in inference
-        trt_min_shape (int): min shape for dynamic shape in trt
-        trt_max_shape (int): max shape for dynamic shape in trt
-        trt_opt_shape (int): opt shape for dynamic shape in trt
-        trt_calib_mode (bool): If the model is produced by TRT offline quantitative
-            calibration, trt_calib_mode need to set True
-        cpu_threads (int): cpu threads
-        enable_mkldnn (bool): whether to turn on MKLDNN
-        enable_mkldnn_bfloat16 (bool): whether to turn on MKLDNN_BFLOAT16
-    """
-
-    def __init__(
-            self,
-            model_dir,
-            device='CPU',
-            run_mode='paddle',
-            batch_size=1,
-            trt_min_shape=1,
-            trt_max_shape=1280,
-            trt_opt_shape=640,
-            trt_calib_mode=False,
-            cpu_threads=1,
-            enable_mkldnn=False,
-            enable_mkldnn_bfloat16=False,
-            output_dir='./',
-            threshold=0.5, ):
-        super(DetectorPicoDet, self).__init__(
-            model_dir=model_dir,
-            device=device,
-            run_mode=run_mode,
-            batch_size=batch_size,
-            trt_min_shape=trt_min_shape,
-            trt_max_shape=trt_max_shape,
-            trt_opt_shape=trt_opt_shape,
-            trt_calib_mode=trt_calib_mode,
-            cpu_threads=cpu_threads,
-            enable_mkldnn=enable_mkldnn,
-            enable_mkldnn_bfloat16=enable_mkldnn_bfloat16,
-            output_dir=output_dir,
-            threshold=threshold, )
-
-    def postprocess(self, inputs, result):
-        # postprocess output of predictor
-        np_score_list = result['boxes']
-        np_boxes_list = result['boxes_num']
-        postprocessor = PicoDetPostProcess(
-            inputs['image'].shape[2:],
-            inputs['im_shape'],
-            inputs['scale_factor'],
-            strides=self.pred_config.fpn_stride,
-            nms_threshold=self.pred_config.nms['nms_threshold'])
-        np_boxes, np_boxes_num = postprocessor(np_score_list, np_boxes_list)
-        result = dict(boxes=np_boxes, boxes_num=np_boxes_num)
-        return result
-
-    def predict(self, repeats=1):
-        '''
-        Args:
-            repeats (int): repeat number for prediction
-        Returns:
-            result (dict): include 'boxes': np.ndarray: shape:[N,6], N: number of box,
-                            matix element:[class, score, x_min, y_min, x_max, y_max]
-        '''
-        np_score_list, np_boxes_list = [], []
-        for i in range(repeats):
-            self.predictor.run()
-            np_score_list.clear()
-            np_boxes_list.clear()
-            output_names = self.predictor.get_output_names()
-            num_outs = int(len(output_names) / 2)
-            for out_idx in range(num_outs):
-                np_score_list.append(
-                    self.predictor.get_output_handle(output_names[out_idx])
-                    .copy_to_cpu())
-                np_boxes_list.append(
-                    self.predictor.get_output_handle(output_names[
-                        out_idx + num_outs]).copy_to_cpu())
-        result = dict(boxes=np_score_list, boxes_num=np_boxes_list)
-        return result
-
-
 def create_inputs(imgs, im_info):
     """generate input for different model type
     Args:
@@ -958,10 +789,6 @@ def main():
         yml_conf = yaml.safe_load(f)
     arch = yml_conf['arch']
     detector_func = 'Detector'
-    if arch == 'SOLOv2':
-        detector_func = 'DetectorSOLOv2'
-    elif arch == 'PicoDet':
-        detector_func = 'DetectorPicoDet'
 
     detector = eval(detector_func)(
         FLAGS.model_dir,

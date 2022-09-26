@@ -14,7 +14,6 @@
 
 import cv2
 import numpy as np
-from keypoint_preprocess import get_affine_transform
 from PIL import Image
 
 
@@ -438,55 +437,6 @@ class Pad(object):
         canvas[0:im_h, 0:im_w, :] = im.astype(np.float32)
         im = canvas
         return im, im_info
-
-
-class WarpAffine(object):
-    """Warp affine the image
-    """
-
-    def __init__(self,
-                 keep_res=False,
-                 pad=31,
-                 input_h=512,
-                 input_w=512,
-                 scale=0.4,
-                 shift=0.1):
-        self.keep_res = keep_res
-        self.pad = pad
-        self.input_h = input_h
-        self.input_w = input_w
-        self.scale = scale
-        self.shift = shift
-
-    def __call__(self, im, im_info):
-        """
-        Args:
-            im (np.ndarray): image (np.ndarray)
-            im_info (dict): info of image
-        Returns:
-            im (np.ndarray):  processed image (np.ndarray)
-            im_info (dict): info of processed image
-        """
-        img = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)
-
-        h, w = img.shape[:2]
-
-        if self.keep_res:
-            input_h = (h | self.pad) + 1
-            input_w = (w | self.pad) + 1
-            s = np.array([input_w, input_h], dtype=np.float32)
-            c = np.array([w // 2, h // 2], dtype=np.float32)
-
-        else:
-            s = max(h, w) * 1.0
-            input_h, input_w = self.input_h, self.input_w
-            c = np.array([w / 2., h / 2.], dtype=np.float32)
-
-        trans_input = get_affine_transform(c, s, 0, [input_w, input_h])
-        img = cv2.resize(img, (w, h))
-        inp = cv2.warpAffine(
-            img, trans_input, (input_w, input_h), flags=cv2.INTER_LINEAR)
-        return inp, im_info
 
 
 def preprocess(im, preprocess_ops):

@@ -15,18 +15,6 @@ PaddleDetection在训练过程包括网络的前向和优化器相关参数，�
 # 导出YOLOv3检测模型
 python tools/export_model.py -c configs/yolov3/yolov3_darknet53_270e_coco.yml --output_dir=./inference_model \
  -o weights=https://paddledet.bj.bcebos.com/models/yolov3_darknet53_270e_coco.pdparams
-
-# 导出HigherHRNet(bottom-up)关键点检测模型
-python tools/export_model.py -c configs/keypoint/higherhrnet/higherhrnet_hrnet_w32_512.yml -o weights=https://paddledet.bj.bcebos.com/models/keypoint/higherhrnet_hrnet_w32_512.pdparams
-
-# 导出HRNet(top-down)关键点检测模型
-python tools/export_model.py -c configs/keypoint/hrnet/hrnet_w32_384x288.yml -o weights=https://paddledet.bj.bcebos.com/models/keypoint/hrnet_w32_384x288.pdparams
-
-# 导出FairMOT多目标跟踪模型
-python tools/export_model.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml -o weights=https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608.pdparams
-
-# 导出ByteTrack多目标跟踪模型(相当于只导出检测器)
-python tools/export_model.py -c configs/mot/bytetrack/detector/ppyoloe_crn_l_36e_640x640_mot17half.yml -o weights=https://paddledet.bj.bcebos.com/models/mot/ppyoloe_crn_l_36e_640x640_mot17half.pdparams
 ```
 
 导出后目录下，包括`infer_cfg.yml`, `model.pdiparams`,  `model.pdiparams.info`, `model.pdmodel`四个文件。
@@ -40,38 +28,7 @@ python tools/export_model.py -c configs/mot/bytetrack/detector/ppyoloe_crn_l_36e
 python deploy/python/infer.py --model_dir=./output_inference/yolov3_darknet53_270e_coco --image_file=./demo/000000014439.jpg --device=GPU
 ```
 
-### 2.2 关键点检测
-在终端输入以下命令进行预测：
-```bash
-# keypoint top-down(HRNet)/bottom-up(HigherHRNet)单独推理，该模式下top-down模型HRNet只支持单人截图预测
-python deploy/python/keypoint_infer.py --model_dir=output_inference/hrnet_w32_384x288/ --image_file=./demo/hrnet_demo.jpg --device=GPU --threshold=0.5
-python deploy/python/keypoint_infer.py --model_dir=output_inference/higherhrnet_hrnet_w32_512/ --image_file=./demo/000000014439_640x640.jpg --device=GPU --threshold=0.5
-
-# detector 检测 + keypoint top-down模型联合部署（联合推理只支持top-down关键点模型）
-python deploy/python/det_keypoint_unite_infer.py --det_model_dir=output_inference/yolov3_darknet53_270e_coco/ --keypoint_model_dir=output_inference/hrnet_w32_384x288/ --video_file={your video name}.mp4  --device=GPU
-```
-**注意:**
- - 关键点检测模型导出和预测具体可参照[keypoint](../../configs/keypoint/README.md)，可分别在各个模型的文档中查找具体用法；
- - 此目录下的关键点检测部署为基础前向功能，更多关键点检测功能可使用PP-Human项目，参照[pipeline](../pipeline/README.md)；
-
-
-### 2.3 多目标跟踪
-在终端输入以下命令进行预测：
-```bash
-# FairMOT跟踪
-python deploy/python/mot_jde_infer.py --model_dir=output_inference/fairmot_dla34_30e_1088x608 --video_file={your video name}.mp4 --device=GPU
-
-# ByteTrack跟踪
-python deploy/python/mot_sde_infer.py --model_dir=output_inference/ppyoloe_crn_l_36e_640x640_mot17half/ --tracker_config=deploy/python/tracker_config.yml --video_file={your video name}.mp4 --device=GPU --scaled=True
-
-# FairMOT多目标跟踪联合HRNet关键点检测（联合推理只支持top-down关键点模型）
-python deploy/python/mot_keypoint_unite_infer.py --mot_model_dir=output_inference/fairmot_dla34_30e_1088x608/ --keypoint_model_dir=output_inference/hrnet_w32_384x288/ --video_file={your video name}.mp4 --device=GPU
-```
-
-**注意:**
- - 多目标跟踪模型导出和预测具体可参照[mot]](../../configs/mot/README.md)，可分别在各个模型的文档中查找具体用法；
- - 此目录下的跟踪部署为基础前向功能以及联合关键点部署，更多跟踪功能可使用PP-Human项目，参照[pipeline](../pipeline/README.md)，或PP-Tracking项目(绘制轨迹、出入口流量计数)，参照[pptracking](../pptracking/README.md)；
-
+# 参数说明
 
 参数说明如下:
 
