@@ -1,36 +1,22 @@
 ## 简介
 
-**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等模型，欢迎一起使用和建设！
+**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等模型，欢迎一起使用和建设！
 
-## Updates!
-* 【2022/09/26】发布[PaddleYOLO](https://github.com/PaddlePaddle/PaddleYOLO)；
+## 更新日志
+* 【2022/09/26】发布[`PaddleYOLO`](https://github.com/PaddlePaddle/PaddleYOLO)模型套件；
 * 【2022/09/19】支持[`YOLOv6`](configs/yolov6)新版，包括n/t/s/m/l模型；
 * 【2022/08/23】发布`PaddleDetection_YOLOSeries`代码库: 支持`YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等YOLO模型，支持ConvNeXt骨干网络高精度版`PP-YOLOE`,`YOLOX`和`YOLOv5`等模型，支持PaddleSlim无损加速量化训练`PP-YOLOE`,`YOLOv5`,`YOLOv6`和`YOLOv7`等模型，详情可阅读[此文章](https://mp.weixin.qq.com/s/Hki01Zs2lQgvLSLWS0btrA)；
 
 **注意:**
- - **PaddleYOLO**代码库协议为**GPL 3.0**；
+ - **PaddleYOLO**代码库协议为**GPL 3.0**，[YOLOv5](configs/yolov5),[YOLOv7](configs/yolov7)和[YOLOv6](configs/yolov6)这3类模型代码不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)，其余YOLO模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用，**会最先发布PP-YOLO系列特色检测模型的最新进展**；；
  - **PaddleYOLO**代码库**推荐使用paddlepaddle-2.3.0以上的版本**，请参考[官网](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html)下载对应适合版本，**其中develop分支代码请安装paddle develop版本，其余分支建议安装paddle 2.3.2版本**；
- - 提issue可以在**PaddleYOLO**代码库的[issues](https://github.com/PaddlePaddle/PaddleYOLO/issues)页面中，也可以在**[PaddleDetection issues](https://github.com/PaddlePaddle/PaddleDetection/issues)**中，也欢迎提[PR](https://github.com/PaddlePaddle/PaddleYOLO/pulls)共同建设和维护；
- - [PP-YOLOE](configs/ppyoloe),[PP-YOLOE+](configs/ppyoloe),[PP-YOLO](configs/ppyolo),[PP-YOLOv2](configs/ppyolo),[YOLOv3](configs/yolov3)和[YOLOX](configs/yolox)等模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用，**会最先发布PP-YOLO系列特色检测模型的最新进展**；
- - [YOLOv5](configs/yolov5),[YOLOv7](configs/yolov7)和[YOLOv6](configs/yolov6)模型推荐在此代码库中使用，**由于GPL开源协议这部分代码不会合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)主代码库**；
-
-
-## <img title="" src="https://user-images.githubusercontent.com/48054808/157800467-2a9946ad-30d1-49a9-b9db-ba33413d9c90.png" alt="" width="20"> 技术交流
-
-- 如果你发现任何PaddleDetection存在的问题或者是建议, 欢迎通过[GitHub Issues](https://github.com/PaddlePaddle/PaddleDetection/issues)给我们提issues。
-
-- **欢迎加入PaddleDetection 微信用户群（扫码填写问卷即可入群）**
-  - **入群福利 💎：获取PaddleDetection团队整理的重磅学习大礼包🎁**
-    - 📊 福利一：获取飞桨联合业界企业整理的开源数据集
-    - 👨‍🏫 福利二：获取PaddleDetection历次发版直播视频与最新直播咨询
-    - 🗳 福利三：获取垂类场景预训练模型集合，包括工业、安防、交通等5+行业场景
-    - 🗂 福利四：获取10+全流程产业实操范例，覆盖火灾烟雾检测、人流量计数等产业高频场景
-  <div align="center">
-  <img src="https://user-images.githubusercontent.com/34162360/177678712-4655747d-4290-4ad9-b7a1-4564a5418ac6.jpg"  width = "200" />  
-  </div>
 
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157793354-6e7f381a-0aa6-4bb7-845c-9acf2ecc05c3.png" width="20"/> 产品动态
+
+- 🔥 **2022.9.26：PaddleYOLO发布[release/2.5版本](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5)**
+  - 💡 模型套件：
+    - 发布[PaddleYOLO](https://github.com/PaddlePaddle/PaddleYOLO)模型套件: 支持`YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等YOLO模型，支持ConvNeXt骨干网络高精度版`PP-YOLOE`,`YOLOX`和`YOLOv5`等模型，支持PaddleSlim无损加速量化训练`PP-YOLOE`,`YOLOv5`,`YOLOv6`和`YOLOv7`等模型
 
 - 🔥 **2022.8.26：PaddleDetection发布[release/2.5版本](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5)**
   - 🗳 特色模型：
@@ -53,6 +39,7 @@
 
 - [更多版本发布](https://github.com/PaddlePaddle/PaddleDetection/releases)
 
+
 ## <img title="" src="https://user-images.githubusercontent.com/48054808/157795569-9fc77c85-732f-4870-9be0-99a7fe2cff27.png" alt="" width="20"> 简介
 
 **PaddleDetection**为基于飞桨PaddlePaddle的端到端目标检测套件，内置**30+模型算法**及**250+预训练模型**，覆盖**目标检测、实例分割、跟踪、关键点检测**等方向，其中包括**服务器端和移动端高精度、轻量级**产业级SOTA模型、冠军方案和学术前沿算法，并提供配置化的网络模块组件、十余种数据增强策略和损失函数等高阶优化支持和多种部署方案，在打通数据处理、模型开发、训练、压缩、部署全流程的基础上，提供丰富的案例及教程，加速算法产业落地应用。
@@ -61,16 +48,6 @@
   <img src="https://user-images.githubusercontent.com/48054808/157826886-2e101a71-25a2-42f5-bf5e-30a97be28f46.gif" width="800"/>
 </div>
 
-## <img src="https://user-images.githubusercontent.com/48054808/157799599-e6a66855-bac6-4e75-b9c0-96e13cb9612f.png" width="20"/> 特性
-
-- **模型丰富**: 包含**目标检测**、**实例分割**、**人脸检测**、****关键点检测****、**多目标跟踪**等**250+个预训练模型**，涵盖多种**全球竞赛冠军**方案。
-- **使用简洁**：模块化设计，解耦各个网络组件，开发者轻松搭建、试用各种检测模型及优化策略，快速得到高性能、定制化的算法。
-- **端到端打通**: 从数据增强、组网、训练、压缩、部署端到端打通，并完备支持**云端**/**边缘端**多架构、多设备部署。
-- **高性能**: 基于飞桨的高性能内核，模型训练速度及显存占用优势明显。支持FP16训练, 支持多机训练。
-
-<div  align="center">
-  <img src="https://user-images.githubusercontent.com/22989727/186810676-29078214-27ab-45eb-9adb-5dea2b0d035b.png" width="800"/>
-</div>
 
 ## <img title="" src="https://user-images.githubusercontent.com/48054808/157800467-2a9946ad-30d1-49a9-b9db-ba33413d9c90.png" alt="" width="20"> 技术交流
 
@@ -109,11 +86,6 @@
         <ul>
         <details><summary><b>Object Detection</b></summary>
           <ul>
-            <li>Faster RCNN</li>
-            <li>FPN</li>
-            <li>Cascade-RCNN</li>
-            <li>PSS-Det</li>
-            <li>RetinaNet</li>
             <li>YOLOv3</li>  
             <li>YOLOv5</li>  
             <li>YOLOv6</li>  
@@ -123,68 +95,17 @@
             <li>PP-YOLOE</li>
             <li>PP-YOLOE+</li>
             <li>YOLOX</li>
-            <li>SSD</li>
-            <li>CenterNet</li>
-            <li>FCOS</li>  
-            <li>TTFNet</li>
-            <li>TOOD</li>
-            <li>GFL</li>
-            <li>PP-PicoDet</li>
-            <li>DETR</li>
-            <li>Deformable DETR</li>
-            <li>Swin Transformer</li>
-            <li>Sparse RCNN</li>
          </ul></details>
-        <details><summary><b>Instance Segmentation</b></summary>
-         <ul>
-            <li>Mask RCNN</li>
-            <li>Cascade Mask RCNN</li>
-            <li>SOLOv2</li>
-        </ul></details>
-        <details><summary><b>Face Detection</b></summary>
-        <ul>
-            <li>BlazeFace</li>
-        </ul></details>
-        <details><summary><b>Multi-Object-Tracking</b></summary>
-        <ul>
-            <li>JDE</li>
-            <li>FairMOT</li>
-            <li>DeepSORT</li>
-            <li>ByteTrack</li>
-            <li>OC-SORT</li>
-        </ul></details>
-        <details><summary><b>KeyPoint-Detection</b></summary>
-        <ul>
-            <li>HRNet</li>
-            <li>HigherHRNet</li>
-            <li>Lite-HRNet</li>
-            <li>PP-TinyPose</li>
-        </ul></details>
       </ul>
       </td>
       <td>
         <details><summary><b>Details</b></summary>
         <ul>
           <li>ResNet(&vd)</li>
-          <li>Res2Net(&vd)</li>
           <li>CSPResNet</li>
-          <li>SENet</li>
-          <li>Res2Net</li>
-          <li>HRNet</li>
-          <li>Lite-HRNet</li>
           <li>DarkNet</li>
           <li>CSPDarkNet</li>
-          <li>MobileNetv1/v3</li>  
-          <li>ShuffleNet</li>
-          <li>GhostNet</li>
-          <li>BlazeNet</li>
-          <li>DLA</li>
-          <li>HardNet</li>
-          <li>LCNet</li>  
-          <li>ESNet</li>  
-          <li>Swin-Transformer</li>
           <li>ConvNeXt</li>
-          <li>Vision Transformer</li>
         </ul></details>
       </td>
       <td>
@@ -196,18 +117,11 @@
             <li>EMA</li>
           </ul> </details>
         </ul>
-        <details><summary><b>KeyPoint</b></summary>
-          <ul>
-            <li>DarkPose</li>
-          </ul></details>
-        </ul>
         <details><summary><b>FPN</b></summary>
           <ul>
-            <li>BiFPN</li>
             <li>CSP-PAN</li>
             <li>Custom-PAN</li>
             <li>ES-PAN</li>
-            <li>HRFPN</li>
           </ul> </details>
         </ul>  
         <details><summary><b>Loss</b></summary>
@@ -216,7 +130,6 @@
             <li>GIoU/DIoU/CIoU</li>  
             <li>IoUAware</li>
             <li>Focal Loss</li>
-            <li>CT Focal Loss</li>
             <li>VariFocal Loss</li>
           </ul> </details>
         </ul>  
@@ -311,15 +224,6 @@
 | PP-YOLOE+_l | 53.3        | 149.2                     | [链接](configs/ppyoloe/ppyoloe_plus_crn_l_80e_coco.yml) | [下载地址](https://paddledet.bj.bcebos.com/models/ppyoloe_plus_crn_m_80e_coco.pdparams) |
 | PP-YOLOE+_x | 54.9        | 95.2                      | [链接](configs/ppyoloe/ppyoloe_plus_crn_x_80e_coco.yml) | [下载地址](https://paddledet.bj.bcebos.com/models/ppyoloe_plus_crn_x_80e_coco.pdparams) |
 
-#### [PP-PicoDet](./configs/picodet)系列 推荐场景：ARM CPU(RK3399, 树莓派等) 和NPU(比特大陆，晶晨等)移动端芯片和x86 CPU设备
-
-| 模型名称       | COCO精度（mAP） | 骁龙865 四线程速度(ms) | 配置文件                                                | 模型下载                                                                              |
-|:---------- |:-----------:|:---------------:|:---------------------------------------------------:|:---------------------------------------------------------------------------------:|
-| PicoDet-XS | 23.5        | 7.81            | [链接](configs/picodet/picodet_xs_320_coco_lcnet.yml) | [下载地址](https://paddledet.bj.bcebos.com/models/picodet_xs_320_coco_lcnet.pdparams) |
-| PicoDet-S  | 29.1        | 9.56            | [链接](configs/picodet/picodet_s_320_coco_lcnet.yml)  | [下载地址](https://paddledet.bj.bcebos.com/models/picodet_s_320_coco_lcnet.pdparams)  |
-| PicoDet-M  | 34.4        | 17.68           | [链接](configs/picodet/picodet_m_320_coco_lcnet.yml)  | [下载地址](https://paddledet.bj.bcebos.com/models/picodet_m_320_coco_lcnet.pdparams)  |
-| PicoDet-L  | 36.1        | 25.21           | [链接](configs/picodet/picodet_l_320_coco_lcnet.yml)  | [下载地址](https://paddledet.bj.bcebos.com/models/picodet_l_320_coco_lcnet.pdparams)  |
-
 #### 前沿检测算法
 
 | 模型名称                                                               | COCO精度（mAP） | V100 TensorRT FP16速度(FPS) | 配置文件                                                                                                         | 模型下载                                                                       |
@@ -329,87 +233,6 @@
 | [YOLOv7-l](https://github.com/nemonameless/PaddleDetection_YOLOSeries/tree/develop/configs/yolov7) | 51.0        | 135.0                     | [链接](https://github.com/nemonameless/PaddleDetection_YOLOSeries/blob/develop/configs/yolov7/yolov7_l_300e_coco.yml) | [下载地址](https://paddledet.bj.bcebos.com/models/yolov7_l_300e_coco.pdparams) |
 
 #### 其他通用检测模型 [文档链接](docs/MODEL_ZOO_cn.md)
-
-</details>
-
-<details>
-<summary><b> 2. 实例分割</b></summary>
-
-| 模型名称              | 模型简介         | 推荐场景 | COCO精度(mAP)                      | 配置文件                                                                  | 模型下载                                                                                              |
-|:----------------- |:------------ |:---- |:--------------------------------:|:---------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------:|
-| Mask RCNN         | 两阶段实例分割算法    | 云边端  | box AP: 41.4 <br/> mask AP: 37.5 | [链接](configs/mask_rcnn/mask_rcnn_r50_vd_fpn_2x_coco.yml)              | [下载地址](https://paddledet.bj.bcebos.com/models/mask_rcnn_r50_vd_fpn_2x_coco.pdparams)              |
-| Cascade Mask RCNN | 两阶段实例分割算法    | 云边端  | box AP: 45.7 <br/> mask AP: 39.7 | [链接](configs/mask_rcnn/cascade_mask_rcnn_r50_vd_fpn_ssld_2x_coco.yml) | [下载地址](https://paddledet.bj.bcebos.com/models/cascade_mask_rcnn_r50_vd_fpn_ssld_2x_coco.pdparams) |
-| SOLOv2            | 轻量级单阶段实例分割算法 | 云边端  | mask AP: 38.0                    | [链接](configs/solov2/solov2_r50_fpn_3x_coco.yml)                       | [下载地址](https://paddledet.bj.bcebos.com/models/solov2_r50_fpn_3x_coco.pdparams)                    |
-
-</details>
-
-<details>
-<summary><b> 3. 关键点检测</b></summary>
-
-| 模型名称                                        | 模型简介                                                             | 推荐场景                               | COCO精度（AP） | 速度                      | 配置文件                                                    | 模型下载                                                                                    |
-|:------------------------------------------- |:---------------------------------------------------------------- |:---------------------------------- |:----------:|:-----------------------:|:-------------------------------------------------------:|:---------------------------------------------------------------------------------------:|
-| HRNet-w32 + DarkPose                        | <div style="width: 130pt">top-down 关键点检测算法<br/>输入尺寸384x288</div> | <div style="width: 50pt">云边端</div> | 78.3       | T4 TensorRT FP16 2.96ms | [链接](configs/keypoint/hrnet/dark_hrnet_w32_384x288.yml) | [下载地址](https://paddledet.bj.bcebos.com/models/keypoint/dark_hrnet_w32_384x288.pdparams) |
-| HRNet-w32 + DarkPose                        | top-down 关键点检测算法<br/>输入尺寸256x192                                 | 云边端                                | 78.0       | T4 TensorRT FP16 1.75ms | [链接](configs/keypoint/hrnet/dark_hrnet_w32_256x192.yml) | [下载地址](https://paddledet.bj.bcebos.com/models/keypoint/dark_hrnet_w32_256x192.pdparams) |
-| [PP-TinyPose](./configs/keypoint/tiny_pose) | 轻量级关键点算法<br/>输入尺寸256x192                                         | 移动端                                | 68.8       | 骁龙865 四线程 6.30ms        | [链接](configs/keypoint/tiny_pose/tinypose_256x192.yml)   | [下载地址](https://bj.bcebos.com/v1/paddledet/models/keypoint/tinypose_256x192.pdparams)    |
-| [PP-TinyPose](./configs/keypoint/tiny_pose) | 轻量级关键点算法<br/>输入尺寸128x96                                          | 移动端                                | 58.1       | 骁龙865 四线程 2.37ms        | [链接](configs/keypoint/tiny_pose/tinypose_128x96.yml)    | [下载地址](https://bj.bcebos.com/v1/paddledet/models/keypoint/tinypose_128x96.pdparams)     |
-
-#### 其他关键点检测模型 [文档链接](configs/keypoint)
-
-</details>
-
-<details>
-<summary><b> 4. 多目标跟踪PP-Tracking </b></summary>
-
-| 模型名称      | 模型简介                     | 推荐场景                               | 精度                     | 配置文件                                                                  | 模型下载                                                                                              |
-|:--------- |:------------------------ |:---------------------------------- |:----------------------:|:---------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------:|
-| ByteTrack | SDE多目标跟踪算法 仅包含检测模型       | 云边端                                | MOT-17 half val:  77.3 | [链接](configs/mot/bytetrack/detector/yolox_x_24e_800x1440_mix_det.yml) | [下载地址](https://paddledet.bj.bcebos.com/models/mot/deepsort/yolox_x_24e_800x1440_mix_det.pdparams) |
-| FairMOT   | JDE多目标跟踪算法 多任务联合学习方法     | 云边端                                | MOT-16 test: 75.0      | [链接](configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml)              | [下载地址](https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608.pdparams)            |
-| OC-SORT | SDE多目标跟踪算法 仅包含检测模型       | 云边端                                | MOT-17 half val:  75.5 | [链接](configs/mot/ocsort/ocsort_yolox.yml) | - |
-
-#### 其他多目标跟踪模型 [文档链接](configs/mot)
-
-</details>
-
-<details>
-<summary><b> 5. 产业级实时行人分析工具PP-Human </b></summary>
-
-
-| 任务            | 端到端速度（ms）|  模型方案  |  模型体积 |
-| :---------:     | :-------:  |  :------: |:------: |
-|  行人检测（高精度）  | 25.1ms  |  [目标检测](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip) | 182M |  
-|  行人检测（轻量级）  | 16.2ms  |  [目标检测](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_s_36e_pipeline.zip) | 27M |
-|  行人跟踪（高精度）  | 31.8ms  |  [多目标跟踪](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip) | 182M |  
-|  行人跟踪（轻量级）  | 21.0ms  |  [多目标跟踪](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_s_36e_pipeline.zip) | 27M |
-|  属性识别（高精度）  |   单人8.5ms | [目标检测](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip)<br> [属性识别](https://bj.bcebos.com/v1/paddledet/models/pipeline/PPHGNet_small_person_attribute_954_infer.zip) | 目标检测：182M<br>属性识别：86M |
-|  属性识别（轻量级）  |   单人7.1ms | [目标检测](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip)<br> [属性识别](https://bj.bcebos.com/v1/paddledet/models/pipeline/PPLCNet_x1_0_person_attribute_945_infer.zip) | 目标检测：182M<br>属性识别：86M |
-|  摔倒识别  |   单人10ms | [多目标跟踪](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip) <br> [关键点检测](https://bj.bcebos.com/v1/paddledet/models/pipeline/dark_hrnet_w32_256x192.zip) <br> [基于关键点行为识别](https://bj.bcebos.com/v1/paddledet/models/pipeline/STGCN.zip) | 多目标跟踪：182M<br>关键点检测：101M<br>基于关键点行为识别：21.8M |
-|  闯入识别  |   31.8ms | [多目标跟踪](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip) | 182M |
-|  打架识别  |   19.7ms | [视频分类](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip) | 90M |
-|  抽烟识别  |   单人15.1ms | [目标检测](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip)<br>[基于人体id的目标检测](https://bj.bcebos.com/v1/paddledet/models/pipeline/ppyoloe_crn_s_80e_smoking_visdrone.zip) | 目标检测：182M<br>基于人体id的目标检测：27M |
-|  打电话识别  |   单人ms | [目标检测](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip)<br>[基于人体id的图像分类](https://bj.bcebos.com/v1/paddledet/models/pipeline/PPHGNet_tiny_calling_halfbody.zip) | 目标检测：182M<br>基于人体id的图像分类：45M |
-
-
-点击模型方案中的模型即可下载指定模型
-
-详细信息参考[文档](deploy/pipeline)
-
-</details>
-
-<details>
-<summary><b> 6. 产业级实时车辆分析工具PP-Vehicle </b></summary>
-
-| 任务            | 端到端速度（ms）|  模型方案  |  模型体积 |
-| :---------:     | :-------:  |  :------: |:------: |
-|  车辆检测（高精度）  | 25.7ms  |  [目标检测](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_ppvehicle.zip) | 182M |  
-|  车辆检测（轻量级）  | 13.2ms  |  [目标检测](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_s_36e_ppvehicle.zip) | 27M |
-|  车辆跟踪（高精度）  | 40ms  |  [多目标跟踪](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_ppvehicle.zip) | 182M |
-|  车辆跟踪（轻量级）  | 25ms  |  [多目标跟踪](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_s_36e_ppvehicle.zip) | 27M |
-|  车牌识别  |   4.68ms |  [车牌检测](https://bj.bcebos.com/v1/paddledet/models/pipeline/ch_PP-OCRv3_det_infer.tar.gz) <br> [车牌识别](https://bj.bcebos.com/v1/paddledet/models/pipeline/ch_PP-OCRv3_rec_infer.tar.gz) | 车牌检测：3.9M  <br> 车牌字符识别： 12M |
-|  车辆属性  |   7.31ms | [属性识别](https://bj.bcebos.com/v1/paddledet/models/pipeline/vehicle_attribute_model.zip) | 7.2M |
-
-点击模型方案中的模型即可下载指定模型
-
-详细信息参考[文档](deploy/pipeline)
 
 </details>
 
@@ -428,7 +251,6 @@
 
 - 参数配置
 
-  - [RCNN参数说明](docs/tutorials/config_annotation/faster_rcnn_r50_fpn_1x_coco_annotation.md)
   - [PP-YOLO参数说明](docs/tutorials/config_annotation/ppyolo_r50vd_dcn_1x_coco_annotation.md)
 
 - 模型压缩(基于[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim))
@@ -452,61 +274,11 @@
   - [新增检测模型](docs/advanced_tutorials/MODEL_TECHNICAL.md)
   - 二次开发教程
     - [目标检测](docs/advanced_tutorials/customization/detection.md)
-    - [关键点检测](docs/advanced_tutorials/customization/keypoint_detection.md)
-    - [多目标跟踪](docs/advanced_tutorials/customization/pphuman_mot.md)
-    - [行为识别](docs/advanced_tutorials/customization/action_recognotion/)
-    - [属性识别](docs/advanced_tutorials/customization/pphuman_attribute.md)
 
-### 课程专栏
-
-- **【理论基础】[目标检测7日打卡营](https://aistudio.baidu.com/aistudio/education/group/info/1617)：** 目标检测任务综述、RCNN系列目标检测算法详解、YOLO系列目标检测算法详解、PP-YOLO优化策略与案例分享、AnchorFree系列算法介绍和实践
-
-- **【产业实践】[AI快车道产业级目标检测技术与应用](https://aistudio.baidu.com/aistudio/education/group/info/23670)：** 目标检测超强目标检测算法矩阵、实时行人分析系统PP-Human、目标检测产业应用全流程拆解与实践
-
-- **【行业特色】2022.3.26 [智慧城市行业七日课](https://aistudio.baidu.com/aistudio/education/group/info/25620)：** 城市规划、城市治理、智慧政务、交通管理、社区治理
-
-### [产业实践范例教程](./industrial_tutorial/README.md)
-
-- [基于PP-TinyPose增强版的智能健身动作识别](https://aistudio.baidu.com/aistudio/projectdetail/4385813)
-
-- [基于PP-Human的打架识别](https://aistudio.baidu.com/aistudio/projectdetail/4086987?contributionType=1)
-
-- [基于PP-PicoDet增强版的路面垃圾检测](https://aistudio.baidu.com/aistudio/projectdetail/3846170?channelType=0&channel=0)
-
-- [基于PP-PicoDet的通信塔识别及Android端部署](https://aistudio.baidu.com/aistudio/projectdetail/3561097)
-
-- [基于FairMOT实现人流量统计](https://aistudio.baidu.com/aistudio/projectdetail/2421822)
-
-- [更多其他范例](./industrial_tutorial/README.md)
-
-## <img title="" src="https://user-images.githubusercontent.com/48054808/157836473-1cf451fa-f01f-4148-ba68-b6d06d5da2f9.png" alt="" width="20"> 应用案例
-
-- [安卓健身APP](https://github.com/zhiboniu/pose_demo_android)
-- [多目标跟踪系统GUI可视化界面](https://github.com/yangyudong2020/PP-Tracking_GUi)
-
-## <img src="https://user-images.githubusercontent.com/48054808/160552806-496dc3ba-beb6-4623-8e26-44416b5848bf.png" width="25"/> 第三方教程推荐
-
-- [PaddleDetection在Windows下的部署(一)](https://zhuanlan.zhihu.com/p/268657833)
-- [PaddleDetection在Windows下的部署(二)](https://zhuanlan.zhihu.com/p/280206376)
-- [Jetson Nano上部署PaddleDetection经验分享](https://zhuanlan.zhihu.com/p/319371293)
-- [安全帽检测YOLOv3模型在树莓派上的部署](https://github.com/PaddleCV-FAQ/PaddleDetection-FAQ/blob/main/Lite%E9%83%A8%E7%BD%B2/yolov3_for_raspi.md)
-- [使用SSD-MobileNetv1完成一个项目--准备数据集到完成树莓派部署](https://github.com/PaddleCV-FAQ/PaddleDetection-FAQ/blob/main/Lite%E9%83%A8%E7%BD%B2/ssd_mobilenet_v1_for_raspi.md)
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157835981-ef6057b4-6347-4768-8fcc-cd07fcc3d8b0.png" width="20"/> 版本更新
 
 版本更新内容请参考[版本更新文档](docs/CHANGELOG.md)
-
-
-## <img src="https://user-images.githubusercontent.com/48054808/157835796-08d4ffbc-87d9-4622-89d8-cf11a44260fc.png" width="20"/> 贡献代码
-
-我们非常欢迎你可以为PaddleDetection提供代码，也十分感谢你的反馈。
-
-- 感谢[Mandroide](https://github.com/Mandroide)清理代码并且统一部分函数接口。
-- 感谢[FL77N](https://github.com/FL77N/)贡献`Sparse-RCNN`模型。
-- 感谢[Chen-Song](https://github.com/Chen-Song)贡献`Swin Faster-RCNN`模型。
-- 感谢[yangyudong](https://github.com/yangyudong2020), [hchhtc123](https://github.com/hchhtc123) 开发PP-Tracking GUI界面
-- 感谢Shigure19 开发PP-TinyPose健身APP
-- 感谢[manangoel99](https://github.com/manangoel99)贡献Wandb可视化方式
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157835276-9aab9d1c-1c46-446b-bdd4-5ab75c5cfa48.png" width="20"/> 引用
 
