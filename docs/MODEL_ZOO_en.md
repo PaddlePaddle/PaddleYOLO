@@ -30,17 +30,6 @@
  - To use **PaddleYOLO**, **PaddlePaddle-2.3.2 or above is recommended**，please refer to the [official website](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html) to download the appropriate version. **For Windows platforms, please install the paddle develop version **;
 
 
-## <img title="" src="https://user-images.githubusercontent.com/48054808/157800467-2a9946ad-30d1-49a9-b9db-ba33413d9c90.png" alt="" width="20"> Exchanges
-
-- If you have any question or suggestion, please give us your valuable input via [GitHub Issues](https://github.com/PaddlePaddle/PaddleDetection/issues)
-
-  Welcome to join PaddleDetection user groups on WeChat (scan the QR code, add and reply "D" to the assistant)
-
-  <div align="center">
-  <img src="https://user-images.githubusercontent.com/34162360/177678712-4655747d-4290-4ad9-b7a1-4564a5418ac6.jpg"  width = "200" />  
-  </div>
-
-
 ## ModelZoo
 
 ### [PP-YOLOE, PP-YOLOE+](../../configs/ppyoloe)
