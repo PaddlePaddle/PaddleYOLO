@@ -18,6 +18,7 @@ from . import cspresnet
 from . import csp_darknet
 from . import convnext
 from . import efficientrep
+from . import cspnext
 
 from .resnet import *
 from .darknet import *
@@ -25,3 +26,4 @@ from .cspresnet import *
 from .csp_darknet import *
 from .convnext import *
 from .efficientrep import *
+from .cspnext import *
