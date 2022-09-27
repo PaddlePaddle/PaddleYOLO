@@ -1,27 +1,26 @@
 [简体中文](README_cn.md) | English
 
-<div align="center">
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/48054808/160532560-34cf7a1f-d950-435e-90d2-4b0a679e5119.png" align="middle" width = "800" />
-</p>
+## Introduction
 
-**A High-Efficient Development Toolkit for Object Detection based on [PaddlePaddle](https://github.com/paddlepaddle/paddle)**
+**PaddleYOLO** is a YOLO Series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7` and so on. Welcome to use and build it together!
 
-<p align="center">
-    <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache%202-dfd.svg"></a>
-    <a href="https://github.com/PaddlePaddle/PaddleDetection/releases"><img src="https://img.shields.io/github/v/release/PaddlePaddle/PaddleDetection?color=ffa"></a>
-    <a href=""><img src="https://img.shields.io/badge/python-3.7+-aff.svg"></a>
-    <a href=""><img src="https://img.shields.io/badge/os-linux%2C%20win%2C%20mac-pink.svg"></a>
-    <a href="https://github.com/PaddlePaddle/PaddleDetection/stargazers"><img src="https://img.shields.io/github/stars/PaddlePaddle/PaddleDetection?color=ccf"></a>
-</p>
-</div>
+## Updates
 
-<div  align="center">
-  <img src="docs/images/ppdet.gif" width="800"/>
+* 【2022/09/26】Release [`PaddleYOLO`](https://github.com/PaddlePaddle/PaddleYOLO), see [ModelZoo](docs/MODEL_ZOO_en.md);
+* 【2022/09/19】Support the new version of [`YOLOv6`](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6), including n/t/s/m/l model;
+* 【2022/08/23】Release `YOLOSeries` codebase: support `YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6` and `YOLOv7`; support using `ConvNeXt` backbone to get high-precision version of `PP-YOLOE`,`YOLOX` and `YOLOv5`; support PaddleSlim accelerated quantitative training `PP-YOLOE`,`YOLOv5`,`YOLOv6` and `YOLOv7`. For details, please read this [article](https://mp.weixin.qq.com/s/Hki01Zs2lQgvLSLWS0btrA)；
 
-</div>
+
+**Notes：**
+ - The Licence of **PaddleYOLO** is **GPL 3.0**, the codes of [YOLOv5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5),[YOLOv7](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov7) and [YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6) will not be merged into [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection). Except for these three YOLO models, other YOLO models are recommended to use in [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **which will be the first to release the latest progress of PP-YOLO series detection model**;
+ - To use **PaddleYOLO**, **PaddlePaddle-2.3.2 or above is recommended**，please refer to the [official website](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html) to download the appropriate version. **For Windows platforms, please install the paddle develop version **;
+
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157793354-6e7f381a-0aa6-4bb7-845c-9acf2ecc05c3.png" width="20"/> Product Update
+
+- 🔥 **2022.9.26：Release PaddleYOLO[release/2.5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5)**
+  - 💡 Model kit：
+    - Release `PaddleYOLO`: support `YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6` and `YOLOv7`; support using `ConvNeXt` backbone to get high-precision version of `PP-YOLOE`,`YOLOX` and `YOLOv5`; support PaddleSlim accelerated quantitative training `PP-YOLOE`,`YOLOv5`,`YOLOv6` and `YOLOv7`.
 
 - 🔥 **2022.8.26：PaddleDetection releases[release/2.5 version](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5)**
 
@@ -38,7 +37,7 @@
 
   - 💡 Cutting-edge algorithms：
 
-    - Covers [YOLO family](https://github.com/nemonameless/PaddleDetection_YOLOSeries) classic and latest models: YOLOv3, PP-YOLOE (a real-time high-precision object detection model developed by Baidu PaddlePaddle), and cutting-edge detection algorithms such as YOLOv4, YOLOv5, YOLOX, YOLOv6, and YOLOv7
+    - Covers [YOLO family](https://github.com/PaddlePaddle/PaddleYOLO) classic and latest models: YOLOv3, PP-YOLOE (a real-time high-precision object detection model developed by Baidu PaddlePaddle), and cutting-edge detection algorithms such as YOLOv4, YOLOv5, YOLOX, YOLOv6, and YOLOv7
     - Newly add high precision detection model based on [ViT](configs/vitdet) backbone network, with a 55.7% mAP accuracy on COCO dataset; newly add multi-object tracking model [OC-SORT](configs/mot/ocsort); newly add [ConvNeXt](configs/convnext) backbone network.
 
   - 📋 Industrial applications: Newly add [Smart Fitness](https://aistudio.baidu.com/aistudio/projectdetail/4385813), [Fighting recognition](https://aistudio.baidu.com/aistudio/projectdetail/4086987?channelType=0&channel=0),[ and Visitor Analysis](https://aistudio.baidu.com/aistudio/projectdetail/4230123?channelType=0&channel=0).
@@ -105,79 +104,26 @@
         <ul>
         <details><summary><b>Object Detection</b></summary>
           <ul>
-            <li>Faster RCNN</li>
-            <li>FPN</li>
-            <li>Cascade-RCNN</li>
-            <li>PSS-Det</li>
-            <li>RetinaNet</li>
             <li>YOLOv3</li>  
+            <li>YOLOv5</li>  
+            <li>YOLOv6</li>  
+            <li>YOLOv7</li>  
             <li>PP-YOLOv1/v2</li>
             <li>PP-YOLO-Tiny</li>
             <li>PP-YOLOE</li>
             <li>PP-YOLOE+</li>
             <li>YOLOX</li>
-            <li>SSD</li>
-            <li>CenterNet</li>
-            <li>FCOS</li>  
-            <li>TTFNet</li>
-            <li>TOOD</li>
-            <li>GFL</li>
-            <li>PP-PicoDet</li>
-            <li>DETR</li>
-            <li>Deformable DETR</li>
-            <li>Swin Transformer</li>
-            <li>Sparse RCNN</li>
          </ul></details>
-        <details><summary><b>Instance Segmentation</b></summary>
-         <ul>
-            <li>Mask RCNN</li>
-            <li>Cascade Mask RCNN</li>
-            <li>SOLOv2</li>
-        </ul></details>
-        <details><summary><b>Face Detection</b></summary>
-        <ul>
-            <li>BlazeFace</li>
-        </ul></details>
-        <details><summary><b>Multi-Object-Tracking</b></summary>
-        <ul>
-            <li>JDE</li>
-            <li>FairMOT</li>
-            <li>DeepSORT</li>
-            <li>ByteTrack</li>
-            <li>OC-SORT</li>
-        </ul></details>
-        <details><summary><b>KeyPoint-Detection</b></summary>
-        <ul>
-            <li>HRNet</li>
-            <li>HigherHRNet</li>
-            <li>Lite-HRNet</li>
-            <li>PP-TinyPose</li>
-        </ul></details>
       </ul>
       </td>
       <td>
         <details><summary><b>Details</b></summary>
         <ul>
           <li>ResNet(&vd)</li>
-          <li>Res2Net(&vd)</li>
           <li>CSPResNet</li>
-          <li>SENet</li>
-          <li>Res2Net</li>
-          <li>HRNet</li>
-          <li>Lite-HRNet</li>
           <li>DarkNet</li>
           <li>CSPDarkNet</li>
-          <li>MobileNetv1/v3</li>  
-          <li>ShuffleNet</li>
-          <li>GhostNet</li>
-          <li>BlazeNet</li>
-          <li>DLA</li>
-          <li>HardNet</li>
-          <li>LCNet</li>  
-          <li>ESNet</li>  
-          <li>Swin-Transformer</li>
           <li>ConvNeXt</li>
-          <li>Vision Transformer</li>
         </ul></details>
       </td>
       <td>
@@ -189,18 +135,11 @@
             <li>EMA</li>
           </ul> </details>
         </ul>
-        <details><summary><b>KeyPoint</b></summary>
-          <ul>
-            <li>DarkPose</li>
-          </ul></details>
-        </ul>
         <details><summary><b>FPN</b></summary>
           <ul>
-            <li>BiFPN</li>
             <li>CSP-PAN</li>
             <li>Custom-PAN</li>
             <li>ES-PAN</li>
-            <li>HRFPN</li>
           </ul> </details>
         </ul>  
         <details><summary><b>Loss</b></summary>
@@ -209,7 +148,6 @@
             <li>GIoU/DIoU/CIoU</li>  
             <li>IoUAware</li>
             <li>Focal Loss</li>
-            <li>CT Focal Loss</li>
             <li>VariFocal Loss</li>
           </ul> </details>
         </ul>  
@@ -265,8 +203,6 @@ The comparison between COCO mAP and FPS on Tesla V100 of representative models o
 
 **Clarification：**
 
-- `ViT` stands for `ViT-Cascade-Faster-RCNN`, which has highest mAP on COCO as 55.7%
-- `Cascade-Faster-RCNN`stands for `Cascade-Faster-RCNN-ResNet50vd-DCN`, which has been optimized to 20 FPS inference speed when COCO mAP as 47.8% in PaddleDetection models
 - `PP-YOLOE` are optimized `PP-YOLO v2`. It reached accuracy as 51.4% on COCO dataset, inference speed as 78.1 FPS on Tesla V100
 - `PP-YOLOE+` are optimized `PP-YOLOE`. It reached accuracy as 53.3% on COCO dataset, inference speed as 78.1 FPS on Tesla V100
 - The models in the figure are available in the[ model library](#模型库)
@@ -303,101 +239,13 @@ The comparison between COCO mAP and FPS on Qualcomm Snapdragon 865 processor of 
 | PP-YOLOE+_l | 53.3        | 149.2                     | [link](configs/ppyoloe/ppyoloe_plus_crn_l_80e_coco.yml) | [download](https://paddledet.bj.bcebos.com/models/ppyoloe_plus_crn_m_80e_coco.pdparams) |
 | PP-YOLOE+_x | 54.9        | 95.2                      | [link](configs/ppyoloe/ppyoloe_plus_crn_x_80e_coco.yml) | [download](https://paddledet.bj.bcebos.com/models/ppyoloe_plus_crn_x_80e_coco.pdparams) |
 
-#### PP-PicoDet series Recommended scenarios: Mobile chips and x86 CPU devices, such as ARM CPU(RK3399, Raspberry Pi) and NPU(BITMAIN)
-
-| Model      | COCO Accuracy（mAP） | Snapdragon 865 four-thread speed (ms) | Configuration                                         | Download                                                                              |
-|:---------- |:------------------:|:-------------------------------------:|:-----------------------------------------------------:|:-------------------------------------------------------------------------------------:|
-| PicoDet-XS | 23.5               | 7.81                                  | [Link](configs/picodet/picodet_xs_320_coco_lcnet.yml) | [Download](https://paddledet.bj.bcebos.com/models/picodet_xs_320_coco_lcnet.pdparams) |
-| PicoDet-S  | 29.1               | 9.56                                  | [Link](configs/picodet/picodet_s_320_coco_lcnet.yml)  | [Download](https://paddledet.bj.bcebos.com/models/picodet_s_320_coco_lcnet.pdparams)  |
-| PicoDet-M  | 34.4               | 17.68                                 | [Link](configs/picodet/picodet_m_320_coco_lcnet.yml)  | [Download](https://paddledet.bj.bcebos.com/models/picodet_m_320_coco_lcnet.pdparams)  |
-| PicoDet-L  | 36.1               | 25.21                                 | [Link](configs/picodet/picodet_l_320_coco_lcnet.yml)  | [Download](https://paddledet.bj.bcebos.com/models/picodet_l_320_coco_lcnet.pdparams)  |
-
 #### Frontier detection algorithm
 
 | Model    | COCO Accuracy（mAP） | V100 TensorRT FP16 speed(FPS) | Configuration                                                                                                  | Download                                                                       |
 |:-------- |:------------------:|:-----------------------------:|:--------------------------------------------------------------------------------------------------------------:|:------------------------------------------------------------------------------:|
-| YOLOX-l  | 50.1               | 107.5                         | [Link](configs/yolox/yolox_l_300e_coco.yml)                                                                    | [Download](https://paddledet.bj.bcebos.com/models/yolox_l_300e_coco.pdparams)  |
-| YOLOv5-l | 48.6               | 136.0                         | [Link](https://github.com/nemonameless/PaddleDetection_YOLOv5/blob/main/configs/yolov5/yolov5_l_300e_coco.yml) | [Download](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) |
-
-#### Other general purpose models [doc](docs/MODEL_ZOO_cn.md)
-
-</details>
-
-<details>
-<summary><b> 2. Instance segmentation</b></summary>
-
-| Model             | Introduction                                             | Recommended Scenarios                         | COCO Accuracy(mAP)               | Configuration                                                           | Download                                                                                              |
-|:----------------- |:-------------------------------------------------------- |:--------------------------------------------- |:--------------------------------:|:-----------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------:|
-| Mask RCNN         | Two-stage instance segmentation algorithm                | <div style="width: 50pt">Edge-Cloud end</div> | box AP: 41.4 <br/> mask AP: 37.5 | [Link](configs/mask_rcnn/mask_rcnn_r50_vd_fpn_2x_coco.yml)              | [Download](https://paddledet.bj.bcebos.com/models/mask_rcnn_r50_vd_fpn_2x_coco.pdparams)              |
-| Cascade Mask RCNN | Two-stage instance segmentation algorithm                | <div style="width: 50pt">Edge-Cloud end</div> | box AP: 45.7 <br/> mask AP: 39.7 | [Link](configs/mask_rcnn/cascade_mask_rcnn_r50_vd_fpn_ssld_2x_coco.yml) | [Download](https://paddledet.bj.bcebos.com/models/cascade_mask_rcnn_r50_vd_fpn_ssld_2x_coco.pdparams) |
-| SOLOv2            | Lightweight single-stage instance segmentation algorithm | <div style="width: 50pt">Edge-Cloud end</div> | mask AP: 38.0                    | [Link](configs/solov2/solov2_r50_fpn_3x_coco.yml)                       | [Download](https://paddledet.bj.bcebos.com/models/solov2_r50_fpn_3x_coco.pdparams)                    |
-
-</details>
-
-<details>
-<summary><b> 3. Keypoint detection</b></summary>
-
-| Model                | Introduction                                                                                  | Recommended scenarios                         | COCO Accuracy（AP） | Speed                             | Configuration                                             | Download                                                                                    |
-|:-------------------- |:--------------------------------------------------------------------------------------------- |:--------------------------------------------- |:-----------------:|:---------------------------------:|:---------------------------------------------------------:|:-------------------------------------------------------------------------------------------:|
-| HRNet-w32 + DarkPose | <div style="width: 130pt">Top-down Keypoint detection algorithm<br/>Input size: 384x288</div> | <div style="width: 50pt">Edge-Cloud end</div> | 78.3              | T4 TensorRT FP16 2.96ms           | [Link](configs/keypoint/hrnet/dark_hrnet_w32_384x288.yml) | [Download](https://paddledet.bj.bcebos.com/models/keypoint/dark_hrnet_w32_384x288.pdparams) |
-| HRNet-w32 + DarkPose | Top-down Keypoint detection algorithm<br/>Input size: 256x192                                 | Edge-Cloud end                                | 78.0              | T4 TensorRT FP16 1.75ms           | [Link](configs/keypoint/hrnet/dark_hrnet_w32_256x192.yml) | [Download](https://paddledet.bj.bcebos.com/models/keypoint/dark_hrnet_w32_256x192.pdparams) |
-| PP-TinyPose          | Light-weight keypoint algorithm<br/>Input size: 256x192                                       | Mobile                                        | 68.8              | Snapdragon 865 four-thread 6.30ms | [Link](configs/keypoint/tiny_pose/tinypose_256x192.yml)   | [Download](https://bj.bcebos.com/v1/paddledet/models/keypoint/tinypose_256x192.pdparams)    |
-| PP-TinyPose          | Light-weight keypoint algorithm<br/>Input size: 128x96                                        | Mobile                                        | 58.1              | Snapdragon 865 four-thread 2.37ms | [Link](configs/keypoint/tiny_pose/tinypose_128x96.yml)    | [Download](https://bj.bcebos.com/v1/paddledet/models/keypoint/tinypose_128x96.pdparams)     |
-
-#### Other keypoint detection models [doc](configs/keypoint)
-
-</details>
-
-<details>
-<summary><b> 4. Multi-object tracking PP-Tracking</b></summary>
-
-| Model     | Introduction                                                  | Recommended scenarios | Accuracy               | Configuration                                                           | Download                                                                                              |
-|:--------- |:------------------------------------------------------------- |:--------------------- |:----------------------:|:-----------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------:|
-| ByteTrack | SDE Multi-object tracking algorithm with detection model only | Edge-Cloud end        | MOT-17 half val:  77.3 | [Link](configs/mot/bytetrack/detector/yolox_x_24e_800x1440_mix_det.yml) | [Download](https://paddledet.bj.bcebos.com/models/mot/deepsort/yolox_x_24e_800x1440_mix_det.pdparams) |
-| FairMOT   | JDE multi-object tracking algorithm multi-task learning       | Edge-Cloud end        | MOT-16 test: 75.0      | [Link](configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml)              | [Download](https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608.pdparams)            |
-| OC-SORT   | SDE multi-object tracking algorithm with detection model only       | Edge-Cloud end        | MOT-16 half val: 75.5      | [Link](configs/mot/ocsort/ocsort_yolox.yml)              | -            |
-
-#### Other multi-object tracking models [docs](configs/mot)
-
-</details>
-
-<details>
-<summary><b> 5. Industrial real-time pedestrain analysis tool-PP Human</b></summary>
-
-| Task                                   | End-to-End Speed（ms） | Model                                                                                                                                                                                                                                                                                                                           | Size                                                                                                   |
-|:--------------------------------------:|:--------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------------------------:|
-| Pedestrian detection (high precision)  | 25.1ms               | [Multi-object tracking](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip)                                                                                                                                                                                                                      | 182M                                                                                                   |
-| Pedestrian detection (lightweight)     | 16.2ms               | [Multi-object tracking](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_s_36e_pipeline.zip)                                                                                                                                                                                                                      | 27M                                                                                                    |
-| Pedestrian tracking (high precision)   | 31.8ms               | [Multi-object tracking](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip)                                                                                                                                                                                                                      | 182M                                                                                                   |
-| Pedestrian tracking (lightweight)      | 21.0ms               | [Multi-object tracking](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_s_36e_pipeline.zip)                                                                                                                                                                                                                      | 27M                                                                                                    |
-| Attribute recognition (high precision) | Single person8.5ms   | [Object detection](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip)<br> [Attribute recognition](https://bj.bcebos.com/v1/paddledet/models/pipeline/strongbaseline_r50_30e_pa100k.zip)                                                                                                         | Object detection：182M<br>Attribute recognition：86M                                                     |
-| Attribute recognition (lightweight)    | Single person 7.1ms  | [Object detection](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip)<br> [Attribute recognition](https://bj.bcebos.com/v1/paddledet/models/pipeline/strongbaseline_r50_30e_pa100k.zip)                                                                                                         | Object detection：182M<br>Attribute recognition：86M                                                     |
-| Falling detection                      | Single person 10ms   | [Multi-object tracking](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip) <br> [Keypoint detection](https://bj.bcebos.com/v1/paddledet/models/pipeline/dark_hrnet_w32_256x192.zip) <br> [Behavior detection based on key points](https://bj.bcebos.com/v1/paddledet/models/pipeline/STGCN.zip) | Multi-object tracking：182M<br>Keypoint detection：101M<br>Behavior detection based on key points: 21.8M |
-| Intrusion detection                    | 31.8ms               | [Multi-object tracking](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip)                                                                                                                                                                                                                      | 182M                                                                                                   |
-| Fighting detection                     | 19.7ms               | [Video classification](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip)                                                                                                                                                                                                                       | 90M                                                                                                    |
-| Smoking detection                      | Single person 15.1ms | [Object detection](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip)<br>[Object detection based on Human Id](https://bj.bcebos.com/v1/paddledet/models/pipeline/ppyoloe_crn_s_80e_smoking_visdrone.zip)                                                                                        | Object detection：182M<br>Object detection based on Human ID: 27M                                       |
-| Phoning detection                      | Single person ms     | [Object detection](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_pipeline.zip)<br>[Image classification based on Human ID](https://bj.bcebos.com/v1/paddledet/models/pipeline/PPHGNet_tiny_calling_halfbody.zip)                                                                                         | Object detection：182M<br>Image classification based on Human ID：45M                                    |
-
-Please refer to [docs](deploy/pipeline/README_en.md) for details.
-
-</details>
-
-<details>
-<summary><b> 6. Industrial real-time vehicle analysis tool-PP Vehicle</b></summary>
-
-| Task                                   | End-to-End Speed（ms） | Model                                                                                                                                                                                                                                                                                                                           | Size                                                                                                   |
-|:--------------------------------------:|:--------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------------------------:|
-| Vehicle detection (high precision)  | 25.7ms               | [object detection](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_ppvehicle.zip)                                                                                                                                                                                                                      | 182M                                                                                                   |
-| Vehicle detection (lightweight)     | 13.2ms               | [object detection](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_s_36e_ppvehicle.zip)                                                                                                                                                                                                                      | 27M                                                                                                    |
-| Vehicle tracking (high precision)   | 40ms               | [multi-object tracking](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_l_36e_ppvehicle.zip)                                                                                                                                                                                                                      | 182M                                                                                                   |
-| Vehicle tracking (lightweight)      | 25ms               | [multi-object tracking](https://bj.bcebos.com/v1/paddledet/models/pipeline/mot_ppyoloe_s_36e_pipeline.zip)                                                                                                                                                                                                                      | 27M                                                                                                    |
-| Plate Recognition                   | 4.68ms     | [plate detection](https://bj.bcebos.com/v1/paddledet/models/pipeline/ch_PP-OCRv3_det_infer.tar.gz)<br>[plate recognition](https://bj.bcebos.com/v1/paddledet/models/pipeline/ch_PP-OCRv3_rec_infer.tar.gz)                                                                                         | Plate detection：3.9M<br>Plate recognition：12M                                    |
-| Vehicle attribute      | 7.31ms               | [attribute recognition](https://bj.bcebos.com/v1/paddledet/models/pipeline/vehicle_attribute_model.zip)                                                                                                                                                                                                                      | 7.2M                                                                                                    |
-
-Please refer to [docs](deploy/pipeline/README_en.md) for details.
-
-</details>
-
+| [YOLOX-l](configs/yolox)  | 50.1               | 107.5                         | [Link](configs/yolox/yolox_l_300e_coco.yml)                                                                    | [Download](https://paddledet.bj.bcebos.com/models/yolox_l_300e_coco.pdparams)  |
+| [YOLOv5-l](configs/yolov5) | 48.6               | 136.0                         | [Link](configs/yolov5/yolov5_l_300e_coco.yml) | [Download](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) |
+| [YOLOv7-l](configs/yolov7) | 51.0        | 135.0                     | [链接](configs/yolov7/yolov7_l_300e_coco.yml) | [下载地址](https://paddledet.bj.bcebos.com/models/yolov7_l_300e_coco.pdparams) |
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157828296-d5eb0ccb-23ea-40f5-9957-29853d7d13a9.png" width="20"/>Document tutorials
 
@@ -413,7 +261,6 @@ Please refer to [docs](deploy/pipeline/README_en.md) for details.
 
 - Configuration
 
-  - [RCNN Configuration](docs/tutorials/config_annotation/faster_rcnn_r50_fpn_1x_coco_annotation.md)
   - [PP-YOLO Configuration](docs/tutorials/config_annotation/ppyolo_r50vd_dcn_1x_coco_annotation.md)
 
 - Compression based on [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim)
@@ -443,62 +290,12 @@ Please refer to [docs](deploy/pipeline/README_en.md) for details.
   - [New object detection models](docs/advanced_tutorials/MODEL_TECHNICAL.md)
   - Custumization
     - [Object detection](docs/advanced_tutorials/customization/detection.md)
-    - [Keypoint detection](docs/advanced_tutorials/customization/keypoint_detection.md)
-    - [Multiple object tracking](docs/advanced_tutorials/customization/pphuman_mot.md)
-    - [Action recognition](docs/advanced_tutorials/customization/action_recognotion/)
-    - [Attribute recognition](docs/advanced_tutorials/customization/pphuman_attribute.md)
 
-### Courses
-
-- **[Theoretical foundation] [Object detection 7-day camp](https://aistudio.baidu.com/aistudio/education/group/info/1617):** Overview of object detection tasks, details of RCNN series object detection algorithm and YOLO series object detection algorithm, PP-YOLO optimization strategy and case sharing, introduction and practice of AnchorFree series algorithm
-
-- **[Industrial application] [AI Fast Track industrial object detection technology and application](https://aistudio.baidu.com/aistudio/education/group/info/23670):** Super object detection algorithms, real-time pedestrian analysis system PP-Human, breakdown and practice of object detection industrial application
-
-- **[Industrial features] 2022.3.26** **[Smart City Industry Seven-Day Class](https://aistudio.baidu.com/aistudio/education/group/info/25620)** : Urban planning, Urban governance, Smart governance service, Traffic management, community governance.
-
-### [Industrial tutorial examples](./industrial_tutorial/README.md)
-
-- [Intelligent fitness recognition based on PP-TinyPose Plus](https://aistudio.baidu.com/aistudio/projectdetail/4385813)
-
-- [Road litter detection based on PP-PicoDet Plus](https://aistudio.baidu.com/aistudio/projectdetail/3561097)
-
-- [Communication tower detection based on PP-PicoDet and deployment on Android](https://aistudio.baidu.com/aistudio/projectdetail/3561097)
-
-- [Visitor flow statistics based on FairMOT](https://aistudio.baidu.com/aistudio/projectdetail/2421822)
-
-- [More examples](./industrial_tutorial/README.md)
-
-## <img title="" src="https://user-images.githubusercontent.com/48054808/157836473-1cf451fa-f01f-4148-ba68-b6d06d5da2f9.png" alt="" width="20"> Applications
-
-- [Fitness app on android mobile](https://github.com/zhiboniu/pose_demo_android)
-- [PP-Tracking GUI Visualization Interface](https://github.com/yangyudong2020/PP-Tracking_GUi)
-
-## Recommended third-party tutorials
-
-- [Deployment of PaddleDetection for Windows I ](https://zhuanlan.zhihu.com/p/268657833)
-- [Deployment of PaddleDetection for Windows II](https://zhuanlan.zhihu.com/p/280206376)
-- [Deployment of PaddleDetection on Jestson Nano](https://zhuanlan.zhihu.com/p/319371293)
-- [How to deploy YOLOv3 model on Raspberry Pi for Helmet detection](https://github.com/PaddleCV-FAQ/PaddleDetection-FAQ/blob/main/Lite%E9%83%A8%E7%BD%B2/yolov3_for_raspi.md)
-- [Use SSD-MobileNetv1 for a project -- From dataset to deployment on Raspberry Pi](https://github.com/PaddleCV-FAQ/PaddleDetection-FAQ/blob/main/Lite%E9%83%A8%E7%BD%B2/ssd_mobilenet_v1_for_raspi.md)
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157835981-ef6057b4-6347-4768-8fcc-cd07fcc3d8b0.png" width="20"/> Version updates
 
 Please refer to the[ Release note ](https://github.com/PaddlePaddle/Paddle/wiki/PaddlePaddle-2.3.0-Release-Note-EN)for more details about the updates
 
-## <img title="" src="https://user-images.githubusercontent.com/48054808/157835345-f5d24128-abaf-4813-b793-d2e5bdc70e5a.png" alt="" width="20">  License
-
-PaddlePaddle is provided under the [Apache 2.0 license](LICENSE)
-
-## <img src="https://user-images.githubusercontent.com/48054808/157835796-08d4ffbc-87d9-4622-89d8-cf11a44260fc.png" width="20"/> Contribute your code
-
-We appreciate your contributions and your feedback！
-
-- Thank [Mandroide](https://github.com/Mandroide) for code cleanup and
-- Thank [FL77N](https://github.com/FL77N/) for `Sparse-RCNN`model
-- Thank [Chen-Song](https://github.com/Chen-Song) for `Swin Faster-RCNN`model
-- Thank [yangyudong](https://github.com/yangyudong2020), [hchhtc123](https://github.com/hchhtc123) for developing PP-Tracking GUI interface
-- Thank Shigure19 for developing PP-TinyPose fitness APP
-- Thank [manangoel99](https://github.com/manangoel99) for Wandb visualization methods
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157835276-9aab9d1c-1c46-446b-bdd4-5ab75c5cfa48.png" width="20"/> Quote
 
