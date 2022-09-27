@@ -6,8 +6,8 @@
 
 ## Updates
 
-* 【2022/09/26】Release [`PaddleYOLO`](https://github.com/PaddlePaddle/PaddleYOLO), see [ModelZoo](docs/MODEL_ZOO_en.md);
-* 【2022/09/19】Support the new version of [`YOLOv6`](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6), including n/t/s/m/l model;
+* 【2022/09/26】Release [PaddleYOLO](https://github.com/PaddlePaddle/PaddleYOLO), see [ModelZoo](docs/MODEL_ZOO_en.md);
+* 【2022/09/19】Support the new version of [YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6), including n/t/s/m/l model;
 * 【2022/08/23】Release `YOLOSeries` codebase: support `YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6` and `YOLOv7`; support using `ConvNeXt` backbone to get high-precision version of `PP-YOLOE`,`YOLOX` and `YOLOv5`; support PaddleSlim accelerated quantitative training `PP-YOLOE`,`YOLOv5`,`YOLOv6` and `YOLOv7`. For details, please read this [article](https://mp.weixin.qq.com/s/Hki01Zs2lQgvLSLWS0btrA)；
 
 
@@ -20,7 +20,7 @@
 
 - 🔥 **2022.9.26：Release PaddleYOLO[release/2.5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5)**
   - 💡 Model kit：
-    - Release `PaddleYOLO`: support `YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6` and `YOLOv7`; support using `ConvNeXt` backbone to get high-precision version of `PP-YOLOE`,`YOLOX` and `YOLOv5`; support PaddleSlim accelerated quantitative training `PP-YOLOE`,`YOLOv5`,`YOLOv6` and `YOLOv7`.
+    - Release [PaddleYOLO](https://github.com/PaddlePaddle/PaddleYOLO): support `YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6` and `YOLOv7`; support using `ConvNeXt` backbone to get high-precision version of `PP-YOLOE`,`YOLOX` and `YOLOv5`; support PaddleSlim accelerated quantitative training `PP-YOLOE`,`YOLOv5`,`YOLOv6` and `YOLOv7`.
 
 - 🔥 **2022.8.26：PaddleDetection releases[release/2.5 version](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5)**
 
@@ -102,7 +102,7 @@
     <tr valign="top">
       <td>
         <ul>
-        <details><summary><b>Object Detection</b></summary>
+        <details open><summary><b>Object Detection</b></summary>
           <ul>
             <li>YOLOv3</li>  
             <li>YOLOv5</li>  
@@ -117,7 +117,7 @@
       </ul>
       </td>
       <td>
-        <details><summary><b>Details</b></summary>
+        <details open><summary><b>Details</b></summary>
         <ul>
           <li>ResNet(&vd)</li>
           <li>CSPResNet</li>
@@ -127,7 +127,7 @@
         </ul></details>
       </td>
       <td>
-        <details><summary><b>Common</b></summary>
+        <details open><summary><b>Common</b></summary>
           <ul>
             <li>Sync-BN</li>
             <li>Group Norm</li>
@@ -135,14 +135,14 @@
             <li>EMA</li>
           </ul> </details>
         </ul>
-        <details><summary><b>FPN</b></summary>
+        <details open><summary><b>FPN</b></summary>
           <ul>
             <li>CSP-PAN</li>
             <li>Custom-PAN</li>
             <li>ES-PAN</li>
           </ul> </details>
         </ul>  
-        <details><summary><b>Loss</b></summary>
+        <details open><summary><b>Loss</b></summary>
           <ul>
             <li>Smooth-L1</li>
             <li>GIoU/DIoU/CIoU</li>  
@@ -151,13 +151,13 @@
             <li>VariFocal Loss</li>
           </ul> </details>
         </ul>  
-        <details><summary><b>Post-processing</b></summary>
+        <details open><summary><b>Post-processing</b></summary>
           <ul>
             <li>SoftNMS</li>
             <li>MatrixNMS</li>  
           </ul> </details>  
         </ul>
-        <details><summary><b>Speed</b></summary>
+        <details open><summary><b>Speed</b></summary>
           <ul>
             <li>FP16 training</li>
             <li>Multi-machine training </li>  
@@ -165,7 +165,7 @@
         </ul>  
       </td>
       <td>
-        <details><summary><b>Details</b></summary>
+        <details open><summary><b>Details</b></summary>
         <ul>
           <li>Resize</li>  
           <li>Lighting</li>  
@@ -246,6 +246,8 @@ The comparison between COCO mAP and FPS on Qualcomm Snapdragon 865 processor of 
 | [YOLOX-l](configs/yolox)  | 50.1               | 107.5                         | [Link](configs/yolox/yolox_l_300e_coco.yml)                                                                    | [Download](https://paddledet.bj.bcebos.com/models/yolox_l_300e_coco.pdparams)  |
 | [YOLOv5-l](configs/yolov5) | 48.6               | 136.0                         | [Link](configs/yolov5/yolov5_l_300e_coco.yml) | [Download](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) |
 | [YOLOv7-l](configs/yolov7) | 51.0        | 135.0                     | [链接](configs/yolov7/yolov7_l_300e_coco.yml) | [下载地址](https://paddledet.bj.bcebos.com/models/yolov7_l_300e_coco.pdparams) |
+
+</details>
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157828296-d5eb0ccb-23ea-40f5-9957-29853d7d13a9.png" width="20"/>Document tutorials
 

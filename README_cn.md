@@ -3,8 +3,8 @@
 **PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等模型，欢迎一起使用和建设！
 
 ## 更新日志
-* 【2022/09/26】发布[`PaddleYOLO`](https://github.com/PaddlePaddle/PaddleYOLO)模型套件，请参照[ModelZoo](docs/MODEL_ZOO_cn.md)；
-* 【2022/09/19】支持[`YOLOv6`](configs/yolov6)新版，包括n/t/s/m/l模型；
+* 【2022/09/26】发布[PaddleYOLO](https://github.com/PaddlePaddle/PaddleYOLO)模型套件，请参照[ModelZoo](docs/MODEL_ZOO_cn.md)；
+* 【2022/09/19】支持[YOLOv6](configs/yolov6)新版，包括n/t/s/m/l模型；
 * 【2022/08/23】发布`YOLOSeries`代码库: 支持`YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等YOLO模型，支持`ConvNeXt`骨干网络高精度版`PP-YOLOE`,`YOLOX`和`YOLOv5`等模型，支持PaddleSlim无损加速量化训练`PP-YOLOE`,`YOLOv5`,`YOLOv6`和`YOLOv7`等模型，详情可阅读[此文章](https://mp.weixin.qq.com/s/Hki01Zs2lQgvLSLWS0btrA)；
 
 
@@ -85,7 +85,7 @@
     <tr valign="top">
       <td>
         <ul>
-        <details><summary><b>Object Detection</b></summary>
+        <details open><summary><b>Object Detection</b></summary>
           <ul>
             <li>YOLOv3</li>  
             <li>YOLOv5</li>  
@@ -100,7 +100,7 @@
       </ul>
       </td>
       <td>
-        <details><summary><b>Details</b></summary>
+        <details open><summary><b>Details</b></summary>
         <ul>
           <li>ResNet(&vd)</li>
           <li>CSPResNet</li>
@@ -110,7 +110,7 @@
         </ul></details>
       </td>
       <td>
-        <details><summary><b>Common</b></summary>
+        <details open><summary><b>Common</b></summary>
           <ul>
             <li>Sync-BN</li>
             <li>Group Norm</li>
@@ -118,14 +118,14 @@
             <li>EMA</li>
           </ul> </details>
         </ul>
-        <details><summary><b>FPN</b></summary>
+        <details open><summary><b>FPN</b></summary>
           <ul>
             <li>CSP-PAN</li>
             <li>Custom-PAN</li>
             <li>ES-PAN</li>
           </ul> </details>
         </ul>  
-        <details><summary><b>Loss</b></summary>
+        <details open><summary><b>Loss</b></summary>
           <ul>
             <li>Smooth-L1</li>
             <li>GIoU/DIoU/CIoU</li>  
@@ -134,13 +134,13 @@
             <li>VariFocal Loss</li>
           </ul> </details>
         </ul>  
-        <details><summary><b>Post-processing</b></summary>
+        <details open><summary><b>Post-processing</b></summary>
           <ul>
             <li>SoftNMS</li>
             <li>MatrixNMS</li>  
           </ul> </details>  
         </ul>
-        <details><summary><b>Speed</b></summary>
+        <details open><summary><b>Speed</b></summary>
           <ul>
             <li>FP16 training</li>
             <li>Multi-machine training </li>  
@@ -148,7 +148,7 @@
         </ul>  
       </td>
       <td>
-        <details><summary><b>Details</b></summary>
+        <details open><summary><b>Details</b></summary>
         <ul>
           <li>Resize</li>  
           <li>Lighting</li>  
