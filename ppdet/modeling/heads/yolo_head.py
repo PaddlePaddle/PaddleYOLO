@@ -77,7 +77,7 @@ class YOLOv3Head(nn.Layer):
         self.num_outputs = len(self.anchors)
         self.data_format = data_format
 
-        self.yolo_outputs = []
+        self.yolo_outputs = nn.LayerList()
         for i in range(len(self.anchors)):
 
             if self.iou_aware:
@@ -93,9 +93,7 @@ class YOLOv3Head(nn.Layer):
                 padding=0,
                 data_format=data_format,
                 bias_attr=ParamAttr(regularizer=L2Decay(0.)))
-            conv.skip_quant = True
-            yolo_output = self.add_sublayer(name, conv)
-            self.yolo_outputs.append(yolo_output)
+            self.yolo_outputs.append(conv)
 
     def parse_anchor(self, anchors, anchor_masks):
         self.anchors = [[anchors[i] for i in mask] for mask in anchor_masks]
@@ -171,8 +169,10 @@ class YOLOXHead(nn.Layer):
                      'l1': 1.0,
                  },
                  trt=False,
-                 exclude_nms=False):
+                 exclude_nms=False,
+                 exclude_post_process=False):
         super(YOLOXHead, self).__init__()
+        self.exclude_post_process = exclude_post_process
         self._dtype = paddle.framework.get_default_dtype()
         self.num_classes = num_classes
         assert len(in_channels) > 0, "in_channels length should > 0"
@@ -197,7 +197,7 @@ class YOLOXHead(nn.Layer):
             self.stem_conv.append(BaseConv(in_c, feat_channels, 1, 1, act=act))
 
             self.conv_cls.append(
-                nn.Sequential(* [
+                nn.Sequential(*[
                     ConvBlock(
                         feat_channels, feat_channels, 3, 1, act=act), ConvBlock(
                             feat_channels, feat_channels, 3, 1, act=act),
@@ -209,7 +209,7 @@ class YOLOXHead(nn.Layer):
                 ]))
 
             self.conv_reg.append(
-                nn.Sequential(* [
+                nn.Sequential(*[
                     ConvBlock(
                         feat_channels, feat_channels, 3, 1, act=act),
                     ConvBlock(
@@ -402,17 +402,22 @@ class YOLOXHead(nn.Layer):
 
     def post_process(self, head_outs, img_shape, scale_factor):
         pred_scores, pred_bboxes, stride_tensor = head_outs
-        pred_scores = pred_scores.transpose([0, 2, 1])
-        pred_bboxes *= stride_tensor
+        pred_scores = pred_scores.transpose([0, 2, 1])  #[1, 8400, 80]
+        pred_bboxes *= stride_tensor  #[1, 80, 8400]
+
+        if self.exclude_post_process:
+            return paddle.concat(
+                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1), None
         # scale bbox to origin image
-        scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
-        pred_bboxes /= scale_factor
-        if self.exclude_nms:
-            # `exclude_nms=True` just use in benchmark
-            return pred_bboxes.sum(), pred_scores.sum()
         else:
-            bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
-            return bbox_pred, bbox_num
+            scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
+            pred_bboxes /= scale_factor
+            if self.exclude_nms:
+                # `exclude_nms=True` just use in benchmark
+                return pred_bboxes, pred_scores
+            else:
+                bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
+                return bbox_pred, bbox_num
 
 
 @register
@@ -431,7 +436,8 @@ class YOLOv5Head(nn.Layer):
                  data_format='NCHW',
                  nms='MultiClassNMS',
                  trt=False,
-                 exclude_nms=False):
+                 exclude_nms=False,
+                 exclude_post_process=False):
         """
         Head for YOLOv5
 
@@ -449,6 +455,7 @@ class YOLOv5Head(nn.Layer):
         assert len(in_channels) > 0, "in_channels length should > 0"
         self.num_classes = num_classes
         self.in_channels = in_channels
+        self.exclude_post_process = exclude_post_process
 
         self.parse_anchor(anchors, anchor_masks)
         self.anchors = paddle.to_tensor(self.anchors, dtype='float32')
@@ -564,18 +571,22 @@ class YOLOv5Head(nn.Layer):
             score_list.append(score)
         pred_bboxes = paddle.concat(bbox_list, axis=1)
         pred_scores = paddle.concat(score_list, axis=-1)
-        scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
-        pred_bboxes /= scale_factor
-
-        if self.exclude_nms:
-            # `exclude_nms=True` just use in benchmark for speed test
+        if self.exclude_post_process:
             return paddle.concat(
-                [pred_bboxes, pred_scores.transpose([0, 2, 1])],
-                axis=-1), paddle.to_tensor(
-                    [1], dtype='int32')
+                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1), None
+
         else:
-            bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
-            return bbox_pred, bbox_num
+            scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
+            pred_bboxes /= scale_factor
+            if self.exclude_nms:
+                # `exclude_nms=True` just use in benchmark for speed test
+                return paddle.concat(
+                    [pred_bboxes, pred_scores.transpose([0, 2, 1])],
+                    axis=-1), paddle.to_tensor(
+                        [1], dtype='int32')
+            else:
+                bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
+                return bbox_pred, bbox_num
 
 
 @register
@@ -600,7 +611,8 @@ class YOLOv7Head(nn.Layer):
             data_format='NCHW',
             nms='MultiClassNMS',
             trt=False,
-            exclude_nms=False):
+            exclude_nms=False,
+            exclude_post_process=False):
         """
         Head for YOLOv7
 
@@ -622,6 +634,7 @@ class YOLOv7Head(nn.Layer):
         assert len(in_channels) > 0, "in_channels length should > 0"
         self.num_classes = num_classes
         self.in_channels = in_channels
+        self.exclude_post_process = exclude_post_process
 
         self.parse_anchor(anchors, anchor_masks)
         self.anchors = paddle.to_tensor(self.anchors, dtype='int32')
@@ -805,10 +818,13 @@ class YOLOv7Head(nn.Layer):
         pred_scores = paddle.concat(score_list, axis=-1)
         scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
         pred_bboxes /= scale_factor
-
-        if self.exclude_nms:
-            # `exclude_nms=True` just use in benchmark for speed test
-            return pred_bboxes.sum(), pred_scores.sum()
+        if self.exclude_post_process:
+            return paddle.concat(
+                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1), None
         else:
-            bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
-            return bbox_pred, bbox_num
+            if self.exclude_nms:
+                # `exclude_nms=True` just use in benchmark for speed test
+                return pred_bboxes.sum(), pred_scores.sum()
+            else:
+                bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
+                return bbox_pred, bbox_num
