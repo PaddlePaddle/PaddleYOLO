@@ -11,3 +11,6 @@ width_mult: 1.25
 log_iter: 100
 snapshot_epoch: 10
 weights: output/rtmnet_x_300e_coco/model_final
+
+RTMDetHead:
+  exp_on_reg: True

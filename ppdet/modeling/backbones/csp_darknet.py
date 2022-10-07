@@ -69,8 +69,8 @@ class BaseConv(nn.Layer):
             bias_attr=bias)
         self.bn = nn.BatchNorm2D(
             out_channels,
-            epsilon=1e-3,  # for amp(fp16)
-            momentum=0.97,
+            # epsilon=1e-3,  # for amp(fp16), set in ppdet/engine/trainer.py
+            # momentum=0.97,
             weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
             bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
         self.act = get_activation(act)

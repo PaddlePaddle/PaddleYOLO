@@ -14,6 +14,7 @@ TrainReader:
         mixup_scale: [0.5, 1.5]
     - AugmentHSV: {is_bgr: False, hgain: 5, sgain: 30, vgain: 30}
     - PadResize: {target_size: 640}
+    #- NormalizeImage: {mean: [103.53, 116.28, 123.675], std: [57.375, 57.12, 58.395], is_scale: True}
     - RandomFlip: {}
   batch_transforms:
     - Permute: {}
@@ -29,6 +30,7 @@ EvalReader:
     - Decode: {}
     - Resize: {target_size: [640, 640], keep_ratio: True, interp: 1}
     - Pad: {size: [640, 640], fill_value: [114., 114., 114.]}
+    - NormalizeImage: {mean: [0.485, 0.456, 0.406], std: [0.229, 0.224, 0.225], is_scale: True}
     - Permute: {}
   batch_size: 4
 
@@ -40,5 +42,7 @@ TestReader:
     - Decode: {}
     - Resize: {target_size: [640, 640], keep_ratio: True, interp: 1}
     - Pad: {size: [640, 640], fill_value: [114., 114., 114.]}
+    - NormalizeImage: {mean: [0.485, 0.456, 0.406], std: [0.229, 0.224, 0.225], is_scale: True}
     - Permute: {}
   batch_size: 1
+  fuse_normalize: True

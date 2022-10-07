@@ -31,6 +31,7 @@ TRT_MIN_SUBGRAPH = {
     'YOLO': 3,
     'YOLOX': 8,
     'YOLOv5': 10,
+    'RTMDet': 10,
 }
 
 KEYPOINT_ARCH = ['HigherHRNet', 'TopDownHRNet']

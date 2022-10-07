@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import paddle
+import numpy as np
+from IPython import embed
 import paddle.nn as nn
 import paddle.nn.functional as F
 from ppdet.core.workspace import register, serializable
@@ -223,9 +225,13 @@ class CSPNeXt(nn.Layer):
         self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
 
     def forward(self, inputs):
-        x = inputs['image']
+        # inputs['image'] = paddle.to_tensor(np.load('img4.npy'))
+        # print('img4: ', inputs['image'].shape, inputs['image'].sum())
+        x = inputs['image']  # sum [-1575801.50000000]
+        #print('img4 ', x.shape, x.sum())
         outputs = []
-        x = self.stem(x)
+        x = self.stem(x)  # [4, 32, 320, 320]     bn bug[40140672.]
+        #print('stem ', x.shape, x.sum()) [40518680.]
         for i, layer in enumerate(self.csp_next_blocks):
             x = layer(x)
             if i + 1 in self.return_idx:

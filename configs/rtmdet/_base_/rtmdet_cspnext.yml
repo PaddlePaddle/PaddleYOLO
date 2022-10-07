@@ -23,6 +23,8 @@ CSPNeXt:
 
 RTMDetHead:
   exp_on_reg: False
+  fpn_strides: [8, 16, 32]
+  grid_cell_offset: 0
   nms:
     name: MultiClassNMS
     nms_top_k: 1000

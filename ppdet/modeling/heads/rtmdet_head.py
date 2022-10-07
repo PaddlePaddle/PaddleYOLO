@@ -17,12 +17,15 @@ import paddle.nn as nn
 import paddle.nn.functional as F
 from ppdet.core.workspace import register
 
+import numpy as np
 from ..bbox_utils import batch_distance2bbox
-from ..losses import GIoULoss
+from ..losses import GIoULoss, QualityFocalLoss, IouLoss
 from ..initializer import bias_init_with_prob, constant_, normal_
 from ..assigners.utils import generate_anchors_for_grid_cell
-from ppdet.modeling.backbones.cspresnet import ConvBNLayer
+from ppdet.modeling.backbones.csp_darknet import BaseConv
 from ppdet.modeling.ops import get_static_shape, get_act_fn
+from ppdet.modeling.assigners.simota_assigner import SimOTAAssigner  #, DynamicSoftLabelAssigner
+from ppdet.modeling.bbox_utils import bbox_overlaps
 from ppdet.modeling.layers import MultiClassNMS
 from paddle import ParamAttr
 from paddle.nn.initializer import Normal, Constant
@@ -36,32 +39,33 @@ class RTMDetHead(nn.Layer):
         'num_classes', 'width_mult', 'trt', 'exclude_nms',
         'exclude_post_process'
     ]
-    __inject__ = ['static_assigner', 'nms']
+    __inject__ = ['assigner', 'nms']
 
-    def __init__(self,
-                 num_classes=80,
-                 width_mult=1.0,
-                 in_channels=[1024, 512, 256],
-                 feat_channels=256,
-                 stacked_convs=2,
-                 pred_kernel_size=1,
-                 act='swish',
-                 fpn_strides=(32, 16, 8),
-                 share_conv=True,
-                 use_varifocal_loss=True,
-                 exp_on_reg=False,
-                 static_assigner='ATSSAssigner',
-                 nms='MultiClassNMS',
-                 loss_weight={
-                     'class': 1.0,
-                     'iou': 2.5,
-                     'dfl': 0.5,
-                 },
-                 trt=False,
-                 exclude_nms=False,
-                 exclude_post_process=False):
+    def __init__(
+            self,
+            num_classes=80,
+            width_mult=1.0,
+            in_channels=[1024, 512, 256],
+            feat_channels=256,
+            stacked_convs=2,
+            pred_kernel_size=1,
+            act='swish',
+            fpn_strides=(32, 16, 8),
+            share_conv=True, # will set False in deploy
+            exp_on_reg=False,
+            assigner='SimOTAAssigner',  #'DynamicSoftLabelAssigner',
+            grid_cell_offset=0.,
+            nms='MultiClassNMS',
+            loss_weight={
+                'cls': 1.0,
+                'box': 2.0,
+            },
+            trt=False,
+            exclude_nms=False,
+            exclude_post_process=False):
         super(RTMDetHead, self).__init__()
         assert len(in_channels) > 0, "len(in_channels) should > 0"
+        self._dtype = paddle.framework.get_default_dtype()
         self.in_channels = in_channels
         self.num_classes = num_classes
         self.fpn_strides = fpn_strides
@@ -70,12 +74,14 @@ class RTMDetHead(nn.Layer):
         self.feat_channels = int(feat_channels * width_mult)
         self.share_conv = share_conv
         self.exp_on_reg = exp_on_reg
+        self.grid_cell_offset = grid_cell_offset
 
-        self.iou_loss = GIoULoss()
+        self.loss_cls = QualityFocalLoss()
+        self.loss_box = IouLoss(
+            loss_weight=1.0, giou=True)  # GIoULoss() #(loss_weight=2.0)
         self.loss_weight = loss_weight
-        self.use_varifocal_loss = use_varifocal_loss
+        self.assigner = assigner
 
-        self.static_assigner = static_assigner
         self.nms = nms
         if isinstance(self.nms, MultiClassNMS) and trt:
             self.nms.trt = trt
@@ -92,12 +98,8 @@ class RTMDetHead(nn.Layer):
             reg_convs = nn.LayerList()
             for i in range(self.stacked_convs):
                 chn = self.in_channels[idx] if i == 0 else self.feat_channels
-                cls_convs.append(
-                    ConvBNLayer(
-                        chn, self.feat_channels, 3, padding=1))
-                reg_convs.append(
-                    ConvBNLayer(
-                        chn, self.feat_channels, 3, padding=1))
+                cls_convs.append(BaseConv(chn, self.feat_channels, 3, 1))
+                reg_convs.append(BaseConv(chn, self.feat_channels, 3, 1))
             self.cls_convs.append(cls_convs)
             self.reg_convs.append(reg_convs)
 
@@ -120,12 +122,11 @@ class RTMDetHead(nn.Layer):
                         mean=0., std=0.01)),
                     bias_attr=True))
 
-        if self.share_conv:
+        if 0: #self.share_conv: # TODO: bug in deploy
             for n in range(len(self.fpn_strides)):
                 for i in range(self.stacked_convs):
                     self.cls_convs[n][i].conv = self.cls_convs[0][i].conv
                     self.reg_convs[n][i].conv = self.reg_convs[0][i].conv
-
         self._init_weights()
 
     @classmethod
@@ -140,52 +141,211 @@ class RTMDetHead(nn.Layer):
             constant_(reg_.weight)
             constant_(reg_.bias, 1.0)
 
-    def forward(self, feats, targets=None):
+    def forward_train(self, feats, targets):
         assert len(feats) == len(self.fpn_strides), \
             "The size of feats is not equal to size of fpn_strides"
+        feat_sizes = [[f.shape[-2], f.shape[-1]] for f in feats]
 
-        cls_scores = []
-        bbox_preds = []
-        for idx, (x, stride) in enumerate(zip(feats, self.fpn_strides)):
+        cls_score_list, reg_distri_list = [], []
+        for idx, x in enumerate(feats):
+            b, _, h, w = x.shape
+            l = h * w
             cls_feat = x
             reg_feat = x
             for cls_layer in self.cls_convs[idx]:
                 cls_feat = cls_layer(cls_feat)
-            cls_score = self.cls_preds[idx](cls_feat)
+            cls_logit = self.cls_preds[idx](cls_feat)
 
             for reg_layer in self.reg_convs[idx]:
                 reg_feat = reg_layer(reg_feat)
             if self.exp_on_reg:
-                reg_dist = self.reg_preds[idx](reg_feat).exp() * stride
+                reg_dist = self.reg_preds[idx](reg_feat).exp()
             else:
-                reg_dist = self.reg_preds[idx](reg_feat) * stride
+                reg_dist = self.reg_preds[idx](reg_feat)
+            reg_dist = reg_dist * self.fpn_strides[idx]
+            # cls and reg
+            cls_score = F.sigmoid(cls_logit)
+            cls_score_list.append(cls_score.flatten(2).transpose([0, 2, 1]))
+            reg_distri_list.append(reg_dist.flatten(2).transpose([0, 2, 1]))
+        cls_score_list = paddle.concat(cls_score_list, axis=1)  # [4, 8400, 80]
+        reg_distri_list = paddle.concat(reg_distri_list, axis=1)  # [4, 8400, 4]
 
-            cls_scores.append(cls_score.flatten(2).transpose([0, 2, 1]))
-            bbox_preds.append(reg_dist.flatten(2).transpose([0, 2, 1]))
+        # bbox decode
+        anchor_points, stride_tensor = self._generate_anchor_point(
+            feat_sizes, self.fpn_strides, 0.)
+        reg_xy, reg_wh = paddle.split(reg_distri_list, 2, axis=-1)
+        reg_xy += (anchor_points / stride_tensor)
+        reg_wh = paddle.exp(reg_wh) * 0.5
+        bbox_pred_list = paddle.concat(
+            [reg_xy - reg_wh, reg_xy + reg_wh], axis=-1)
 
-        cls_scores = paddle.concat(cls_scores, 1)
-        bbox_preds = paddle.concat(bbox_preds, 1)
+        anchor_points, stride_tensor = self._generate_anchor_point(
+            feat_sizes, self.fpn_strides, 0.)
+
+        return self.get_loss(
+            [cls_score_list, bbox_pred_list, anchor_points,
+             stride_tensor], targets)
+
+    def _generate_anchors(self, feats=None, dtype='float32'):
+        # just use in eval time
+        anchor_points = []
+        stride_tensor = []
+        for i, stride in enumerate(self.fpn_strides):
+            if feats is not None:
+                _, _, h, w = feats[i].shape
+            else:
+                h = int(self.eval_size[0] / stride)
+                w = int(self.eval_size[1] / stride)
+            shift_x = paddle.arange(end=w) + self.grid_cell_offset
+            shift_y = paddle.arange(end=h) + self.grid_cell_offset
+            shift_y, shift_x = paddle.meshgrid(shift_y, shift_x)
+            anchor_point = paddle.cast(
+                paddle.stack(
+                    [shift_x, shift_y], axis=-1), dtype=dtype)
+            anchor_points.append(anchor_point.reshape([-1, 2]))
+            stride_tensor.append(paddle.full([h * w, 1], stride, dtype=dtype))
+        anchor_points = paddle.concat(anchor_points)
+        stride_tensor = paddle.concat(stride_tensor)
+        return anchor_points, stride_tensor
+
+    def forward_eval(self, feats):
+        anchor_points, stride_tensor = self._generate_anchors(feats)
+        cls_score_list, reg_dist_list = [], []
+        for idx, x in enumerate(feats):
+            b, _, h, w = x.shape
+            l = h * w
+            cls_feat = x
+            reg_feat = x
+            for cls_layer in self.cls_convs[idx]:
+                cls_feat = cls_layer(cls_feat)
+            cls_logit = self.cls_preds[idx](cls_feat)
+
+            for reg_layer in self.reg_convs[idx]:
+                reg_feat = reg_layer(reg_feat)
+            if self.exp_on_reg:
+                reg_dist = self.reg_preds[idx](reg_feat).exp()
+            else:
+                reg_dist = self.reg_preds[idx](reg_feat)
+            # cls and reg
+            cls_score = F.sigmoid(cls_logit)
+            cls_score_list.append(cls_score.reshape([b, self.num_classes, l]))
+            reg_dist_list.append(reg_dist.reshape([b, 4, l]))
+
+        cls_score_list = paddle.concat(cls_score_list, axis=-1)
+        reg_dist_list = paddle.concat(reg_dist_list, axis=-1)
+
+        return cls_score_list, reg_dist_list, anchor_points, stride_tensor
+
+    def forward(self, feats, targets=None):
+        assert len(feats) == len(self.fpn_strides), \
+            "The size of feats is not equal to size of fpn_strides"
 
         if self.training:
-            return self.get_loss([cls_scores, bbox_preds], targets)
+            return self.forward_train(feats, targets)
         else:
-            return cls_scores, bbox_preds
+            return self.forward_eval(feats)
 
-    def get_loss(self, head_outs, gt_meta):
-        cls_scores, bbox_preds = head_outs
-        ### TODO
+    def _generate_anchor_point(self, feat_sizes, strides, offset=0.):
+        anchor_points, stride_tensor = [], []
+        num_anchors_list = []
+        for feat_size, stride in zip(feat_sizes, strides):
+            h, w = feat_size
+            x = (paddle.arange(w) + offset) * stride
+            y = (paddle.arange(h) + offset) * stride
+            y, x = paddle.meshgrid(y, x)
+            anchor_points.append(paddle.stack([x, y], axis=-1).reshape([-1, 2]))
+            stride_tensor.append(
+                paddle.full(
+                    [len(anchor_points[-1]), 1], stride, dtype=self._dtype))
+            num_anchors_list.append(len(anchor_points[-1]))
+        anchor_points = paddle.concat(anchor_points).astype(self._dtype)
+        anchor_points.stop_gradient = True
+        stride_tensor = paddle.concat(stride_tensor)
+        stride_tensor.stop_gradient = True
+        return anchor_points, stride_tensor  #, num_anchors_list
 
-        out_dict = {
+    def get_loss(self, head_outs, targets):
+        pred_scores, pred_bboxes, anchor_points, stride_tensor = head_outs
+
+        x1y1, x2y2 = paddle.split(pred_bboxes, 2, -1)
+        lt = anchor_points - x1y1
+        rb = x2y2 - anchor_points
+        pred_bboxes = paddle.concat([lt, rb], -1)
+
+        gt_labels = targets['gt_class']
+        gt_bboxes = targets['gt_bbox']
+        # label assignment
+        center_and_strides = paddle.concat(
+            [anchor_points, stride_tensor, stride_tensor], axis=-1)
+        pos_num_list, label_list, bbox_target_list = [], [], []
+        for pred_score, pred_bbox, gt_box, gt_label in zip(
+                pred_scores.detach(),
+                pred_bboxes.detach() * stride_tensor, gt_bboxes, gt_labels):
+            pos_num, label, _, bbox_target = self.assigner(
+                pred_score, center_and_strides, pred_bbox, gt_box, gt_label)
+            pos_num_list.append(pos_num)
+            label_list.append(label)
+            bbox_target_list.append(bbox_target)
+        labels = paddle.to_tensor(np.stack(label_list, axis=0))
+        bbox_targets = paddle.to_tensor(np.stack(bbox_target_list, axis=0))
+        bbox_targets /= stride_tensor  # rescale bbox
+
+        # 1. obj score loss
+        mask_positive = (labels != self.num_classes)
+        num_pos = sum(pos_num_list)
+
+        if num_pos > 0:
+            num_pos = paddle.to_tensor(num_pos, dtype=self._dtype).clip(min=1)
+            #loss_obj /= num_pos
+
+            # 2. iou loss
+            bbox_mask = mask_positive.unsqueeze(-1).tile([1, 1, 4])
+            pred_bboxes_pos = paddle.masked_select(pred_bboxes,
+                                                   bbox_mask).reshape([-1, 4])
+            assigned_bboxes_pos = paddle.masked_select(
+                bbox_targets, bbox_mask).reshape([-1, 4])
+            bbox_iou = bbox_overlaps(pred_bboxes_pos, assigned_bboxes_pos)
+            bbox_iou = paddle.diag(bbox_iou)
+
+            loss_iou = self.loss_box(
+                pred_bboxes_pos.split(
+                    4, axis=-1),
+                assigned_bboxes_pos.split(
+                    4, axis=-1))
+            loss_iou = loss_iou.sum() / num_pos
+
+            # 3. cls loss
+            cls_mask = mask_positive.unsqueeze(-1).tile(
+                [1, 1, self.num_classes])
+            pred_cls_pos = paddle.masked_select(
+                pred_cls, cls_mask).reshape([-1, self.num_classes])
+            assigned_cls_pos = paddle.masked_select(labels, mask_positive)
+            assigned_cls_pos = F.one_hot(assigned_cls_pos,
+                                         self.num_classes + 1)[..., :-1]
+            assigned_cls_pos *= bbox_iou.unsqueeze(-1)
+            loss_cls = F.binary_cross_entropy(
+                pred_cls_pos, assigned_cls_pos, reduction='sum')
+            loss_cls /= num_pos
+        else:
+            loss_cls = paddle.zeros([1])
+            loss_iou = paddle.zeros([1])
+            loss_cls.stop_gradient = False
+            loss_iou.stop_gradient = False
+
+        loss = self.loss_weight['cls'] * loss_cls + \
+               self.loss_weight['box'] * loss_iou
+
+        return {
             'loss': loss,
             'loss_cls': loss_cls,
-            'loss_iou': loss_iou,
+            'loss_box': loss_iou,
         }
-        return out_dict
 
     def post_process(self, head_outs, im_shape, scale_factor):
-        pred_scores, pred_bboxes = head_outs
-        ### TODO
-
+        pred_scores, pred_dist, anchor_points, stride_tensor = head_outs
+        pred_bboxes = batch_distance2bbox(anchor_points,
+                                          pred_dist.transpose([0, 2, 1]))
+        pred_bboxes *= stride_tensor
         if self.exclude_post_process:
             return paddle.concat(
                 [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1), None
