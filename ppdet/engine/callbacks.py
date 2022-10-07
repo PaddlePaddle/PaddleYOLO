@@ -34,7 +34,7 @@ logger = setup_logger('ppdet.engine')
 
 __all__ = [
     'Callback', 'ComposeCallback', 'LogPrinter', 'Checkpointer',
-    'VisualDLWriter', 'SniperProposalsGenerator'
+    'VisualDLWriter'
 ]
 
 
@@ -123,9 +123,9 @@ class LogPrinter(Callback):
                     fmt = ' '.join([
                         'Epoch: [{}]',
                         '[{' + space_fmt + '}/{}]',
-                        'learning_rate: {lr:.6f}',
-                        '{meters}',
                         'eta: {eta}',
+                        'lr: {lr:.6f}',
+                        '{meters}',
                         'batch_cost: {btime}',
                         'data_cost: {dtime}',
                         'ips: {ips:.4f} images/s',
@@ -134,9 +134,9 @@ class LogPrinter(Callback):
                         epoch_id,
                         step_id,
                         steps_per_epoch,
+                        eta=eta_str,
                         lr=status['learning_rate'],
                         meters=logs,
-                        eta=eta_str,
                         btime=str(batch_time),
                         dtime=str(data_time),
                         ips=ips)
@@ -219,18 +219,6 @@ class Checkpointer(Callback):
                                save_name, epoch_id + 1)
 
 
-class WiferFaceEval(Callback):
-    def __init__(self, model):
-        super(WiferFaceEval, self).__init__(model)
-
-    def on_epoch_begin(self, status):
-        assert self.model.mode == 'eval', \
-            "WiferFaceEval can only be set during evaluation"
-        for metric in self.model._metrics:
-            metric.update(self.model.model)
-        sys.exit()
-
-
 class VisualDLWriter(Callback):
     """
     Use VisualDL to log data or image
@@ -288,6 +276,7 @@ class VisualDLWriter(Callback):
                                                    self.vdl_mAP_step)
                 self.vdl_mAP_step += 1
 
+
 class WandbCallback(Callback):
     def __init__(self, model):
         super(WandbCallback, self).__init__(model)
@@ -307,10 +296,8 @@ class WandbCallback(Callback):
             self.wandb_params = {}
         for k, v in model.cfg.items():
             if k.startswith("wandb_"):
-                self.wandb_params.update({
-                    k.lstrip("wandb_"): v
-                })
-        
+                self.wandb_params.update({k.lstrip("wandb_"): v})
+
         self._run = None
         if dist.get_world_size() < 2 or dist.get_rank() == 0:
             _ = self.run
@@ -319,27 +306,28 @@ class WandbCallback(Callback):
             self.run.define_metric("eval/*", step_metric="epoch")
 
         self.best_ap = 0
-    
+
     @property
     def run(self):
         if self._run is None:
             if self.wandb.run is not None:
-                logger.info("There is an ongoing wandb run which will be used"
-                        "for logging. Please use `wandb.finish()` to end that"
-                        "if the behaviour is not intended")
+                logger.info(
+                    "There is an ongoing wandb run which will be used"
+                    "for logging. Please use `wandb.finish()` to end that"
+                    "if the behaviour is not intended")
                 self._run = self.wandb.run
             else:
                 self._run = self.wandb.init(**self.wandb_params)
         return self._run
-    
+
     def save_model(self,
-                optimizer,
-                save_dir,
-                save_name,
-                last_epoch,
-                ema_model=None,
-                ap=None, 
-                tags=None):
+                   optimizer,
+                   save_dir,
+                   save_name,
+                   last_epoch,
+                   ema_model=None,
+                   ap=None,
+                   tags=None):
         if dist.get_world_size() < 2 or dist.get_rank() == 0:
             model_path = os.path.join(save_dir, save_name)
             metadata = {}
@@ -347,8 +335,14 @@ class WandbCallback(Callback):
             if ap:
                 metadata["ap"] = ap
             if ema_model is None:
-                ema_artifact = self.wandb.Artifact(name="ema_model-{}".format(self.run.id), type="model", metadata=metadata)
-                model_artifact = self.wandb.Artifact(name="model-{}".format(self.run.id), type="model", metadata=metadata)
+                ema_artifact = self.wandb.Artifact(
+                    name="ema_model-{}".format(self.run.id),
+                    type="model",
+                    metadata=metadata)
+                model_artifact = self.wandb.Artifact(
+                    name="model-{}".format(self.run.id),
+                    type="model",
+                    metadata=metadata)
 
                 ema_artifact.add_file(model_path + ".pdema", name="model_ema")
                 model_artifact.add_file(model_path + ".pdparams", name="model")
@@ -356,10 +350,13 @@ class WandbCallback(Callback):
                 self.run.log_artifact(ema_artifact, aliases=tags)
                 self.run.log_artfact(model_artifact, aliases=tags)
             else:
-                model_artifact = self.wandb.Artifact(name="model-{}".format(self.run.id), type="model", metadata=metadata)
+                model_artifact = self.wandb.Artifact(
+                    name="model-{}".format(self.run.id),
+                    type="model",
+                    metadata=metadata)
                 model_artifact.add_file(model_path + ".pdparams", name="model")
                 self.run.log_artifact(model_artifact, aliases=tags)
-    
+
     def on_step_end(self, status):
 
         mode = status['mode']
@@ -368,11 +365,9 @@ class WandbCallback(Callback):
                 training_status = status['training_staus'].get()
                 for k, v in training_status.items():
                     training_status[k] = float(v)
-                metrics = {
-                    "train/" + k: v for k,v in training_status.items()
-                }
+                metrics = {"train/" + k: v for k, v in training_status.items()}
                 self.run.log(metrics)
-    
+
     def on_epoch_end(self, status):
         mode = status['mode']
         epoch_id = status['epoch_id']
@@ -383,7 +378,8 @@ class WandbCallback(Callback):
                 if (
                         epoch_id + 1
                 ) % self.model.cfg.snapshot_epoch == 0 or epoch_id == end_epoch - 1:
-                    save_name = str(epoch_id) if epoch_id != end_epoch - 1 else "model_final"
+                    save_name = str(
+                        epoch_id) if epoch_id != end_epoch - 1 else "model_final"
                     tags = ["latest", "epoch_{}".format(epoch_id)]
                     self.save_model(
                         self.model.optimizer,
@@ -391,8 +387,7 @@ class WandbCallback(Callback):
                         save_name,
                         epoch_id + 1,
                         self.model.use_ema,
-                        tags=tags
-                    )
+                        tags=tags)
             if mode == 'eval':
                 merged_dict = {}
                 for metric in self.model._metrics:
@@ -427,67 +422,7 @@ class WandbCallback(Callback):
                                 last_epoch=epoch_id + 1,
                                 ema_model=self.model.use_ema,
                                 ap=self.best_ap,
-                                tags=tags
-                            )
-    
+                                tags=tags)
+
     def on_train_end(self, status):
         self.run.finish()
-
-
-class SniperProposalsGenerator(Callback):
-    def __init__(self, model):
-        super(SniperProposalsGenerator, self).__init__(model)
-        ori_dataset = self.model.dataset
-        self.dataset = self._create_new_dataset(ori_dataset)
-        self.loader = self.model.loader
-        self.cfg = self.model.cfg
-        self.infer_model = self.model.model
-
-    def _create_new_dataset(self, ori_dataset):
-        dataset = copy.deepcopy(ori_dataset)
-        # init anno_cropper
-        dataset.init_anno_cropper()
-        # generate infer roidbs
-        ori_roidbs = dataset.get_ori_roidbs()
-        roidbs = dataset.anno_cropper.crop_infer_anno_records(ori_roidbs)
-        # set new roidbs
-        dataset.set_roidbs(roidbs)
-
-        return dataset
-
-    def _eval_with_loader(self, loader):
-        results = []
-        with paddle.no_grad():
-            self.infer_model.eval()
-            for step_id, data in enumerate(loader):
-                outs = self.infer_model(data)
-                for key in ['im_shape', 'scale_factor', 'im_id']:
-                    outs[key] = data[key]
-                for key, value in outs.items():
-                    if hasattr(value, 'numpy'):
-                        outs[key] = value.numpy()
-
-                results.append(outs)
-
-        return results
-
-    def on_train_end(self, status):
-        self.loader.dataset = self.dataset
-        results = self._eval_with_loader(self.loader)
-        results = self.dataset.anno_cropper.aggregate_chips_detections(results)
-        # sniper
-        proposals = []
-        clsid2catid = {v: k for k, v in self.dataset.catid2clsid.items()}
-        for outs in results:
-            batch_res = get_infer_results(outs, clsid2catid)
-            start = 0
-            for i, im_id in enumerate(outs['im_id']):
-                bbox_num = outs['bbox_num']
-                end = start + bbox_num[i]
-                bbox_res = batch_res['bbox'][start:end] \
-                    if 'bbox' in batch_res else None
-                if bbox_res:
-                    proposals += bbox_res
-        logger.info("save proposals in {}".format(self.cfg.proposals_path))
-        with open(self.cfg.proposals_path, 'w') as f:
-            json.dump(proposals, f)

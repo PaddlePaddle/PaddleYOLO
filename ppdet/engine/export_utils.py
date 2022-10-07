@@ -33,9 +33,6 @@ TRT_MIN_SUBGRAPH = {
     'YOLOv5': 10,
 }
 
-KEYPOINT_ARCH = ['HigherHRNet', 'TopDownHRNet']
-MOT_ARCH = ['DeepSORT', 'JDE', 'FairMOT', 'ByteTrack']
-
 
 def _prune_input_spec(input_spec, program, targets):
     # try to prune static program to figure out pruned input spec
@@ -122,13 +119,6 @@ def _dump_infer_config(config, path, image_shape, model):
         infer_cfg['export_onnx'] = True
         infer_cfg['export_eb'] = export_eb
 
-    if infer_arch in MOT_ARCH:
-        if infer_arch == 'DeepSORT':
-            tracker_cfg = config['DeepSORTTracker']
-        else:
-            tracker_cfg = config['JDETracker']
-        infer_cfg['tracker'] = _parse_tracker(tracker_cfg)
-
     for arch, min_subgraph_size in TRT_MIN_SUBGRAPH.items():
         if arch in infer_arch:
             infer_cfg['arch'] = arch
@@ -151,32 +141,12 @@ def _dump_infer_config(config, path, image_shape, model):
             'architecture']]['mask_head']:
         infer_cfg['mask'] = True
     label_arch = 'detection_arch'
-    if infer_arch in KEYPOINT_ARCH:
-        label_arch = 'keypoint_arch'
 
-    if infer_arch in MOT_ARCH:
-        label_arch = 'mot_arch'
-        reader_cfg = config['TestMOTReader']
-        dataset_cfg = config['TestMOTDataset']
-    else:
-        reader_cfg = config['TestReader']
-        dataset_cfg = config['TestDataset']
+    reader_cfg = config['TestReader']
+    dataset_cfg = config['TestDataset']
 
     infer_cfg['Preprocess'], infer_cfg['label_list'] = _parse_reader(
         reader_cfg, dataset_cfg, config['metric'], label_arch, image_shape[1:])
-
-    if infer_arch == 'PicoDet':
-        if hasattr(config, 'export') and config['export'].get(
-                'post_process',
-                False) and not config['export'].get('benchmark', False):
-            infer_cfg['arch'] = 'GFL'
-        head_name = 'PicoHeadV2' if config['PicoHeadV2'] else 'PicoHead'
-        infer_cfg['NMS'] = config[head_name]['nms']
-        # In order to speed up the prediction, the threshold of nms 
-        # is adjusted here, which can be changed in infer_cfg.yml
-        config[head_name]['nms']["score_threshold"] = 0.3
-        config[head_name]['nms']["nms_threshold"] = 0.5
-        infer_cfg['fpn_stride'] = config[head_name]['fpn_stride']
 
     yaml.dump(infer_cfg, open(path, 'w'))
     logger.info("Export inference config file to {}".format(os.path.join(path)))
