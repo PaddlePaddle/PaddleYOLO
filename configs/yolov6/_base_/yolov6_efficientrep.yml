@@ -7,7 +7,7 @@ act: 'relu' # not 'silu'
 find_unused_parameters: True
 
 training_mode: "repvgg"
-use_distill: False
+self_distill: False
 
 depth_mult: 0.33 # default: s version
 width_mult: 0.50
@@ -31,7 +31,7 @@ EffiDeHead:
   reg_max: 0
   use_dfl: False
   static_assigner_epoch: 3 # warmup_epoch
-  loss_weight: {class: 1.0, iou: 2.5, dfl: 0.5}
+  loss_weight: {cls: 1.0, iou: 2.5}
   iou_type: 'siou' # 'siou' in n/t version, 'giou' in s/m/l version
   static_assigner:
     name: ATSSAssigner

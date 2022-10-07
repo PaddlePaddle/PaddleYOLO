@@ -18,7 +18,7 @@ import paddle.nn.functional as F
 from paddle import ParamAttr
 from paddle.regularizer import L2Decay
 from ppdet.core.workspace import register
-from IPython import embed
+
 from ..bbox_utils import batch_distance2bbox
 from ..losses import GIoULoss, SIoULoss
 from ..initializer import bias_init_with_prob, constant_, normal_
@@ -34,7 +34,7 @@ __all__ = ['EffiDeHead']
 class EffiDeHead(nn.Layer):
     __shared__ = [
         'num_classes', 'eval_size', 'trt', 'exclude_nms',
-        'exclude_post_process', 'use_distill'
+        'exclude_post_process', 'self_distill'
     ]
     __inject__ = ['static_assigner', 'assigner', 'nms']
 
@@ -47,27 +47,28 @@ class EffiDeHead(nn.Layer):
             grid_cell_scale=5.0,
             grid_cell_offset=0.5,
             reg_max=16,  # reg_max=0 if use_dfl is False
-            use_dfl=False,  # in n/t/s version, True in m/l version
+            use_dfl=False,  # False in n/t/s version, True in m/l version
             static_assigner_epoch=3,  # warmup_epoch
-            use_varifocal_loss=True,
             static_assigner='ATSSAssigner',
             assigner='TaskAlignedAssigner',
-            nms='MultiClassNMS',
             eval_size=None,
-            loss_weight={
-                'class': 1.0,
-                'iou': 2.5,
-                'dfl': 0.5,
-            },
             iou_type='giou',  # 'siou' in n/t version
-            use_distill=False,
-            distill_weight={
-                'class': 1.0,
-                'dfl': 1.0,
+            loss_weight={
+                'cls': 1.0,
+                'iou': 2.5,
+                'dfl': 0.5,  # used in m/l version 
+                'cwd': 10.0,  # used when self_distill=True, in m/l version
             },
+            nms='MultiClassNMS',
             trt=False,
             exclude_nms=False,
-            exclude_post_process=False):
+            exclude_post_process=False,
+            self_distill=False,
+            distill_weight={
+                'cls': 1.0,
+                'dfl': 1.0,
+            },
+            print_l1_loss=True):
         super(EffiDeHead, self).__init__()
         assert len(in_channels) > 0, "len(in_channels) should > 0"
         self.in_channels = in_channels
@@ -77,25 +78,26 @@ class EffiDeHead(nn.Layer):
         self.grid_cell_offset = grid_cell_offset
         self.reg_max = reg_max
         self.use_dfl = use_dfl
-        self.iou_loss = GIoULoss()
-        assert iou_type in ['giou', 'siou'], "only support giou and siou loss."
-        if iou_type == 'siou':
-            self.iou_loss = SIoULoss(splited=False)
-        self.loss_weight = loss_weight
-        self.use_varifocal_loss = use_varifocal_loss
-        self.eval_size = eval_size
 
         self.static_assigner_epoch = static_assigner_epoch
         self.static_assigner = static_assigner
         self.assigner = assigner
+        self.eval_size = eval_size
+        self.iou_loss = GIoULoss()
+        assert iou_type in ['giou', 'siou'], "only support giou and siou loss."
+        if iou_type == 'siou':
+            self.iou_loss = SIoULoss()
+        self.loss_weight = loss_weight
+
         self.nms = nms
         if isinstance(self.nms, MultiClassNMS) and trt:
             self.nms.trt = trt
         self.exclude_nms = exclude_nms
         self.exclude_post_process = exclude_post_process
+        self.print_l1_loss = print_l1_loss
 
-        # for distill
-        self.use_distill = use_distill
+        # for self-distillation
+        self.self_distill = self_distill
         self.distill_weight = distill_weight
 
         # stem
@@ -130,6 +132,7 @@ class EffiDeHead(nn.Layer):
         self.proj_conv = nn.Conv2D(self.reg_max + 1, 1, 1, bias_attr=False)
         self.proj_conv.skip_quant = True
         self._init_weights()
+        self.print_l1_loss = print_l1_loss
 
     @classmethod
     def from_config(cls, cfg, input_shape):
@@ -234,16 +237,6 @@ class EffiDeHead(nn.Layer):
             return self.forward_eval(feats)
 
     @staticmethod
-    def _focal_loss(score, label, alpha=0.25, gamma=2.0):
-        weight = (score - label).pow(gamma)
-        if alpha > 0:
-            alpha_t = alpha * label + (1 - alpha) * (1 - label)
-            weight *= alpha_t
-        loss = F.binary_cross_entropy(
-            score, label, weight=weight, reduction='sum')
-        return loss
-
-    @staticmethod
     def _varifocal_loss(pred_score, gt_score, label, alpha=0.75, gamma=2.0):
         weight = alpha * pred_score.pow(gamma) * (1 - label) + gt_score * label
         loss = F.binary_cross_entropy(
@@ -340,7 +333,6 @@ class EffiDeHead(nn.Layer):
                     pad_gt_mask,
                     bg_index=self.num_classes,
                     pred_bboxes=pred_bboxes.detach() * stride_tensor)
-            alpha_l = 0.25
         else:
             assigned_labels, assigned_bboxes, assigned_scores = \
                 self.assigner(
@@ -352,18 +344,14 @@ class EffiDeHead(nn.Layer):
                 gt_bboxes,
                 pad_gt_mask,
                 bg_index=self.num_classes)
-            alpha_l = -1
         # rescale bbox
         assigned_bboxes /= stride_tensor
-        # cls loss
-        if self.use_varifocal_loss:
-            one_hot_label = F.one_hot(assigned_labels,
-                                      self.num_classes + 1)[..., :-1]
-            loss_cls = self._varifocal_loss(pred_scores, assigned_scores,
-                                            one_hot_label)
-        else:
-            loss_cls = self._focal_loss(pred_scores, assigned_scores, alpha_l)
 
+        # cls loss: varifocal_loss
+        one_hot_label = F.one_hot(assigned_labels,
+                                  self.num_classes + 1)[..., :-1]
+        loss_cls = self._varifocal_loss(pred_scores, assigned_scores,
+                                        one_hot_label)
         assigned_scores_sum = assigned_scores.sum()
         if paddle.distributed.get_world_size() > 1:
             paddle.distributed.all_reduce(assigned_scores_sum)
@@ -372,20 +360,34 @@ class EffiDeHead(nn.Layer):
                 min=1)
         loss_cls /= assigned_scores_sum
 
+        # bbox loss
         loss_l1, loss_iou, loss_dfl = \
             self._bbox_loss(pred_distri, pred_bboxes, anchor_points_s,
                             assigned_labels, assigned_bboxes, assigned_scores,
                             assigned_scores_sum)
-        loss = self.loss_weight['class'] * loss_cls + \
-               self.loss_weight['iou'] * loss_iou + \
-               self.loss_weight['dfl'] * loss_dfl
-        out_dict = {
-            'loss': loss,
-            'loss_cls': loss_cls,
-            'loss_iou': loss_iou,
-            'loss_dfl': loss_dfl,
-            'loss_l1': loss_l1,
-        }
+
+        if self.use_dfl:
+            loss = self.loss_weight['cls'] * loss_cls + \
+                self.loss_weight['iou'] * loss_iou + \
+                self.loss_weight['dfl'] * loss_dfl
+            out_dict = {
+                'loss': loss,
+                'loss_cls': loss_cls,
+                'loss_iou': loss_iou,
+                'loss_dfl': loss_dfl,
+            }
+        else:
+            loss = self.loss_weight['cls'] * loss_cls + \
+                self.loss_weight['iou'] * loss_iou
+            out_dict = {
+                'loss': loss,
+                'loss_cls': loss_cls,
+                'loss_iou': loss_iou,
+            }
+
+        if self.print_l1_loss:
+            # just see convergence
+            out_dict.update({'loss_l1': loss_l1})
         return out_dict
 
     def post_process(self, head_outs, im_shape, scale_factor):

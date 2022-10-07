@@ -16,6 +16,7 @@ weights: output/yolov6_t_400e_coco/model_final
 EffiDeHead:
   reg_max: 0
   use_dfl: False
+  loss_weight: {cls: 1.0, iou: 2.5}
   iou_type: 'siou' # only in n/t version
 
 

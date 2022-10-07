@@ -13,8 +13,6 @@ snapshot_epoch: 10
 weights: output/yolov6_m_300e_coco/model_final
 
 
-use_distill: True
-
 CSPBepBackbone:
   csp_e: 0.67
 
@@ -25,11 +23,23 @@ EffiDeHead:
   reg_max: 16
   use_dfl: True
   iou_type: 'giou'
-  distill_weight: {class: 1.0, dfl: 1.0} # 1:1
+  loss_weight: {cls: 1.0, iou: 2.5, dfl: 0.5, cwd: 10.0}
+  distill_weight: {cls: 1.0, dfl: 1.0} # 1:1 , will not work default (self_distill=False)
 
 
+# Step 1: Training the base model, get 48.0+ mAP
 TrainReader:
   batch_size: 32 # total batch_size = 32 * gpu_num
 
 EvalReader:
   batch_size: 4
+
+
+# Step 2: Self-distillation training, get 49.0+ mAP
+# Please cancel the following comment and train again
+#
+# self_distill: True
+# pretrain_weights: output/yolov6_m_300e_coco/model_final.pdparams
+# save_dir: output_distill
+# weights: output_distill/yolov6_m_300e_coco/model_final
+#

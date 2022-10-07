@@ -16,6 +16,7 @@ weights: output/yolov6_n_416_400e_coco/model_final
 EffiDeHead:
   reg_max: 0
   use_dfl: False
+  loss_weight: {cls: 1.0, iou: 2.5}
   iou_type: 'siou' # only in n/t version
 
 
@@ -40,7 +41,7 @@ OptimizerBuilder:
 
 
 TrainReader:
-  batch_size: 32 # total batch_size = 32 * gpu_num
+  batch_size: 16 # total batch_size = 16 * gpu_num
 
 EvalReader:
   batch_size: 4

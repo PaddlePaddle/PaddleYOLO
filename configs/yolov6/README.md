@@ -11,22 +11,22 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| YOLOv6-n       |  416     |    32      |   400e    |     1.0    |  31.1 |    45.3 |  4.74  | 5.16 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_n_416_400e_coco.pdparams) | [配置文件](./yolov6_n_416_400e_coco.yml) |
-| YOLOv6-n       |  640     |    32      |   400e    |     1.3    |  36.1 |    51.9 |  4.74  | 12.21 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_n_400e_coco.pdparams) | [配置文件](./yolov6_n_400e_coco.yml) |
+| YOLOv6-n       |  416     |    16      |   400e    |     1.0    |  31.1 |    45.3 |  4.74  | 5.16 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_n_416_400e_coco.pdparams) | [配置文件](./yolov6_n_416_400e_coco.yml) |
+| YOLOv6-n       |  640     |    16      |   400e    |     1.3    |  36.1 |    51.9 |  4.74  | 12.21 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_n_400e_coco.pdparams) | [配置文件](./yolov6_n_400e_coco.yml) |
 | YOLOv6-t       |  640     |    32      |   400e    |     2.1    |  40.7 |    57.4 |  10.63  | 27.29 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_t_400e_coco.pdparams) | [配置文件](./yolov6_t_400e_coco.yml) |
 | YOLOv6-s       |  640     |    32      |   400e    |     2.6    |  43.4 |    60.5 |  18.87  | 48.35 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams) | [配置文件](./yolov6_s_400e_coco.yml) |
 | YOLOv6-m       |  640     |    32      |   300e    |     5.0    |  49.0 |    66.5 |  37.17  | 88.82 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_m_300e_coco.pdparams) | [配置文件](./yolov6_m_300e_coco.yml) |
-| YOLOv6-l       |  640     |    32      |   300e    |     7.9    |  51.0 |    68.9 |  63.54  | 155.89 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_l_300e_coco.pdparams) | [配置文件](./yolov6_l_300e_coco.yml) |
-| YOLOv6-l-silu  |  640     |    32      |   300e    |     9.6    |  51.7 |    69.6 |  58.59  | 142.66 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_l_silu_300e_coco.pdparams) | [配置文件](./yolov6_l_silu_300e_coco.yml) |
+| YOLOv6-l       |  640     |    32(16)  |   300e    |     7.9    |  51.0 |    68.9 |  63.54  | 155.89 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_l_300e_coco.pdparams) | [配置文件](./yolov6_l_300e_coco.yml) |
+| YOLOv6-l-silu  |  640     |    32(16)  |   300e    |     9.6    |  51.7 |    69.6 |  58.59  | 142.66 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_l_silu_300e_coco.pdparams) | [配置文件](./yolov6_l_silu_300e_coco.yml) |
 
 
 **注意:**
-  - YOLOv6模型训练使用COCO train2017作为训练集，Box AP为在COCO val2017上的`mAP(IoU=0.5:0.95)`结果；
+  - YOLOv6模型训练使用COCO train2017作为训练集，mAP为在COCO val2017上的`mAP(IoU=0.5:0.95)`结果，且评估未使用`multi_label`等trick；
   - YOLOv6 n t s 模型使用`EfficientRep`和`RepPAN`，YOLOv6 m l 模型使用`CSPBepBackbone`和`CSPRepPAN`，Params(M)和FLOPs(G)均为训练时所测；
-  - YOLOv6 m l 模型训练默认使用蒸馏自监督辅助训练，且使用`dfl_loss`和设置`reg_max=16`，其余n t s 模型则未使用；
+  - YOLOv6 m l 模型需要先训练基础模型300epoch，再使用蒸馏自监督训练300epoch(增益1.0+ mAP)，且使用`dfl_loss`和设置`reg_max=16`，其余n t s 模型则均未使用；
   - YOLOv6 l 模型原文默认激活函数为`silu`，其余n t s m模型则默认为`relu`；
   - YOLOv6 n t 模型原文训练默认会使用到`siou loss`，其余s m l模型则默认使用到`giou loss`；
-  - YOLOv6模型训练过程中默认使用8 GPUs进行混合精度训练，默认每卡batch_size 32，默认lr为0.01为8卡总batch_size=256的设置，如果**GPU卡数**或者每卡**batch size**发生改动，也不需要改动学习率，但为了保证高精度最好使用**总batch size大于64**的配置去训练；
+  - YOLOv6模型训练过程中默认使用8 GPUs进行混合精度训练，默认每卡batch_size=32，其中YOLOv6 n模型每卡batch_size=16，YOLOv6 l模型在自蒸馏训练阶段每卡batch_size=16，默认lr为0.01为8卡总batch_size的设置，如果**GPU卡数**或者每卡**batch size**发生改动，也不需要改动学习率，但为了保证高精度最好使用**总batch size大于64**的配置去训练；
   - 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡V100，batch size=1，测试环境为**paddlepaddle-2.3.0**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考[速度测试](#速度测试)。
   - 如果你设置了`--run_benchmark=True`, 你首先需要安装以下依赖`pip install pynvml psutil GPUtil`。
 
