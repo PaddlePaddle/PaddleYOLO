@@ -20,12 +20,12 @@ import unittest
 import ppdet
 
 
-class TestFasterRCNN(unittest.TestCase):
+class TestYOLOv3(unittest.TestCase):
     def setUp(self):
         self.set_config()
 
     def set_config(self):
-        self.cfg_file = 'configs/faster_rcnn/faster_rcnn_r50_fpn_1x_coco.yml'
+        self.cfg_file = 'configs/yolov3/yolov3_darknet53_270e_coco.yml'
 
     def test_trainer(self):
         # Trainer __init__ will build model and DataLoader
@@ -35,34 +35,44 @@ class TestFasterRCNN(unittest.TestCase):
         trainer = ppdet.engine.Trainer(cfg, mode='test')
 
 
-class TestMaskRCNN(TestFasterRCNN):
+class TestPPYOLO(TestYOLOv3):
     def set_config(self):
-        self.cfg_file = 'configs/mask_rcnn/mask_rcnn_r50_fpn_1x_coco.yml'
+        self.cfg_file = 'configs/ppyolo/ppyolo_mbv3_large_coco.yml'
 
 
-class TestCascadeRCNN(TestFasterRCNN):
+class TestPPYOLOTiny(TestYOLOv3):
     def set_config(self):
-        self.cfg_file = 'configs/cascade_rcnn/cascade_rcnn_r50_fpn_1x_coco.yml'
+        self.cfg_file = 'configs/ppyolo/ppyolo_tiny_650e_coco.yml'
 
 
-class TestYolov3(TestFasterRCNN):
+class TestPPYOLOv2(TestYOLOv3):
     def set_config(self):
-        self.cfg_file = 'configs/yolov3/yolov3_darknet53_270e_coco.yml'
+        self.cfg_file = 'configs/ppyolo/ppyolov2_r50vd_dcn_365e_coco.yml'
 
 
-class TestSSD(TestFasterRCNN):
+class TestPPYOLOE(TestYOLOv3):
     def set_config(self):
-        self.cfg_file = 'configs/ssd/ssd_vgg16_300_240e_voc.yml'
+        self.cfg_file = 'configs/ppyoloe/ppyoloe_plus_crn_s_80e_coco.yml'
 
 
-class TestGFL(TestFasterRCNN):
+class TestYOLOX(TestYOLOv3):
     def set_config(self):
-        self.cfg_file = 'configs/gfl/gfl_r50_fpn_1x_coco.yml'
+        self.cfg_file = 'configs/yolox/yolox_s_300e_coco.yml'
 
 
-class TestPicoDet(TestFasterRCNN):
+class TestYOLOv5(TestYOLOv3):
     def set_config(self):
-        self.cfg_file = 'configs/picodet/picodet_s_320_coco_lcnet.yml'
+        self.cfg_file = 'configs/yolov5/yolov5_s_300e_coco.yml'
+
+
+class TestYOLOv6(TestYOLOv3):
+    def set_config(self):
+        self.cfg_file = 'configs/yolov6/yolov6_s_400e_coco.yml'
+
+
+class TestYOLOv7(TestYOLOv3):
+    def set_config(self):
+        self.cfg_file = 'configs/yolov7/yolov7_l_300e_coco.yml'
 
 
 if __name__ == '__main__':

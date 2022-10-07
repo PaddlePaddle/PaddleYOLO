@@ -32,15 +32,15 @@ import paddle
 import paddle.nn as nn
 import paddle.distributed as dist
 from paddle.distributed import fleet
+from paddle.distributed.fleet.utils.hybrid_parallel_util import fused_allreduce_gradients
+
 from paddle.static import InputSpec
 from ppdet.optimizer import ModelEMA
 
 from ppdet.core.workspace import create
 from ppdet.utils.checkpoint import load_weight, load_pretrain_weight
 from ppdet.utils.visualizer import visualize_results, save_result
-from ppdet.metrics import Metric, COCOMetric, VOCMetric, WiderFaceMetric, get_infer_results, KeyPointTopDownCOCOEval, KeyPointTopDownMPIIEval
-from ppdet.metrics import RBoxMetric, JDEDetMetric, SNIPERCOCOMetric
-from ppdet.data.source.sniper_coco import SniperCOCODataSet
+from ppdet.metrics import Metric, COCOMetric, VOCMetric, get_infer_results
 from ppdet.data.source.category import get_categories
 import ppdet.utils.stats as stats
 from ppdet.utils.fuse_utils import fuse_conv_bn
@@ -48,18 +48,13 @@ from ppdet.utils import profiler
 from ppdet.modeling.initializer import reset_initialized_parameter
 from ppdet.modeling.heads import YOLOv7Head
 from ppdet.modeling.post_process import multiclass_nms
-
-from .callbacks import Callback, ComposeCallback, LogPrinter, Checkpointer, WiferFaceEval, VisualDLWriter, SniperProposalsGenerator, WandbCallback
+from .callbacks import Callback, ComposeCallback, LogPrinter, Checkpointer, VisualDLWriter, WandbCallback
 from .export_utils import _dump_infer_config, _prune_input_spec
-
-from paddle.distributed.fleet.utils.hybrid_parallel_util import fused_allreduce_gradients
 
 from ppdet.utils.logger import setup_logger
 logger = setup_logger('ppdet.engine')
 
 __all__ = ['Trainer']
-
-MOT_ARCH = ['DeepSORT', 'JDE', 'FairMOT', 'ByteTrack']
 
 
 class Trainer(object):
@@ -77,34 +72,13 @@ class Trainer(object):
 
         # build data loader
         capital_mode = self.mode.capitalize()
-        if cfg.architecture in MOT_ARCH and self.mode in ['eval', 'test']:
-            self.dataset = self.cfg['{}MOTDataset'.format(
-                capital_mode)] = create('{}MOTDataset'.format(capital_mode))()
-        else:
+        if self.mode in ['train', 'eval', 'test']:
             self.dataset = self.cfg['{}Dataset'.format(capital_mode)] = create(
                 '{}Dataset'.format(capital_mode))()
-
-        if cfg.architecture == 'DeepSORT' and self.mode == 'train':
-            logger.error('DeepSORT has no need of training on mot dataset.')
-            sys.exit(1)
-
-        if cfg.architecture == 'FairMOT' and self.mode == 'eval':
-            images = self.parse_mot_images(cfg)
-            self.dataset.set_images(images)
 
         if self.mode == 'train':
             self.loader = create('{}Reader'.format(capital_mode))(
                 self.dataset, cfg.worker_num)
-
-        if cfg.architecture == 'JDE' and self.mode == 'train':
-            cfg['JDEEmbeddingHead'][
-                'num_identities'] = self.dataset.num_identities_dict[0]
-            # JDE only support single class MOT now.
-
-        if cfg.architecture == 'FairMOT' and self.mode == 'train':
-            cfg['FairMOTEmbeddingHead'][
-                'num_identities_dict'] = self.dataset.num_identities_dict
-            # FairMOT support single class and multi-class MOT now.
 
         # build model
         if 'model' not in self.cfg:
@@ -113,10 +87,10 @@ class Trainer(object):
             self.model = self.cfg.model
             self.is_loaded_weights = True
 
-        if self.cfg.architecture == 'YOLOv5':
+        if self.cfg.architecture in ['YOLOv5', 'YOLOv7']:
             reset_initialized_parameter(self.model)
 
-        if cfg.architecture in ['YOLOX', 'YOLOv5']:
+        if cfg.architecture in ['YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7']:
             for k, m in self.model.named_sublayers():
                 if isinstance(m, nn.BatchNorm2D):
                     m._epsilon = 1e-3  # for amp(fp16)
@@ -139,24 +113,24 @@ class Trainer(object):
         # EvalDataset build with BatchSampler to evaluate in single device
         # TODO: multi-device evaluate
         if self.mode == 'eval':
-            if cfg.architecture == 'FairMOT':
-                self.loader = create('EvalMOTReader')(self.dataset, 0)
-            else:
-                self._eval_batch_sampler = paddle.io.BatchSampler(
-                    self.dataset, batch_size=self.cfg.EvalReader['batch_size'])
-                reader_name = '{}Reader'.format(self.mode.capitalize())
-                # If metric is VOC, need to be set collate_batch=False.
-                if cfg.metric == 'VOC':
-                    cfg[reader_name]['collate_batch'] = False
-                self.loader = create(reader_name)(self.dataset, cfg.worker_num,
-                                                  self._eval_batch_sampler)
+            self._eval_batch_sampler = paddle.io.BatchSampler(
+                self.dataset, batch_size=self.cfg.EvalReader['batch_size'])
+            reader_name = '{}Reader'.format(self.mode.capitalize())
+            # If metric is VOC, need to be set collate_batch=False.
+            if cfg.metric == 'VOC':
+                cfg[reader_name]['collate_batch'] = False
+            self.loader = create(reader_name)(self.dataset, cfg.worker_num,
+                                              self._eval_batch_sampler)
         # TestDataset build after user set images, skip loader creation here
 
-        params = sum([
-            p.numel() for n, p in self.model.named_parameters()
-            if all([x not in n for x in ['_mean', '_variance']])
-        ])  # exclude BatchNorm running status
-        print('Params: ', params / 1e6)
+        # get Params
+        print_params = self.cfg.get('print_params', False)
+        if print_params:
+            params = sum([
+                p.numel() for n, p in self.model.named_parameters()
+                if all([x not in n for x in ['_mean', '_variance']])
+            ])  # exclude BatchNorm running status
+            print('Params: ', params / 1e6)
 
         # build optimizer in train mode
         if self.mode == 'train':
@@ -188,6 +162,10 @@ class Trainer(object):
                 ema_decay_type=ema_decay_type,
                 cycle_epoch=cycle_epoch)
 
+        self.self_distill = self.cfg.get('self_distill', False)
+        if self.self_distill:
+            self.teacher_model = self.model
+
         self._nranks = dist.get_world_size()
         self._local_rank = dist.get_rank()
 
@@ -208,15 +186,11 @@ class Trainer(object):
             self._callbacks = [LogPrinter(self), Checkpointer(self)]
             if self.cfg.get('use_vdl', False):
                 self._callbacks.append(VisualDLWriter(self))
-            if self.cfg.get('save_proposals', False):
-                self._callbacks.append(SniperProposalsGenerator(self))
             if self.cfg.get('use_wandb', False) or 'wandb' in self.cfg:
                 self._callbacks.append(WandbCallback(self))
             self._compose_callback = ComposeCallback(self._callbacks)
         elif self.mode == 'eval':
             self._callbacks = [LogPrinter(self)]
-            if self.cfg.metric == 'WiderFace':
-                self._callbacks.append(WiferFaceEval(self))
             self._compose_callback = ComposeCallback(self._callbacks)
         elif self.mode == 'test' and self.cfg.get('use_vdl', False):
             self._callbacks = [VisualDLWriter(self)]
@@ -230,7 +204,7 @@ class Trainer(object):
             self._metrics = []
             return
         classwise = self.cfg['classwise'] if 'classwise' in self.cfg else False
-        if self.cfg.metric == 'COCO' or self.cfg.metric == "SNIPERCOCO":
+        if self.cfg.metric == 'COCO':
             # TODO: bias should be unified
             bias = 1 if self.cfg.get('bias', False) else 0
             output_eval = self.cfg['output_eval'] \
@@ -253,54 +227,16 @@ class Trainer(object):
                 dataset = self.dataset
                 anno_file = dataset.get_anno()
 
-            IouType = self.cfg['IouType'] if 'IouType' in self.cfg else 'bbox'
-            if self.cfg.metric == "COCO":
-                self._metrics = [
-                    COCOMetric(
-                        anno_file=anno_file,
-                        clsid2catid=clsid2catid,
-                        classwise=classwise,
-                        output_eval=output_eval,
-                        bias=bias,
-                        IouType=IouType,
-                        save_prediction_only=save_prediction_only)
-                ]
-            elif self.cfg.metric == "SNIPERCOCO":  # sniper
-                self._metrics = [
-                    SNIPERCOCOMetric(
-                        anno_file=anno_file,
-                        dataset=dataset,
-                        clsid2catid=clsid2catid,
-                        classwise=classwise,
-                        output_eval=output_eval,
-                        bias=bias,
-                        IouType=IouType,
-                        save_prediction_only=save_prediction_only)
-                ]
-        elif self.cfg.metric == 'RBOX':
-            # TODO: bias should be unified
-            bias = self.cfg['bias'] if 'bias' in self.cfg else 0
-            output_eval = self.cfg['output_eval'] \
-                if 'output_eval' in self.cfg else None
-            save_prediction_only = self.cfg.get('save_prediction_only', False)
-            imid2path = self.cfg.get('imid2path', None)
-
-            # when do validation in train, annotation file should be get from
-            # EvalReader instead of self.dataset(which is TrainReader)
-            anno_file = self.dataset.get_anno()
-            if self.mode == 'train' and validate:
-                eval_dataset = self.cfg['EvalDataset']
-                eval_dataset.check_or_download_dataset()
-                anno_file = eval_dataset.get_anno()
-
+            IouType = self.cfg.get('IouType', 'bbox')
             self._metrics = [
-                RBoxMetric(
+                COCOMetric(
                     anno_file=anno_file,
+                    clsid2catid=clsid2catid,
                     classwise=classwise,
                     output_eval=output_eval,
                     bias=bias,
-                    save_prediction_only=save_prediction_only,
-                    imid2path=imid2path)
+                    IouType=IouType,
+                    save_prediction_only=save_prediction_only)
             ]
         elif self.cfg.metric == 'VOC':
             output_eval = self.cfg['output_eval'] \
@@ -316,43 +252,6 @@ class Trainer(object):
                     output_eval=output_eval,
                     save_prediction_only=save_prediction_only)
             ]
-        elif self.cfg.metric == 'WiderFace':
-            multi_scale = self.cfg.multi_scale_eval if 'multi_scale_eval' in self.cfg else True
-            self._metrics = [
-                WiderFaceMetric(
-                    image_dir=os.path.join(self.dataset.dataset_dir,
-                                           self.dataset.image_dir),
-                    anno_file=self.dataset.get_anno(),
-                    multi_scale=multi_scale)
-            ]
-        elif self.cfg.metric == 'KeyPointTopDownCOCOEval':
-            eval_dataset = self.cfg['EvalDataset']
-            eval_dataset.check_or_download_dataset()
-            anno_file = eval_dataset.get_anno()
-            save_prediction_only = self.cfg.get('save_prediction_only', False)
-            self._metrics = [
-                KeyPointTopDownCOCOEval(
-                    anno_file,
-                    len(eval_dataset),
-                    self.cfg.num_joints,
-                    self.cfg.save_dir,
-                    save_prediction_only=save_prediction_only)
-            ]
-        elif self.cfg.metric == 'KeyPointTopDownMPIIEval':
-            eval_dataset = self.cfg['EvalDataset']
-            eval_dataset.check_or_download_dataset()
-            anno_file = eval_dataset.get_anno()
-            save_prediction_only = self.cfg.get('save_prediction_only', False)
-            self._metrics = [
-                KeyPointTopDownMPIIEval(
-                    anno_file,
-                    len(eval_dataset),
-                    self.cfg.num_joints,
-                    self.cfg.save_dir,
-                    save_prediction_only=save_prediction_only)
-            ]
-        elif self.cfg.metric == 'MOTDet':
-            self._metrics = [JDEDetMetric(), ]
         else:
             logger.warning("Metric not support for metric type {}".format(
                 self.cfg.metric))
@@ -383,6 +282,11 @@ class Trainer(object):
         self.start_epoch = 0
         load_pretrain_weight(self.model, weights)
         logger.debug("Load weights {} to start training".format(weights))
+
+        if self.self_distill:
+            load_pretrain_weight(self.teacher_model, weights)
+            logger.debug("Load weights {} to start training as teacher_model".
+                         format(weights))
 
         if self.mode in ['eval', 'test'] and self.cfg.architecture == 'YOLOv5':
             if isinstance(self.model.yolo_head, YOLOv7Head):
@@ -431,8 +335,8 @@ class Trainer(object):
             model = fleet.distributed_model(model)
             self.optimizer = fleet.distributed_optimizer(self.optimizer)
         elif self._nranks > 1:
-            find_unused_parameters = self.cfg[
-                'find_unused_parameters'] if 'find_unused_parameters' in self.cfg else False
+            find_unused_parameters = self.cfg.get('find_unused_parameters',
+                                                  False)
             model = paddle.DataParallel(
                 model, find_unused_parameters=find_unused_parameters)
 
@@ -456,8 +360,8 @@ class Trainer(object):
 
         self._compose_callback.on_train_begin(self.status)
 
-        use_fused_allreduce_gradients = self.cfg[
-            'use_fused_allreduce_gradients'] if 'use_fused_allreduce_gradients' in self.cfg else False
+        use_fused_allreduce_gradients = self.cfg.get(
+            'use_fused_allreduce_gradients', False)
 
         for epoch_id in range(self.start_epoch, self.cfg.epoch):
             self.status['mode'] = 'train'
@@ -467,7 +371,7 @@ class Trainer(object):
             model.train()
             iter_tic = time.time()
             for step_id, data in enumerate(self.loader):
-                if self.cfg.architecture == 'YOLOv5':
+                if self.cfg.architecture in ['YOLOv5', 'YOLOv6', 'YOLOv7']:
                     # TODO: YOLOv5 Warmup, always 3 epoch
                     nw = 3 * len(self.loader)
                     ni = len(self.loader) * epoch_id + step_id
@@ -487,55 +391,23 @@ class Trainer(object):
                 data['num_gpus'] = self._nranks
 
                 if self.use_amp:
-                    if isinstance(
-                            model, paddle.
-                            DataParallel) and use_fused_allreduce_gradients:
-                        with model.no_sync():
-                            with paddle.amp.auto_cast(
-                                    enable=self.cfg.use_gpu,
-                                    custom_white_list=self.custom_white_list,
-                                    custom_black_list=self.custom_black_list,
-                                    level=self.amp_level):
-                                # model forward
-                                outputs = model(data)
-                                loss = outputs['loss']
-                            # model backward
-                            scaled_loss = scaler.scale(loss)
-                            scaled_loss.backward()
-                        fused_allreduce_gradients(
-                            list(model.parameters()), None)
-                    else:
-                        with paddle.amp.auto_cast(
-                                enable=self.cfg.use_gpu,
-                                custom_white_list=self.custom_white_list,
-                                custom_black_list=self.custom_black_list,
-                                level=self.amp_level):
-                            # model forward
-                            outputs = model(data)
-                            loss = outputs['loss']
-                        # model backward
-                        scaled_loss = scaler.scale(loss)
-                        scaled_loss.backward()
-                    # in dygraph mode, optimizer.minimize is equal to optimizer.step
-                    scaler.minimize(self.optimizer, scaled_loss)
-                else:
-                    if isinstance(
-                            model, paddle.
-                            DataParallel) and use_fused_allreduce_gradients:
-                        with model.no_sync():
-                            # model forward
-                            outputs = model(data)
-                            loss = outputs['loss']
-                            # model backward
-                            loss.backward()
-                        fused_allreduce_gradients(
-                            list(model.parameters()), None)
-                    else:
+                    with paddle.amp.auto_cast(
+                            enable=self.cfg.use_gpu,
+                            custom_white_list=self.custom_white_list,
+                            custom_black_list=self.custom_black_list,
+                            level=self.amp_level):
                         # model forward
                         outputs = model(data)
                         loss = outputs['loss']
-                        # model backward
-                        loss.backward()
+                    scaled_loss = scaler.scale(loss)
+                    scaled_loss.backward()
+                    # in dygraph mode, optimizer.minimize is equal to optimizer.step
+                    scaler.minimize(self.optimizer, scaled_loss)
+                else:
+                    # model forward
+                    outputs = model(data)
+                    loss = outputs['loss']
+                    loss.backward()
                     self.optimizer.step()
                 curr_lr = self.optimizer.get_lr()
                 self.lr.step()
@@ -613,7 +485,6 @@ class Trainer(object):
             self.status['step_id'] = step_id
             self._compose_callback.on_step_begin(self.status)
             # forward
-            # data['image'] = paddle.to_tensor(np.load('x0.npy')) ###
             if self.use_amp:
                 with paddle.amp.auto_cast(
                         enable=self.cfg.use_gpu,
@@ -921,11 +792,6 @@ class Trainer(object):
                     outs[key] = value.numpy()
             results.append(outs)
 
-        # sniper
-        if type(self.dataset) == SniperCOCODataSet:
-            results = self.dataset.anno_cropper.aggregate_chips_detections(
-                results)
-
         for _m in metrics:
             _m.accumulate()
             _m.reset()
@@ -981,10 +847,7 @@ class Trainer(object):
         image_shape = None
         im_shape = [None, 2]
         scale_factor = [None, 2]
-        if self.cfg.architecture in MOT_ARCH:
-            test_reader_name = 'TestMOTReader'
-        else:
-            test_reader_name = 'TestReader'
+        test_reader_name = 'TestReader'
         if 'inputs_def' in self.cfg[test_reader_name]:
             inputs_def = self.cfg[test_reader_name]['inputs_def']
             image_shape = inputs_def.get('image_shape', None)
@@ -1035,11 +898,7 @@ class Trainer(object):
             "scale_factor": InputSpec(
                 shape=scale_factor, name='scale_factor')
         }]
-        if self.cfg.architecture == 'DeepSORT':
-            input_spec[0].update({
-                "crops": InputSpec(
-                    shape=[None, 3, 192, 64], name='crops')
-            })
+
         if prune_input:
             static_model = paddle.jit.to_static(
                 self.model, input_spec=input_spec)
@@ -1147,30 +1006,4 @@ class Trainer(object):
         }]
         flops = flops(self.model, input_spec) / (1000**3)
         logger.info(" Model FLOPs : {:.6f}G. (image shape is {})".format(
-            flops, input_data['image'][0].unsqueeze(0).shape))
-
-    def parse_mot_images(self, cfg):
-        import glob
-        # for quant
-        dataset_dir = cfg['EvalMOTDataset'].dataset_dir
-        data_root = cfg['EvalMOTDataset'].data_root
-        data_root = '{}/{}'.format(dataset_dir, data_root)
-        seqs = os.listdir(data_root)
-        seqs.sort()
-        all_images = []
-        for seq in seqs:
-            infer_dir = os.path.join(data_root, seq)
-            assert infer_dir is None or os.path.isdir(infer_dir), \
-                "{} is not a directory".format(infer_dir)
-            images = set()
-            exts = ['jpg', 'jpeg', 'png', 'bmp']
-            exts += [ext.upper() for ext in exts]
-            for ext in exts:
-                images.update(glob.glob('{}/*.{}'.format(infer_dir, ext)))
-            images = list(images)
-            images.sort()
-            assert len(images) > 0, "no image found in {}".format(infer_dir)
-            all_images.extend(images)
-            logger.info("Found {} inference images in total.".format(
-                len(images)))
-        return all_images
+            flops * 2, input_data['image'][0].unsqueeze(0).shape))
