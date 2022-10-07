@@ -14,12 +14,10 @@
 
 from . import fpn
 from . import yolo_fpn
-from . import csp_pan
 from . import custom_pan
 from . import rep_pan
 
 from .fpn import *
 from .yolo_fpn import *
-from .csp_pan import *
 from .custom_pan import *
 from .rep_pan import *

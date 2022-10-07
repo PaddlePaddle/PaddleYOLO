@@ -17,10 +17,8 @@ TrainReader:
         mixup_prob: 0.243
     - RandomHSV: {hgain: 0.0138, sgain: 0.664, vgain: 0.464}
     - RandomFlip: {}
-    - BboxXYXY2XYWH: {}
-    - NormalizeBox: {}
   batch_transforms:
-    - NormalizeImageQuick: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
+    - NormalizeImage: {mean: [0., 0., 0.], std: [1., 1., 1.], norm_type: none}
     - Permute: {}
     - PadGT: {}
   batch_size: 32
@@ -36,7 +34,7 @@ EvalReader:
     - Decode: {}
     - Resize: {target_size: *input_size, keep_ratio: True, interp: 1}
     - Pad: {size: *input_size, fill_value: [114., 114., 114.]}
-    - NormalizeImageQuick: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
+    - NormalizeImage: {mean: [0., 0., 0.], std: [1., 1., 1.], norm_type: none}
     - Permute: {}
   batch_size: 4
 
@@ -48,7 +46,7 @@ TestReader:
     - Decode: {}
     - Resize: {target_size: *input_size, keep_ratio: True, interp: 1}
     - Pad: {size: *input_size, fill_value: [114., 114., 114.]}
-    - NormalizeImage: {mean: [0, 0, 0], std: [1, 1, 1], is_scale: True}
+    - NormalizeImage: {mean: [0., 0., 0.], std: [1., 1., 1.], norm_type: none}
     - Permute: {}
   batch_size: 1
   fuse_normalize: True

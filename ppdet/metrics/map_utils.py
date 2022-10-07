@@ -22,7 +22,6 @@ import sys
 import numpy as np
 import itertools
 import paddle
-from ppdet.modeling.rbox_utils import poly2rbox_np
 
 from ppdet.utils.logger import setup_logger
 logger = setup_logger(__name__)
@@ -89,43 +88,6 @@ def jaccard_overlap(pred, gt, is_bbox_normalized=False):
     gt_size = bbox_area(gt, is_bbox_normalized)
     overlap = float(inter_size) / (pred_size + gt_size - inter_size)
     return overlap
-
-
-def calc_rbox_iou(pred, gt_poly):
-    """
-    calc iou between rotated bbox
-    """
-    # calc iou of bounding box for speedup
-    pred = np.array(pred, np.float32).reshape(-1, 2)
-    gt_poly = np.array(gt_poly, np.float32).reshape(-1, 2)
-    pred_rect = [
-        np.min(pred[:, 0]), np.min(pred[:, 1]), np.max(pred[:, 0]),
-        np.max(pred[:, 1])
-    ]
-    gt_rect = [
-        np.min(gt_poly[:, 0]), np.min(gt_poly[:, 1]), np.max(gt_poly[:, 0]),
-        np.max(gt_poly[:, 1])
-    ]
-    iou = jaccard_overlap(pred_rect, gt_rect, False)
-
-    if iou <= 0:
-        return iou
-
-    # calc rbox iou
-    pred_rbox = poly2rbox_np(pred.reshape(-1, 8)).reshape(-1, 5)
-    gt_rbox = poly2rbox_np(gt_poly.reshape(-1, 8)).reshape(-1, 5)
-    try:
-        from ext_op import rbox_iou
-    except Exception as e:
-        print("import custom_ops error, try install ext_op " \
-                  "following ppdet/ext_op/README.md", e)
-        sys.stdout.flush()
-        sys.exit(-1)
-    pd_gt_rbox = paddle.to_tensor(gt_rbox, dtype='float32')
-    pd_pred_rbox = paddle.to_tensor(pred_rbox, dtype='float32')
-    iou = rbox_iou(pd_gt_rbox, pd_pred_rbox)
-    iou = iou.numpy()
-    return iou[0][0]
 
 
 def prune_zero_padding(gt_box, gt_label, difficult=None):
