@@ -18,9 +18,9 @@ from __future__ import print_function
 
 from ppdet.core.workspace import register, create
 from .meta_arch import BaseArch
-from ..post_process import JDEBBoxPostProcess
 
 __all__ = ['YOLOv3']
+# PP-YOLO, PP-YOLOv2, PP-YOLOE use the same architecture as YOLOv3
 
 
 @register
@@ -54,7 +54,6 @@ class YOLOv3(BaseArch):
         self.yolo_head = yolo_head
         self.post_process = post_process
         self.for_mot = for_mot
-        self.return_idx = isinstance(post_process, JDEBBoxPostProcess)
 
     @classmethod
     def from_config(cls, cfg, *args, **kwargs):
@@ -79,46 +78,22 @@ class YOLOv3(BaseArch):
         body_feats = self.backbone(self.inputs)
         neck_feats = self.neck(body_feats, self.for_mot)
 
-        if isinstance(neck_feats, dict):
-            assert self.for_mot == True
-            emb_feats = neck_feats['emb_feats']
-            neck_feats = neck_feats['yolo_feats']
-
         if self.training:
             yolo_losses = self.yolo_head(neck_feats, self.inputs)
-
-            if self.for_mot:
-                return {'det_losses': yolo_losses, 'emb_feats': emb_feats}
-            else:
-                return yolo_losses
-
+            return yolo_losses
         else:
             yolo_head_outs = self.yolo_head(neck_feats)
-
-            if self.for_mot:
-                boxes_idx, bbox, bbox_num, nms_keep_idx = self.post_process(
-                    yolo_head_outs, self.yolo_head.mask_anchors)
-                output = {
-                    'bbox': bbox,
-                    'bbox_num': bbox_num,
-                    'boxes_idx': boxes_idx,
-                    'nms_keep_idx': nms_keep_idx,
-                    'emb_feats': emb_feats,
-                }
+            if self.post_process is not None:
+                # anchor based YOLOs: YOLOv3,PP-YOLO,PP-YOLOv2 use mask_anchors
+                bbox, bbox_num = self.post_process(
+                    yolo_head_outs, self.yolo_head.mask_anchors,
+                    self.inputs['im_shape'], self.inputs['scale_factor'])
             else:
-                if self.return_idx:
-                    _, bbox, bbox_num, _ = self.post_process(
-                        yolo_head_outs, self.yolo_head.mask_anchors)
-                elif self.post_process is not None:
-                    bbox, bbox_num = self.post_process(
-                        yolo_head_outs, self.yolo_head.mask_anchors,
-                        self.inputs['im_shape'], self.inputs['scale_factor'])
-                else:
-                    bbox, bbox_num = self.yolo_head.post_process(
-                        yolo_head_outs, self.inputs['scale_factor'])
-                output = {'bbox': bbox, 'bbox_num': bbox_num}
+                # anchor free YOLOs: PP-YOLOE
+                bbox, bbox_num = self.yolo_head.post_process(
+                    yolo_head_outs, self.inputs['scale_factor'])
 
-            return output
+            return {'bbox': bbox, 'bbox_num': bbox_num}
 
     def get_loss(self):
         return self._forward()

@@ -17,12 +17,8 @@ This code is based on https://github.com/meituan/YOLOv6
 
 import paddle
 import paddle.nn as nn
-import paddle.nn.functional as F
-from paddle import ParamAttr
 from ppdet.core.workspace import register, serializable
-from ..backbones.efficientrep import make_divisible, get_block
-from ..backbones.efficientrep import SimConv, Transpose, RepLayer, BepC3Layer
-
+from ..backbones.yolov6_efficientrep import SimConv, Transpose, RepLayer, BepC3Layer, make_divisible, get_block
 from ..shape_spec import ShapeSpec
 
 __all__ = ['RepPAN', 'CSPRepPAN']

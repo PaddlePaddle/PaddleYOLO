@@ -23,6 +23,8 @@ from ..shape_spec import ShapeSpec
 
 __all__ = ['CustomCSPPAN']
 
+# PP-YOLOE use the 'CustomCSPPAN' as pafpn
+
 
 class SPP(nn.Layer):
     def __init__(self,
