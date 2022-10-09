@@ -21,7 +21,7 @@ from ..bbox_utils import batch_distance2bbox
 from ..losses import GIoULoss, QualityFocalLoss, IouLoss
 from ..initializer import bias_init_with_prob, constant_
 from ppdet.modeling.backbones.csp_darknet import BaseConv
-from ppdet.modeling.assigners.simota_assigner import SimOTAAssigner #, DynamicSoftLabelAssigner
+from ppdet.modeling.assigners.simota_assigner import SimOTAAssigner  #, DynamicSoftLabelAssigner
 from ppdet.modeling.layers import MultiClassNMS
 from paddle import ParamAttr
 from paddle.nn.initializer import Normal
@@ -49,7 +49,7 @@ class RTMDetHead(nn.Layer):
             fpn_strides=(32, 16, 8),
             share_conv=True,
             exp_on_reg=False,
-            assigner='SimOTAAssigner', # just placeholder
+            assigner='SimOTAAssigner',  # just placeholder
             grid_cell_offset=0.,
             nms='MultiClassNMS',
             loss_weight={
@@ -73,8 +73,7 @@ class RTMDetHead(nn.Layer):
         self.grid_cell_offset = grid_cell_offset
 
         self.loss_cls = QualityFocalLoss()
-        self.loss_box = IouLoss(
-            loss_weight=1.0, giou=True)
+        self.loss_box = IouLoss(loss_weight=1.0, giou=True)
         self.loss_weight = loss_weight
         self.assigner = assigner
 
@@ -118,7 +117,7 @@ class RTMDetHead(nn.Layer):
                         mean=0., std=0.01)),
                     bias_attr=True))
 
-        self.share_conv = False # TODO in deploy
+        self.share_conv = False  # TODO in deploy
         if self.share_conv:
             for n in range(len(self.fpn_strides)):
                 for i in range(self.stacked_convs):
@@ -169,7 +168,7 @@ class RTMDetHead(nn.Layer):
 
         anchor_points, stride_tensor = self._generate_anchor_point(
             feat_sizes, self.fpn_strides, 0.)
-        
+
         raise NotImplementedError('RTMDet training not implemented yet.')
 
         return self.get_loss(

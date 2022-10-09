@@ -15,7 +15,6 @@
 from . import (core, data, engine, modeling, model_zoo, optimizer, metrics,
                utils, slim)
 
-
 try:
     from .version import full_version as __version__
     from .version import commit as __git_commit__
