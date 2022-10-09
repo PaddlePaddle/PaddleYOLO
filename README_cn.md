@@ -1,6 +1,6 @@
 ## 简介
 
-**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等模型，请参照[ModelZoo](docs/MODEL_ZOO_cn.md)。
+**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`RTMDet`等模型，请参照[ModelZoo](docs/MODEL_ZOO_cn.md)。
 
 
 ## 更新日志
@@ -106,6 +106,7 @@
             <li>PP-YOLOE</li>
             <li>PP-YOLOE+</li>
             <li>YOLOX</li>
+            <li>RTMDet</li>
          </ul></details>
       </ul>
       </td>
@@ -117,6 +118,10 @@
           <li>DarkNet</li>
           <li>CSPDarkNet</li>
           <li>ConvNeXt</li>
+          <li>EfficientRep</li>
+          <li>CSPBepBackbone</li>
+          <li>ELANNet</li>
+          <li>CSPNeXt</li>
         </ul></details>
       </td>
       <td>
@@ -130,9 +135,17 @@
         </ul>
         <details open><summary><b>FPN</b></summary>
           <ul>
-            <li>CSP-PAN</li>
+            <li>YOLOv3FPN</li>
+            <li>PPYOLOFPN</li>
+            <li>PPYOLOTinyFPN</li>
+            <li>PPYOLOPAN</li>
+            <li>YOLOCSPPAN</li>
             <li>Custom-PAN</li>
-            <li>ES-PAN</li>
+            <li>RepPAN</li>
+            <li>CSPRepPAN</li>
+            <li>ELANFPN</li>
+            <li>ELANFPNP6</li>
+            <li>CSPNeXtPAFPN</li>
           </ul> </details>
         </ul>  
         <details open><summary><b>Loss</b></summary>

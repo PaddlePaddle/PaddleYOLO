@@ -19,7 +19,6 @@ CSPNeXt:
   return_idx: [2, 3, 4]
 
 # CSPNeXtPAFPN:
-#   depthwise: False
 
 RTMDetHead:
   exp_on_reg: False

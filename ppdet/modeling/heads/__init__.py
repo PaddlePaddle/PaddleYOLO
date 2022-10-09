@@ -14,10 +14,14 @@
 
 from . import yolo_head
 from . import ppyoloe_head
-from . import effide_head
+from . import yolov5_head
+from . import yolov6_head
+from . import yolov7_head
 from . import rtmdet_head
 
 from .yolo_head import *
 from .ppyoloe_head import *
-from .effide_head import *
+from .yolov5_head import *
+from .yolov6_head import *
+from .yolov7_head import *
 from .rtmdet_head import *

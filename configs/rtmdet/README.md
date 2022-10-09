@@ -11,11 +11,21 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| *RTMDet-t       |  640     |    32      |   300e    |     -    |  40.9 | 57.9 |  4.90  | 16.21 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_t_300e_coco.pdparams) | [配置文件](./rtmdet_t_300e_coco.yml) |
-| *RTMDet-s       |  640     |    32      |   300e    |     -    |  44.5 | 62.0 |  8.89  | 29.71 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_s_300e_coco.pdparams) | [配置文件](./rtmdet_s_300e_coco.yml) |
-| *RTMDet-m       |  640     |    32      |   300e    |     -    |  49.1 | 66.8 |  24.71  | 78.47 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_m_300e_coco.pdparams) | [配置文件](./rtmdet_m_300e_coco.yml) |
-| *RTMDet-l       |  640     |    32      |   300e    |     -    |  51.2 | 68.8 |  52.31  | 160.32 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_l_300e_coco.pdparams) | [配置文件](./rtmdet_l_300e_coco.yml) |
-| *RTMDet-x       |  640     |    32      |   300e    |     -    |  52.6 | 70.4 |  94.86  | 283.12 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_x_300e_coco.pdparams) | [配置文件](./rtmdet_x_300e_coco.yml) |
+| *RTMDet-t       |  640     |    32      |   300e    |    2.8   |  40.9 | 57.9 |  4.90  | 16.21 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_t_300e_coco.pdparams) | [配置文件](./rtmdet_t_300e_coco.yml) |
+| *RTMDet-s       |  640     |    32      |   300e    |    3.3   |  44.5 | 62.0 |  8.89  | 29.71 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_s_300e_coco.pdparams) | [配置文件](./rtmdet_s_300e_coco.yml) |
+| *RTMDet-m       |  640     |    32      |   300e    |    6.4   |  49.1 | 66.8 |  24.71  | 78.47 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_m_300e_coco.pdparams) | [配置文件](./rtmdet_m_300e_coco.yml) |
+| *RTMDet-l       |  640     |    32      |   300e    |    10.2  |  51.2 | 68.8 |  52.31  | 160.32 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_l_300e_coco.pdparams) | [配置文件](./rtmdet_l_300e_coco.yml) |
+| *RTMDet-x       |  640     |    32      |   300e    |    18.0  |  52.6 | 70.4 |  94.86  | 283.12 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_x_300e_coco.pdparams) | [配置文件](./rtmdet_x_300e_coco.yml) |
+
+
+**注意:**
+  - RTMDet模型暂未支持完全训练，mAP为部署权重在COCO val2017上的`mAP(IoU=0.5:0.95)`结果，且评估未使用`multi_label`等trick；
+  - RTMDet t s模型训练使用了ImageNet预训练权重，其余 m l x 模型未使用；
+  - RTMDet模型Params(M)和FLOPs(G)均为训练时所测；
+  - RTMDet模型训练过程中默认使用8 GPUs进行混合精度训练，默认每卡batch_size=32；
+  - RTMDet模型原文测速是在`NVIDIA 3090 GPU`上，暂未提供T4、V100上的测速数据；
+  - 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡T4，batch size=1，测试环境为**paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考[速度测试](#速度测试)。
+  - 如果你设置了`--run_benchmark=True`, 你首先需要安装以下依赖`pip install pynvml psutil GPUtil`。
 
 
 ### 部署模型

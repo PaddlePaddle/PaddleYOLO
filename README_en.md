@@ -2,7 +2,7 @@
 
 ## Introduction
 
-**PaddleYOLO** is a YOLO Series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7` and so on, see [ModelZoo](docs/MODEL_ZOO_en.md);
+**PaddleYOLO** is a YOLO Series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`RTMDet` and so on, see [ModelZoo](docs/MODEL_ZOO_en.md);
 
 ## Updates
 
@@ -111,6 +111,7 @@
             <li>PP-YOLOE</li>
             <li>PP-YOLOE+</li>
             <li>YOLOX</li>
+            <li>RTMDet</li>
          </ul></details>
       </ul>
       </td>
@@ -122,6 +123,10 @@
           <li>DarkNet</li>
           <li>CSPDarkNet</li>
           <li>ConvNeXt</li>
+          <li>EfficientRep</li>
+          <li>CSPBepBackbone</li>
+          <li>ELANNet</li>
+          <li>CSPNeXt</li>
         </ul></details>
       </td>
       <td>
@@ -135,9 +140,17 @@
         </ul>
         <details open><summary><b>FPN</b></summary>
           <ul>
-            <li>CSP-PAN</li>
+            <li>YOLOv3FPN</li>
+            <li>PPYOLOFPN</li>
+            <li>PPYOLOTinyFPN</li>
+            <li>PPYOLOPAN</li>
+            <li>YOLOCSPPAN</li>
             <li>Custom-PAN</li>
-            <li>ES-PAN</li>
+            <li>RepPAN</li>
+            <li>CSPRepPAN</li>
+            <li>ELANFPN</li>
+            <li>ELANFPNP6</li>
+            <li>CSPNeXtPAFPN</li>
           </ul> </details>
         </ul>  
         <details open><summary><b>Loss</b></summary>

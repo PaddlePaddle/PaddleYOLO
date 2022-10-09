@@ -17,18 +17,14 @@ import paddle.nn as nn
 import paddle.nn.functional as F
 from ppdet.core.workspace import register
 
-import numpy as np
 from ..bbox_utils import batch_distance2bbox
 from ..losses import GIoULoss, QualityFocalLoss, IouLoss
-from ..initializer import bias_init_with_prob, constant_, normal_
-from ..assigners.utils import generate_anchors_for_grid_cell
+from ..initializer import bias_init_with_prob, constant_
 from ppdet.modeling.backbones.csp_darknet import BaseConv
-from ppdet.modeling.ops import get_static_shape, get_act_fn
-from ppdet.modeling.assigners.simota_assigner import SimOTAAssigner  #, DynamicSoftLabelAssigner
-from ppdet.modeling.bbox_utils import bbox_overlaps
+from ppdet.modeling.assigners.simota_assigner import SimOTAAssigner #, DynamicSoftLabelAssigner
 from ppdet.modeling.layers import MultiClassNMS
 from paddle import ParamAttr
-from paddle.nn.initializer import Normal, Constant
+from paddle.nn.initializer import Normal
 
 __all__ = ['RTMDetHead']
 
@@ -51,9 +47,9 @@ class RTMDetHead(nn.Layer):
             pred_kernel_size=1,
             act='swish',
             fpn_strides=(32, 16, 8),
-            share_conv=True, # will set False in deploy
+            share_conv=True,
             exp_on_reg=False,
-            assigner='SimOTAAssigner',  #'DynamicSoftLabelAssigner',
+            assigner='SimOTAAssigner', # just placeholder
             grid_cell_offset=0.,
             nms='MultiClassNMS',
             loss_weight={
@@ -78,7 +74,7 @@ class RTMDetHead(nn.Layer):
 
         self.loss_cls = QualityFocalLoss()
         self.loss_box = IouLoss(
-            loss_weight=1.0, giou=True)  # GIoULoss() #(loss_weight=2.0)
+            loss_weight=1.0, giou=True)
         self.loss_weight = loss_weight
         self.assigner = assigner
 
@@ -122,7 +118,8 @@ class RTMDetHead(nn.Layer):
                         mean=0., std=0.01)),
                     bias_attr=True))
 
-        if 0: #self.share_conv: # TODO: bug in deploy
+        self.share_conv = False # TODO in deploy
+        if self.share_conv:
             for n in range(len(self.fpn_strides)):
                 for i in range(self.stacked_convs):
                     self.cls_convs[n][i].conv = self.cls_convs[0][i].conv
@@ -167,23 +164,16 @@ class RTMDetHead(nn.Layer):
             cls_score = F.sigmoid(cls_logit)
             cls_score_list.append(cls_score.flatten(2).transpose([0, 2, 1]))
             reg_distri_list.append(reg_dist.flatten(2).transpose([0, 2, 1]))
-        cls_score_list = paddle.concat(cls_score_list, axis=1)  # [4, 8400, 80]
-        reg_distri_list = paddle.concat(reg_distri_list, axis=1)  # [4, 8400, 4]
-
-        # bbox decode
-        anchor_points, stride_tensor = self._generate_anchor_point(
-            feat_sizes, self.fpn_strides, 0.)
-        reg_xy, reg_wh = paddle.split(reg_distri_list, 2, axis=-1)
-        reg_xy += (anchor_points / stride_tensor)
-        reg_wh = paddle.exp(reg_wh) * 0.5
-        bbox_pred_list = paddle.concat(
-            [reg_xy - reg_wh, reg_xy + reg_wh], axis=-1)
+        cls_score_list = paddle.concat(cls_score_list, axis=1)
+        reg_distri_list = paddle.concat(reg_distri_list, axis=1)
 
         anchor_points, stride_tensor = self._generate_anchor_point(
             feat_sizes, self.fpn_strides, 0.)
+        
+        raise NotImplementedError('RTMDet training not implemented yet.')
 
         return self.get_loss(
-            [cls_score_list, bbox_pred_list, anchor_points,
+            [cls_score_list, reg_distri_list, anchor_points,
              stride_tensor], targets)
 
     def _generate_anchors(self, feats=None, dtype='float32'):
@@ -265,76 +255,16 @@ class RTMDetHead(nn.Layer):
         return anchor_points, stride_tensor  #, num_anchors_list
 
     def get_loss(self, head_outs, targets):
-        pred_scores, pred_bboxes, anchor_points, stride_tensor = head_outs
-
-        x1y1, x2y2 = paddle.split(pred_bboxes, 2, -1)
-        lt = anchor_points - x1y1
-        rb = x2y2 - anchor_points
-        pred_bboxes = paddle.concat([lt, rb], -1)
+        pred_cls, pred_bboxes, anchor_points, stride_tensor = head_outs
+        raise NotImplementedError('RTMDet training not implemented yet.')
 
         gt_labels = targets['gt_class']
         gt_bboxes = targets['gt_bbox']
-        # label assignment
-        center_and_strides = paddle.concat(
-            [anchor_points, stride_tensor, stride_tensor], axis=-1)
-        pos_num_list, label_list, bbox_target_list = [], [], []
-        for pred_score, pred_bbox, gt_box, gt_label in zip(
-                pred_scores.detach(),
-                pred_bboxes.detach() * stride_tensor, gt_bboxes, gt_labels):
-            pos_num, label, _, bbox_target = self.assigner(
-                pred_score, center_and_strides, pred_bbox, gt_box, gt_label)
-            pos_num_list.append(pos_num)
-            label_list.append(label)
-            bbox_target_list.append(bbox_target)
-        labels = paddle.to_tensor(np.stack(label_list, axis=0))
-        bbox_targets = paddle.to_tensor(np.stack(bbox_target_list, axis=0))
-        bbox_targets /= stride_tensor  # rescale bbox
 
-        # 1. obj score loss
-        mask_positive = (labels != self.num_classes)
-        num_pos = sum(pos_num_list)
-
-        if num_pos > 0:
-            num_pos = paddle.to_tensor(num_pos, dtype=self._dtype).clip(min=1)
-            #loss_obj /= num_pos
-
-            # 2. iou loss
-            bbox_mask = mask_positive.unsqueeze(-1).tile([1, 1, 4])
-            pred_bboxes_pos = paddle.masked_select(pred_bboxes,
-                                                   bbox_mask).reshape([-1, 4])
-            assigned_bboxes_pos = paddle.masked_select(
-                bbox_targets, bbox_mask).reshape([-1, 4])
-            bbox_iou = bbox_overlaps(pred_bboxes_pos, assigned_bboxes_pos)
-            bbox_iou = paddle.diag(bbox_iou)
-
-            loss_iou = self.loss_box(
-                pred_bboxes_pos.split(
-                    4, axis=-1),
-                assigned_bboxes_pos.split(
-                    4, axis=-1))
-            loss_iou = loss_iou.sum() / num_pos
-
-            # 3. cls loss
-            cls_mask = mask_positive.unsqueeze(-1).tile(
-                [1, 1, self.num_classes])
-            pred_cls_pos = paddle.masked_select(
-                pred_cls, cls_mask).reshape([-1, self.num_classes])
-            assigned_cls_pos = paddle.masked_select(labels, mask_positive)
-            assigned_cls_pos = F.one_hot(assigned_cls_pos,
-                                         self.num_classes + 1)[..., :-1]
-            assigned_cls_pos *= bbox_iou.unsqueeze(-1)
-            loss_cls = F.binary_cross_entropy(
-                pred_cls_pos, assigned_cls_pos, reduction='sum')
-            loss_cls /= num_pos
-        else:
-            loss_cls = paddle.zeros([1])
-            loss_iou = paddle.zeros([1])
-            loss_cls.stop_gradient = False
-            loss_iou.stop_gradient = False
-
+        loss_cls = paddle.zeros([1])
+        loss_iou = paddle.zeros([1])
         loss = self.loss_weight['cls'] * loss_cls + \
                self.loss_weight['box'] * loss_iou
-
         return {
             'loss': loss,
             'loss_cls': loss_cls,

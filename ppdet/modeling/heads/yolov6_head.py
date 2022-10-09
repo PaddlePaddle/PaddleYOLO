@@ -23,7 +23,7 @@ from ..bbox_utils import batch_distance2bbox
 from ..losses import GIoULoss, SIoULoss
 from ..initializer import bias_init_with_prob, constant_, normal_
 from ..assigners.utils import generate_anchors_for_grid_cell
-from ..backbones.efficientrep import BaseConv
+from ..backbones.yolov6_efficientrep import BaseConv
 from ppdet.modeling.ops import get_static_shape, get_act_fn
 from ppdet.modeling.layers import MultiClassNMS
 

@@ -112,53 +112,6 @@ def argsparser():
         default=True,
         help='Save visualization image results.')
     parser.add_argument(
-        '--save_mot_txts',
-        action='store_true',
-        help='Save tracking results (txt).')
-    parser.add_argument(
-        '--save_mot_txt_per_img',
-        action='store_true',
-        help='Save tracking results (txt) for each image.')
-    parser.add_argument(
-        '--scaled',
-        type=bool,
-        default=False,
-        help="Whether coords after detector outputs are scaled, False in JDE YOLOv3 "
-        "True in general detector.")
-    parser.add_argument(
-        "--tracker_config", type=str, default=None, help=("tracker donfig"))
-    parser.add_argument(
-        "--reid_model_dir",
-        type=str,
-        default=None,
-        help=("Directory include:'model.pdiparams', 'model.pdmodel', "
-              "'infer_cfg.yml', created by tools/export_model.py."))
-    parser.add_argument(
-        "--reid_batch_size",
-        type=int,
-        default=50,
-        help="max batch_size for reid model inference.")
-    parser.add_argument(
-        '--use_dark',
-        type=ast.literal_eval,
-        default=True,
-        help='whether to use darkpose to get better keypoint position predict ')
-    parser.add_argument(
-        "--action_file",
-        type=str,
-        default=None,
-        help="Path of input file for action recognition.")
-    parser.add_argument(
-        "--window_size",
-        type=int,
-        default=50,
-        help="Temporal size of skeleton feature for action recognition.")
-    parser.add_argument(
-        "--random_pad",
-        type=ast.literal_eval,
-        default=False,
-        help="Whether do random padding for action recognition.")
-    parser.add_argument(
         "--save_results",
         action='store_true',
         default=False,

@@ -20,20 +20,18 @@ from ppdet.core.workspace import register, create
 from .meta_arch import BaseArch
 
 __all__ = ['YOLOv5']
+# YOLOv6,YOLOv7 use the same architecture as YOLOv5
 
 
 @register
 class YOLOv5(BaseArch):
     __category__ = 'architecture'
-    __shared__ = ['data_format']
-    __inject__ = ['post_process']
 
     def __init__(self,
                  backbone='CSPDarkNet',
                  neck='YOLOCSPPAN',
                  yolo_head='YOLOv5Head',
                  post_process='BBoxPostProcess',
-                 data_format='NCHW',
                  for_mot=False):
         """
         YOLOv5, YOLOv6(https://arxiv.org/abs/2209.02976) and YOLOv7(https://arxiv.org/abs/2207.02696)
@@ -42,12 +40,10 @@ class YOLOv5(BaseArch):
             backbone (nn.Layer): backbone instance
             neck (nn.Layer): neck instance
             yolo_head (nn.Layer): anchor_head instance
-            post_process (object): `BBoxPostProcess` instance
-            data_format (str): data format, NCHW or NHWC
             for_mot (bool): whether return other features for multi-object tracking
                 models, default False in pure object detection models.
         """
-        super(YOLOv5, self).__init__(data_format=data_format)
+        super(YOLOv5, self).__init__()
         self.backbone = backbone
         self.neck = neck
         self.yolo_head = yolo_head
@@ -82,9 +78,14 @@ class YOLOv5(BaseArch):
             return yolo_losses
         else:
             yolo_head_outs = self.yolo_head(neck_feats)
-            bbox, bbox_num = self.yolo_head.post_process(
-                yolo_head_outs, self.inputs['im_shape'],
-                self.inputs['scale_factor'])
+            if self.post_process is not None:
+                bbox, bbox_num = self.post_process(yolo_head_outs,
+                                                   self.inputs['im_shape'],
+                                                   self.inputs['scale_factor'])
+            else:
+                bbox, bbox_num = self.yolo_head.post_process(
+                    yolo_head_outs, self.inputs['im_shape'],
+                    self.inputs['scale_factor'])
             return {'bbox': bbox, 'bbox_num': bbox_num}
 
     def get_loss(self):

@@ -32,7 +32,7 @@ parent_path = os.path.abspath(os.path.join(__file__, *(['..'])))
 sys.path.insert(0, parent_path)
 
 from benchmark_utils import PaddleInferBenchmark
-from preprocess import preprocess, Resize, NormalizeImage, Permute, PadStride, LetterBoxResize, Pad, decode_image
+from preprocess import preprocess, Resize, NormalizeImage, Permute, Pad, decode_image
 from visualize import visualize_box_mask
 from utils import argsparser, Timer, get_current_memory_mb, multiclass_nms, coco_clsid2catid
 

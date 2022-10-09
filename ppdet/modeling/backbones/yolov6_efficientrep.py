@@ -14,9 +14,7 @@
 """
 This code is based on https://github.com/meituan/YOLOv6
 """
-
 import math
-import numpy as np
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
@@ -27,10 +25,7 @@ from ppdet.modeling.initializer import conv_init_, normal_
 from ppdet.core.workspace import register, serializable
 from ..shape_spec import ShapeSpec
 
-__all__ = [
-    'RepConv', 'RepLayer', 'BepC3Layer', 'SimSPPF', 'EfficientRep',
-    'CSPBepBackbone'
-]
+__all__ = ['EfficientRep', 'CSPBepBackbone']
 
 
 def get_activation(name="silu"):
