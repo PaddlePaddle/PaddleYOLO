@@ -300,6 +300,12 @@
 
 版本更新内容请参考[版本更新文档](docs/CHANGELOG.md)
 
+
+## <img title="" src="https://user-images.githubusercontent.com/48054808/157835345-f5d24128-abaf-4813-b793-d2e5bdc70e5a.png" alt="" width="20"> 许可证书
+
+本项目的发布受[GPL-3.0 license](LICENSE)许可认证。
+
+
 ## <img src="https://user-images.githubusercontent.com/48054808/157835276-9aab9d1c-1c46-446b-bdd4-5ab75c5cfa48.png" width="20"/> 引用
 
 ```

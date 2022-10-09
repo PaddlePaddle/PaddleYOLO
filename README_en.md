@@ -310,6 +310,9 @@ The comparison between COCO mAP and FPS on Qualcomm Snapdragon 865 processor of 
 
 Please refer to the[ Release note ](https://github.com/PaddlePaddle/Paddle/wiki/PaddlePaddle-2.3.0-Release-Note-EN)for more details about the updates
 
+## <img title="" src="https://user-images.githubusercontent.com/48054808/157835345-f5d24128-abaf-4813-b793-d2e5bdc70e5a.png" alt="" width="20">  License
+
+PaddlePaddle is provided under the [GPL-3.0 license](LICENSE)
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157835276-9aab9d1c-1c46-446b-bdd4-5ab75c5cfa48.png" width="20"/> Quote
 

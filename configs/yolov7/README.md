@@ -40,7 +40,7 @@
   - YOLOv7模型训练的图片数/GPU(每卡batch size)默认是采用32G V100并且开启`--amp`混合精度训练的，其中P6模型也可以在配置文件中设置```use_aux: False```以使用更大的batch size。
   - YOLOv7P6模型计算Params和FLOPs需设置成```use_aux: False```。
   - YOLOv7仅tiny模型采用`LeakyReLU`激活函数，基础模型和P6模型均采用`SiLU`激活函数。
-  - 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡V100，batch size=1，测试环境为**paddlepaddle-2.3.0**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考[速度测试](#速度测试)。
+  - 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡Tesla T4 GPU，batch size=1，测试环境为**paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考[速度测试](#速度测试)。
   - 如果你设置了`--run_benchmark=True`, 你首先需要安装以下依赖`pip install pynvml psutil GPUtil`。
 
 
