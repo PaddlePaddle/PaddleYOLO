@@ -10,15 +10,17 @@
     - [YOLOv5](#YOLOv5)
     - [YOLOv6](#YOLOv6)
     - [YOLOv7](#YOLOv7)
+    - [RTMDet](#RTMDet)
 - [使用指南](#使用指南)
     - [一键运行全流程](#一键运行全流程)
     - [自定义数据集](#自定义数据集)
 
 ## 简介
 
-**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等模型，欢迎一起使用和建设！
+**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`RTMDet`等模型，欢迎一起使用和建设！
 
 ## 更新日志
+* 【2022/09/29】支持[RTMDet](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet)预测和部署；
 * 【2022/09/26】发布[`PaddleYOLO`](https://github.com/PaddlePaddle/PaddleYOLO)模型套件；
 * 【2022/09/19】支持[`YOLOv6`](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6)新版，包括n/t/s/m/l模型；
 * 【2022/08/23】发布`YOLOSeries`代码库: 支持`YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等YOLO模型，支持`ConvNeXt`骨干网络高精度版`PP-YOLOE`,`YOLOX`和`YOLOv5`等模型，支持PaddleSlim无损加速量化训练`PP-YOLOE`,`YOLOv5`,`YOLOv6`和`YOLOv7`等模型，详情可阅读[此文章](https://mp.weixin.qq.com/s/Hki01Zs2lQgvLSLWS0btrA)；
@@ -198,11 +200,40 @@
 
 </details>
 
+### [RTMDet](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet)
+
+<details>
+<summary> 基础模型 </summary>
+
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
+| *RTMDet-t       |  640     |    32      |   300e    |    2.8   |  40.9 | 57.9 |  4.90  | 16.21 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_t_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_t_300e_coco.yml) |
+| *RTMDet-s       |  640     |    32      |   300e    |    3.3   |  44.5 | 62.0 |  8.89  | 29.71 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_s_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_s_300e_coco.yml) |
+| *RTMDet-m       |  640     |    32      |   300e    |    6.4   |  49.1 | 66.8 |  24.71  | 78.47 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_m_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_m_300e_coco.yml) |
+| *RTMDet-l       |  640     |    32      |   300e    |    10.2  |  51.2 | 68.8 |  52.31  | 160.32 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_l_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_l_300e_coco.yml) |
+| *RTMDet-x       |  640     |    32      |   300e    |    18.0  |  52.6 | 70.4 |  94.86  | 283.12 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_x_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_x_300e_coco.yml) |
+
+</details>
+
+<details>
+<summary> 部署模型  </summary>
+
+| 网络模型     | 输入尺寸 | 导出后的权重(w/o NMS) | ONNX(w/o NMS)  |
+| :-------- | :--------: | :---------------------: | :----------------: |
+| RTMDet-t |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_t_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_t_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_t_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_t_300e_coco_wo_nms.onnx) |
+| RTMDet-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_s_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_s_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_s_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_s_300e_coco_wo_nms.onnx) |
+| RTMDet-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_m_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_m_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_m_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_m_300e_coco_wo_nms.onnx) |
+| RTMDet-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_l_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_l_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_l_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_l_300e_coco_wo_nms.onnx) |
+| RTMDet-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_x_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_x_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_x_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_x_300e_coco_wo_nms.onnx) |
+
+</details>
+
+
 ### **注意:**
  - 所有模型均使用COCO train2017作为训练集，在COCO val2017上验证精度，模型前带*表示训练更新中。
  - 具体精度和速度细节请查看[PP-YOLOE](../../configs/ppyoloe),[YOLOX](../../configs/yolox),[YOLOv5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5),[YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6),[YOLOv7](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov7)，**其中YOLOv5,YOLOv6,YOLOv7评估并未采用`multi_label`形式**。
-- 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡V100，batch size=1，测试环境为**paddlepaddle-2.3.0**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考各自模型主页。
-- **统计FLOPs(G)**，首先安装[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`，然后设置[runtime.yml](../../configs/runtime.yml)里`print_flops: True`，并且注意确保是**单尺度**下如640x640，**打印的是MACs，FLOPs=2*MACs**。
+- 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡T4，batch size=1，测试环境为**paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考各自模型主页。
+- **统计FLOPs(G)和Params(M)**，首先安装[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`，然后设置[runtime.yml](../../configs/runtime.yml)里`print_flops: True`和`print_params: True`，并且注意确保是**单尺度**下如640x640。
  - 各模型导出后的权重以及ONNX，分为**带(w)**和**不带(wo)**后处理NMS，都提供了下载链接，请参考各自模型主页下载。`w_nms`表示**带NMS后处理**，可以直接使用预测出最终检测框结果如```python deploy/python/infer.py --model_dir=ppyoloe_crn_l_300e_coco_w_nms/ --image_file=demo/000000014439.jpg --device=GPU```；`wo_nms`表示**不带NMS后处理**，是**测速**时使用，如需预测出检测框结果需要找到**对应head中的后处理相关代码**并修改为如下：
  ```
         if self.exclude_nms:

@@ -10,16 +10,18 @@
     - [YOLOv5](#YOLOv5)
     - [YOLOv6](#YOLOv6)
     - [YOLOv7](#YOLOv7)
+    - [RTMDet](#RTMDet)
 - [UserGuide](#UserGuide)
     - [Pipeline](#Pipeline)
     - [CustomDataset](#CustomDataset)
 
 ## Introduction
 
-**PaddleYOLO** is a YOLO Series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7` and so on. Welcome to use and build it together!
+**PaddleYOLO** is a YOLO Series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`RTMDet` and so on. Welcome to use and build it together!
 
 ## Updates
 
+* 【2022/09/29】Support [RTMDet](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet) inference and deploy;
 * 【2022/09/26】Release [`PaddleYOLO`](https://github.com/PaddlePaddle/PaddleYOLO);
 * 【2022/09/19】Support the new version of [`YOLOv6`](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6), including n/t/s/m/l model;
 * 【2022/08/23】Release `YOLOSeries` codebase: support `YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6` and `YOLOv7`; support using `ConvNeXt` backbone to get high-precision version of `PP-YOLOE`,`YOLOX` and `YOLOv5`; support PaddleSlim accelerated quantitative training `PP-YOLOE`,`YOLOv5`,`YOLOv6` and `YOLOv7`. For details, please read this [article](https://mp.weixin.qq.com/s/Hki01Zs2lQgvLSLWS0btrA)；
@@ -200,11 +202,40 @@
 
 </details>
 
+
+### [RTMDet](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet)
+
+<summary> Baseline </summary>
+
+| Model        | Input Size  | images/GPU | Epoch | TRT-FP16-Latency(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    download       | config |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| *RTMDet-t       |  640     |    32      |   300e    |    2.8   |  40.9 | 57.9 |  4.90  | 16.21 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_t_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_t_300e_coco.yml) |
+| *RTMDet-s       |  640     |    32      |   300e    |    3.3   |  44.5 | 62.0 |  8.89  | 29.71 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_s_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_s_300e_coco.yml) |
+| *RTMDet-m       |  640     |    32      |   300e    |    6.4   |  49.1 | 66.8 |  24.71  | 78.47 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_m_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_m_300e_coco.yml) |
+| *RTMDet-l       |  640     |    32      |   300e    |    10.2  |  51.2 | 68.8 |  52.31  | 160.32 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_l_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_l_300e_coco.yml) |
+| *RTMDet-x       |  640     |    32      |   300e    |    18.0  |  52.6 | 70.4 |  94.86  | 283.12 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_x_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_x_300e_coco.yml) |
+
+</details>
+
+<details>
+<summary> Deploy Models  </summary>
+
+| Model     | Input Size | Exported weights(w/o NMS) | ONNX(w/o NMS)  |
+| :-------- | :--------: | :---------------------: | :----------------: |
+| RTMDet-t |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_t_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_t_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_t_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_t_300e_coco_wo_nms.onnx) |
+| RTMDet-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_s_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_s_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_s_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_s_300e_coco_wo_nms.onnx) |
+| RTMDet-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_m_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_m_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_m_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_m_300e_coco_wo_nms.onnx) |
+| RTMDet-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_l_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_l_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_l_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_l_300e_coco_wo_nms.onnx) |
+| RTMDet-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_x_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_x_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_x_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/rtmdet/rtmdet_x_300e_coco_wo_nms.onnx) |
+
+</details>
+
+
 ### **Notes：**
  - All the models are trained on COCO train2017 dataset and evaluated on val2017 dataset. The * in front of the model indicates that the training is being updated.
  - Please check the specific accuracy and speed details in [PP-YOLOE](../../configs/ppyoloe),[YOLOX](../../configs/yolox),[YOLOv5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5),[YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6),[YOLOv7](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov7). **Note that YOLOv5, YOLOv6 and YOLOv7 have not adopted `multi_label` to eval**。
 - TRT-FP16-Latency(ms) is the time spent in testing under TensorRT-FP16, excluding data preprocessing and model output post-processing (NMS). The test adopts single card V100, batch size=1, and the test environment is **paddlepaddle-2.3.0**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**. Please refer to the respective model homepage for details.
-- For **FLOPs(G)**, you should first install [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`, then set `print_flops: True` in [runtime.yml](../../configs/runtime.yml). Make sure **single scale** like 640x640, **MACs are printed，FLOPs=2*MACs**。
+- For **FLOPs(G) and Params(M)**, you should first install [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`, then set `print_params: True` and `print_paps: True` in [runtime.yml](../../configs/runtime.yml). Make sure **single scale** like 640x640。
  - Based on [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), quantitative training of YOLO series models can achieve basically lossless accuracy and generally improve the speed by more than 30%. For details, please refer to [auto_compression](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/example/auto_compression)。
 
 

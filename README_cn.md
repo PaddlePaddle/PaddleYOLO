@@ -1,9 +1,10 @@
 ## 简介
 
-**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等模型，请参照[ModelZoo](docs/MODEL_ZOO_cn.md)。
+**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`RTMDet`等模型，请参照[ModelZoo](docs/MODEL_ZOO_cn.md)。
 
 
 ## 更新日志
+* 【2022/09/29】支持[RTMDet](configs/rtmdet)预测和部署；
 * 【2022/09/26】发布[PaddleYOLO](https://github.com/PaddlePaddle/PaddleYOLO)模型套件，请参照[ModelZoo](docs/MODEL_ZOO_cn.md)；
 * 【2022/09/19】支持[YOLOv6](configs/yolov6)新版，包括n/t/s/m/l模型；
 * 【2022/08/23】发布`YOLOSeries`代码库: 支持`YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等YOLO模型，支持`ConvNeXt`骨干网络高精度版`PP-YOLOE`,`YOLOX`和`YOLOv5`等模型，支持PaddleSlim无损加速量化训练`PP-YOLOE`,`YOLOv5`,`YOLOv6`和`YOLOv7`等模型，详情可阅读[此文章](https://mp.weixin.qq.com/s/Hki01Zs2lQgvLSLWS0btrA)；
@@ -106,6 +107,7 @@
             <li>PP-YOLOE</li>
             <li>PP-YOLOE+</li>
             <li>YOLOX</li>
+            <li>RTMDet</li>
          </ul></details>
       </ul>
       </td>
@@ -117,6 +119,10 @@
           <li>DarkNet</li>
           <li>CSPDarkNet</li>
           <li>ConvNeXt</li>
+          <li>EfficientRep</li>
+          <li>CSPBepBackbone</li>
+          <li>ELANNet</li>
+          <li>CSPNeXt</li>
         </ul></details>
       </td>
       <td>
@@ -130,9 +136,17 @@
         </ul>
         <details open><summary><b>FPN</b></summary>
           <ul>
-            <li>CSP-PAN</li>
+            <li>YOLOv3FPN</li>
+            <li>PPYOLOFPN</li>
+            <li>PPYOLOTinyFPN</li>
+            <li>PPYOLOPAN</li>
+            <li>YOLOCSPPAN</li>
             <li>Custom-PAN</li>
-            <li>ES-PAN</li>
+            <li>RepPAN</li>
+            <li>CSPRepPAN</li>
+            <li>ELANFPN</li>
+            <li>ELANFPNP6</li>
+            <li>CSPNeXtPAFPN</li>
           </ul> </details>
         </ul>  
         <details open><summary><b>Loss</b></summary>

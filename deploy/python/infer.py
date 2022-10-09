@@ -41,6 +41,7 @@ SUPPORT_MODELS = {
     'YOLO',
     'YOLOX',
     'YOLOv5',
+    'RTMDet',
 }
 
 

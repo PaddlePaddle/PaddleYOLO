@@ -1,0 +1,16 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  './_base_/optimizer_300e.yml',
+  './_base_/rtmdet_cspnext.yml',
+  './_base_/rtmdet_reader.yml',
+]
+depth_mult: 0.67
+width_mult: 0.75
+
+log_iter: 100
+snapshot_epoch: 10
+weights: output/rtmnet_m_300e_coco/model_final
+
+RTMDetHead:
+  exp_on_reg: True

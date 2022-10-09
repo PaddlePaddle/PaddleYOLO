@@ -21,6 +21,7 @@ from . import csp_darknet
 from . import convnext
 from . import yolov6_efficientrep
 from . import yolov7_elannet
+from . import cspnext
 
 from .resnet import *
 from .darknet import *
@@ -31,3 +32,4 @@ from .csp_darknet import *
 from .convnext import *
 from .yolov6_efficientrep import *
 from .yolov7_elannet import *
+from .cspnext import *

@@ -70,6 +70,9 @@ class Trainer(object):
         self.custom_white_list = self.cfg.get('custom_white_list', None)
         self.custom_black_list = self.cfg.get('custom_black_list', None)
 
+        if self.cfg.architecture in ['RTMDet']:
+            raise NotImplementedError('RTMDet training not supported yet.')
+
         # build data loader
         capital_mode = self.mode.capitalize()
         if self.mode in ['train', 'eval', 'test']:

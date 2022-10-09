@@ -1,0 +1,17 @@
+# set the same as YOLOX scheduler temporarily
+epoch: 300
+
+LearningRate:
+  base_lr: 0.0004
+  schedulers:
+    - !CosineDecay
+      max_epochs: 300
+    - !LinearWarmup
+      start_factor: 0.00001
+      steps: 1000
+
+OptimizerBuilder:
+  regularizer: false
+  optimizer:
+    type: AdamW
+    weight_decay: 0.05
