@@ -370,8 +370,9 @@ class EffiDeHead(nn.Layer):
             loss = self.loss_weight['cls'] * loss_cls + \
                 self.loss_weight['iou'] * loss_iou + \
                 self.loss_weight['dfl'] * loss_dfl
+            num_gpus = gt_meta.get('num_gpus', 8)
             out_dict = {
-                'loss': loss,
+                'loss': loss * num_gpus,
                 'loss_cls': loss_cls,
                 'loss_iou': loss_iou,
                 'loss_dfl': loss_dfl,
@@ -379,8 +380,9 @@ class EffiDeHead(nn.Layer):
         else:
             loss = self.loss_weight['cls'] * loss_cls + \
                 self.loss_weight['iou'] * loss_iou
+            num_gpus = gt_meta.get('num_gpus', 8)
             out_dict = {
-                'loss': loss,
+                'loss': loss * num_gpus,
                 'loss_cls': loss_cls,
                 'loss_iou': loss_iou,
             }
