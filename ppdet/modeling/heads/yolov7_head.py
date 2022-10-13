@@ -33,21 +33,20 @@ class YOLOv7Head(nn.Layer):
     ]
     __inject__ = ['loss', 'nms']
 
-    def __init__(
-            self,
-            num_classes=80,
-            in_channels=[256, 512, 1024],
-            anchors=[[12, 16], [19, 36], [40, 28], [36, 75], [76, 55],
-                     [72, 146], [142, 110], [192, 243], [459, 401]],
-            anchor_masks=[[0, 1, 2], [3, 4, 5], [6, 7, 8]],
-            stride=[8, 16, 32],
-            use_aux=False,
-            use_implicit=False,  # True # TODO
-            loss='YOLOv7Loss',
-            data_format='NCHW',
-            nms='MultiClassNMS',
-            trt=False,
-            exclude_nms=False):
+    def __init__(self,
+                 num_classes=80,
+                 in_channels=[256, 512, 1024],
+                 anchors=[[12, 16], [19, 36], [40, 28], [36, 75], [76, 55],
+                          [72, 146], [142, 110], [192, 243], [459, 401]],
+                 anchor_masks=[[0, 1, 2], [3, 4, 5], [6, 7, 8]],
+                 stride=[8, 16, 32],
+                 use_aux=False,
+                 use_implicit=False,
+                 loss='YOLOv7Loss',
+                 data_format='NCHW',
+                 nms='MultiClassNMS',
+                 trt=False,
+                 exclude_nms=False):
         """
         Head for YOLOv7
 

@@ -220,7 +220,7 @@ class ImplicitA(nn.Layer):
 
 
 class ImplicitM(nn.Layer):
-    def __init__(self, channel, mean=0., std=.02):
+    def __init__(self, channel, mean=1., std=.02):
         super(ImplicitM, self).__init__()
         self.im = self.create_parameter(
             shape=([1, channel, 1, 1]),

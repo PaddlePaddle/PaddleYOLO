@@ -11,6 +11,7 @@ width_mult: 1.0
 
 arch: 'W6'
 use_aux: True # set False if compute params or flops
+use_implicit: False # default False here, True in paper
 
 YOLOv5:
   backbone: ELANNet
