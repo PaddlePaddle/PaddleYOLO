@@ -1,4 +1,4 @@
-[简体中文](YOLOSERIES_MODEL.md) | English
+[简体中文](MODEL_ZOO_cn.md) | English
 
 # [**PaddleYOLO**](https://github.com/PaddlePaddle/PaddleYOLO)
 
