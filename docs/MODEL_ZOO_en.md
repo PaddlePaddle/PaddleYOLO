@@ -29,8 +29,8 @@
 
 **Notes：**
  - The Licence of **PaddleYOLO** is **GPL 3.0**, the codes of [YOLOv5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5),[YOLOv7](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov7) and [YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6) will not be merged into [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection). Except for these three YOLO models, other YOLO models are recommended to use in [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **which will be the first to release the latest progress of PP-YOLO series detection model**;
- - To use **PaddleYOLO**, **PaddlePaddle-2.3.2 or above is recommended**，please refer to the [official website](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html) to download the appropriate version. **For Windows platforms, please install the paddle develop version **;
-
+ - To use **PaddleYOLO**, **PaddlePaddle-2.3.2 or above is recommended**，please refer to the [official website](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html) to download the appropriate version. **For Windows platforms, please install the paddle develop version**;
+ - Training **Custom dataset** please refer to [doc](#CustomDataset) and [issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43). Please **ensure COCO trained weights are loaded as pre-train** at first. We recommend to use YOLO detection model **with a total `batch_size` at least greater than `64` to train**. If the resources are insufficient, please **use the smaller model** or **reduce the input size of the model**. To ensure high detection accuracy, **you'd better never try to using single GPU or total `batch_size` less than `32` for training**;
 
 ## ModelZoo
 
@@ -205,15 +205,16 @@
 
 ### [RTMDet](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet)
 
+<details>
 <summary> Baseline </summary>
 
 | Model        | Input Size  | images/GPU | Epoch | TRT-FP16-Latency(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    download       | config |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
-| *RTMDet-t       |  640     |    32      |   300e    |    2.8   |  40.9 | 57.9 |  4.90  | 16.21 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_t_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_t_300e_coco.yml) |
-| *RTMDet-s       |  640     |    32      |   300e    |    3.3   |  44.5 | 62.0 |  8.89  | 29.71 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_s_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_s_300e_coco.yml) |
-| *RTMDet-m       |  640     |    32      |   300e    |    6.4   |  49.1 | 66.8 |  24.71  | 78.47 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_m_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_m_300e_coco.yml) |
-| *RTMDet-l       |  640     |    32      |   300e    |    10.2  |  51.2 | 68.8 |  52.31  | 160.32 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_l_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_l_300e_coco.yml) |
-| *RTMDet-x       |  640     |    32      |   300e    |    18.0  |  52.6 | 70.4 |  94.86  | 283.12 |[下载链接](https://paddledet.bj.bcebos.com/models/rtmdet_x_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_x_300e_coco.yml) |
+| *RTMDet-t       |  640     |    32      |   300e    |    2.8   |  40.9 | 57.9 |  4.90  | 16.21 |[model](https://paddledet.bj.bcebos.com/models/rtmdet_t_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_t_300e_coco.yml) |
+| *RTMDet-s       |  640     |    32      |   300e    |    3.3   |  44.5 | 62.0 |  8.89  | 29.71 |[model](https://paddledet.bj.bcebos.com/models/rtmdet_s_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_s_300e_coco.yml) |
+| *RTMDet-m       |  640     |    32      |   300e    |    6.4   |  49.1 | 66.8 |  24.71  | 78.47 |[model](https://paddledet.bj.bcebos.com/models/rtmdet_m_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_m_300e_coco.yml) |
+| *RTMDet-l       |  640     |    32      |   300e    |    10.2  |  51.2 | 68.8 |  52.31  | 160.32 |[model](https://paddledet.bj.bcebos.com/models/rtmdet_l_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_l_300e_coco.yml) |
+| *RTMDet-x       |  640     |    32      |   300e    |    18.0  |  52.6 | 70.4 |  94.86  | 283.12 |[model](https://paddledet.bj.bcebos.com/models/rtmdet_x_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet/rtmdet_x_300e_coco.yml) |
 
 </details>
 

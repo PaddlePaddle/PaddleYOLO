@@ -15,6 +15,8 @@
 **Notes：**
  - The Licence of **PaddleYOLO** is **GPL 3.0**, the codes of [YOLOv5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5),[YOLOv7](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov7) and [YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6) will not be merged into [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection). Except for these three YOLO models, other YOLO models are recommended to use in [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **which will be the first to release the latest progress of PP-YOLO series detection model**;
  - To use **PaddleYOLO**, **PaddlePaddle-2.3.2 or above is recommended**，please refer to the [official website](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html) to download the appropriate version. **For Windows platforms, please install the paddle develop version**;
+ - PaddleYOLO's [Roadmap](https://github.com/PaddlePaddle/PaddleYOLO/issues/44) issue collects feature requests from user, welcome to put forward any opinions and suggestions.
+ - Training **Custom dataset** please refer to [doc](docs/MODEL_ZOO_en.md#CustomDataset) and [issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43). Please **ensure COCO trained weights are loaded as pre-train** at first. We recommend to use YOLO detection model **with a total `batch_size` at least greater than `64` to train**. If the resources are insufficient, please **use the smaller model** or **reduce the input size of the model**. To ensure high detection accuracy, **you'd better never try to using single GPU or total `batch_size` less than `32` for training**;
 
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157793354-6e7f381a-0aa6-4bb7-845c-9acf2ecc05c3.png" width="20"/> Product Update
@@ -312,7 +314,7 @@ Please refer to the[ Release note ](https://github.com/PaddlePaddle/Paddle/wiki/
 
 ## <img title="" src="https://user-images.githubusercontent.com/48054808/157835345-f5d24128-abaf-4813-b793-d2e5bdc70e5a.png" alt="" width="20">  License
 
-PaddlePaddle is provided under the [GPL-3.0 license](LICENSE)
+PaddleYOLO is provided under the [GPL-3.0 license](LICENSE)
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157835276-9aab9d1c-1c46-446b-bdd4-5ab75c5cfa48.png" width="20"/> Quote
 

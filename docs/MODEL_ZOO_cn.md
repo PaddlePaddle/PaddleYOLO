@@ -29,6 +29,8 @@
 **注意:**
  - **PaddleYOLO**代码库协议为**GPL 3.0**，[YOLOv5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5),[YOLOv7](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov7)和[YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6)这3类模型代码不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)，其余YOLO模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用，**会最先发布PP-YOLO系列特色检测模型的最新进展**；；
  - **PaddleYOLO**代码库**推荐使用paddlepaddle-2.3.2以上的版本**，请参考[官网](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html)下载对应适合版本，**Windows平台请安装paddle develop版本**；
+ - PaddleYOLO 的[Roadmap](https://github.com/PaddlePaddle/PaddleYOLO/issues/44) issue用于收集用户的需求，欢迎提出您的建议和需求。
+ - 训练**自定义数据集**请参照[文档](#自定义数据集)和[issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43)。请首先**确保加载了COCO权重作为预训练**，YOLO检测模型建议**总`batch_size`至少大于`64`**去训练，如果资源不够请**换小模型**或**减小模型的输入尺度**，为了保障较高检测精度，**尽量不要尝试单卡训和总`batch_size`小于`32`训**；
 
 
 ## 模型库
