@@ -11,7 +11,7 @@ width_mult: 1.0
 
 arch: 'L'
 use_aux: False
-use_implicit: Falseuse_implicit: False # default False here, True in paper
+use_implicit: False # default False here, True in paper
 
 YOLOv5:
   backbone: ELANNet
