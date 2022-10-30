@@ -80,7 +80,7 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 
 
 <details open>
-<summary>训练自定义数据集</summary>
+<summary>[训练自定义数据集](https://github.com/PaddlePaddle/PaddleYOLO/issues/43)</summary>
 
 - 请参照[文档](docs/MODEL_ZOO_cn.md#自定义数据集)和[issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43)；
 - 请首先**确保加载了COCO权重作为预训练**；

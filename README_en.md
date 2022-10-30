@@ -80,7 +80,8 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 
 
 <details open>
-<summary>Training Custom dataset</summary>
+<summary>[Training Custom dataset](https://github.com/PaddlePaddle/PaddleYOLO/issues/43)</summary>
+
 - Please refer to [doc](docs/MODEL_ZOO_en.md#CustomDataset) and [issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43). 
 - Please **ensure COCO trained weights are loaded as pre-train weights** at first. 
 - We recommend to use YOLO detection model **with a total `batch_size` at least greater than `64` to train**. If the resources are insufficient, please **use the smaller model** or **reduce the input size of the model**. To ensure high detection accuracy, **you'd better not try to using single GPU or total `batch_size` less than `64` for training**;

@@ -9,12 +9,3 @@ terminaltables
 Cython
 pycocotools
 setuptools
-
-# for vehicleplate
-pyclipper
-
-# for mot
-lap
-motmetrics
-sklearn
-filterpy
