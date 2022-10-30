@@ -1,6 +1,92 @@
+简体中文 | [English](README_en.md)
+
 ## 简介
 
-**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`RTMDet`等模型，请参照[ModelZoo](docs/MODEL_ZOO_cn.md)。
+**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`、`PP-YOLO`、`PP-YOLOv2`、`PP-YOLOE`、`PP-YOLOE+`、`YOLOX`、`YOLOv5`、`YOLOv6`、`YOLOv7`、`RTMDet`等模型，请参照 [ModelZoo](docs/MODEL_ZOO_cn.md) 和 [configs](configs/)。
+
+
+**注意:**
+ - **PaddleYOLO** 代码库协议为 **[GPL 3.0](LICENSE)**，[YOLOv5](configs/yolov5)、[YOLOv7](configs/yolov7)和[YOLOv6](configs/yolov6)这3类模型代码不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)，其余YOLO模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用，**会最先发布PP-YOLO系列特色检测模型的最新进展**；
+ - **PaddleYOLO**代码库**推荐使用paddlepaddle-2.3.2以上的版本**，请参考[官网](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html)下载对应适合版本，**Windows平台请安装paddle develop版本**；
+ - **PaddleYOLO 的[Roadmap](https://github.com/PaddlePaddle/PaddleYOLO/issues/44)** issue用于收集用户的需求，欢迎提出您的建议和需求；
+
+## 教程
+
+<details open>
+<summary>安装</summary>
+
+Clone 代码库和安装 [requirements.txt](https://github.com/PaddlePaddle/PaddleYOLO/blob/release/2.5/requirements.txt)，环境需要在一个
+[**Python>=3.7.0**](https://www.python.org/) 下的环境，且需要安装
+[**PaddlePaddle>=2.3.2**](https://www.paddlepaddle.org.cn/install/)。
+
+```bash
+git clone https://github.com/PaddlePaddle/PaddleYOLO  # clone
+cd PaddleYOLO
+pip install -r requirements.txt  # install
+```
+
+</details>
+
+
+<details>
+<summary>训练/验证/预测/部署/测速</summary>
+
+将以下命令写在一个脚本文件里如```run.sh```，一键运行命令为：```sh run.sh```，也可命令行一句句去运行。
+
+```bash
+model_name=ppyoloe # 可修改，如 yolov7
+job_name=ppyoloe_plus_crn_l_300e_coco # 可修改，如 yolov7_tiny_300e_coco
+
+config=configs/${model_name}/${job_name}.yml
+log_dir=log_dir/${job_name}
+# weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
+weights=output/${job_name}/model_final.pdparams
+
+# 1.训练（单卡/多卡）
+# CUDA_VISIBLE_DEVICES=0 python tools/train.py -c ${config} --eval --amp
+python -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
+
+# 2.评估
+CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c ${config} -o weights=${weights} --classwise
+
+# 3.直接预测
+CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg --draw_threshold=0.5
+
+# 4.导出模型
+CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} # exclude_nms=True trt=True
+
+# 5.部署预测
+CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
+
+# 6.部署测速，加 “--run_mode=trt_fp16” 表示在TensorRT FP16模式下测速
+CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU --run_benchmark=True # --run_mode=trt_fp16
+
+# 7.onnx导出
+paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmodel --params_filename model.pdiparams --opset_version 12 --save_file ${job_name}.onnx
+
+# 8.onnx测速
+/usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp16
+```
+
+- 如果想切换模型，只要修改开头两行即可，如:
+  ```
+  model_name=yolov7
+  job_name=yolov7_tiny_300e_coco
+  ```
+- 导出**onnx**，首先安装[Paddle2ONNX](https://github.com/PaddlePaddle/Paddle2ONNX)，`pip install paddle2onnx`；
+- **统计FLOPs(G)和Params(M)**，首先安装[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim)，`pip install paddleslim`，然后设置[runtime.yml](configs/runtime.yml)里`print_flops: True`和`print_params: True`，并且注意确保是**单尺度**下如640x640，**打印的是MACs，FLOPs=2*MACs**。
+
+</details>
+
+
+<details open>
+<summary>训练自定义数据集</summary>
+
+- 请参照[文档](docs/MODEL_ZOO_cn.md#自定义数据集)和[issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43)；
+- 请首先**确保加载了COCO权重作为预训练**；
+- YOLO检测模型建议**总`batch_size`至少大于`64`**去训练，如果资源不够请**换小模型**或**减小模型的输入尺度**，为了保障较高检测精度，**尽量不要尝试单卡训和总`batch_size`小于`64`训**；
+
+</details>
 
 
 ## 更新日志
@@ -8,13 +94,6 @@
 * 【2022/09/26】发布[PaddleYOLO](https://github.com/PaddlePaddle/PaddleYOLO)模型套件，请参照[ModelZoo](docs/MODEL_ZOO_cn.md)；
 * 【2022/09/19】支持[YOLOv6](configs/yolov6)新版，包括n/t/s/m/l模型；
 * 【2022/08/23】发布`YOLOSeries`代码库: 支持`YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`等YOLO模型，支持`ConvNeXt`骨干网络高精度版`PP-YOLOE`,`YOLOX`和`YOLOv5`等模型，支持PaddleSlim无损加速量化训练`PP-YOLOE`,`YOLOv5`,`YOLOv6`和`YOLOv7`等模型，详情可阅读[此文章](https://mp.weixin.qq.com/s/Hki01Zs2lQgvLSLWS0btrA)；
-
-
-**注意:**
- - **PaddleYOLO**代码库协议为**GPL 3.0**，[YOLOv5](configs/yolov5),[YOLOv7](configs/yolov7)和[YOLOv6](configs/yolov6)这3类模型代码不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)，其余YOLO模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用，**会最先发布PP-YOLO系列特色检测模型的最新进展**；；
- - **PaddleYOLO**代码库**推荐使用paddlepaddle-2.3.2以上的版本**，请参考[官网](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html)下载对应适合版本，**Windows平台请安装paddle develop版本**；
- - PaddleYOLO 的[Roadmap](https://github.com/PaddlePaddle/PaddleYOLO/issues/44) issue用于收集用户的需求，欢迎提出您的建议和需求。
- - 训练**自定义数据集**请参照[文档](docs/MODEL_ZOO_cn.md#自定义数据集)和[issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43)。请首先**确保加载了COCO权重作为预训练**，YOLO检测模型建议**总`batch_size`至少大于`64`**去训练，如果资源不够请**换小模型**或**减小模型的输入尺度**，为了保障较高检测精度，**尽量不要尝试单卡训和总`batch_size`小于`32`训**；
 
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157793354-6e7f381a-0aa6-4bb7-845c-9acf2ecc05c3.png" width="20"/> 产品动态

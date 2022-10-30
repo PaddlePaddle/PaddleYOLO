@@ -2,21 +2,98 @@
 
 ## Introduction
 
-**PaddleYOLO** is a YOLO Series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`RTMDet` and so on, see [ModelZoo](docs/MODEL_ZOO_en.md);
+**PaddleYOLO** is a YOLO Series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`RTMDet` and so on, see [ModelZoo](docs/MODEL_ZOO_en.md) and [configs](configs/).
+
+**Notes：**
+ - The Licence of **PaddleYOLO** is **[GPL 3.0](LICENSE)**, the codes of [YOLOv5](configs/yolov5),[YOLOv7](configs/yolov7) and [YOLOv6](configs/yolov6) will not be merged into [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection). Except for these three YOLO models, other YOLO models are recommended to use in [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **which will be the first to release the latest progress of PP-YOLO series detection model**;
+ - To use **PaddleYOLO**, **PaddlePaddle-2.3.2 or above is recommended**，please refer to the [official website](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html) to download the appropriate version. **For Windows platforms, please install the paddle develop version**;
+ - **PaddleYOLO's [Roadmap](https://github.com/PaddlePaddle/PaddleYOLO/issues/44)** issue collects feature requests from user, welcome to put forward any opinions and suggestions.
+ 
+## Tutorials
+
+<details open>
+<summary>Install</summary>
+
+Clone repo and install [requirements.txt](https://github.com/PaddlePaddle/PaddleYOLO/blob/release/2.5/requirements.txt) in a
+[**Python>=3.7.0**](https://www.python.org/) environment, including
+[**PaddlePaddle>=2.3.2**](https://www.paddlepaddle.org.cn/install/).
+
+```bash
+git clone https://github.com/PaddlePaddle/PaddleYOLO  # clone
+cd PaddleYOLO
+pip install -r requirements.txt  # install
+```
+
+</details>
+
+
+<details>
+<summary>Training/Evaluation/Inference/Deployment/Speed</summary>
+
+Write the following commands in a script file, such as ```run.sh```, and run as：```sh run.sh```. You can also run the command line sentence by sentence.
+
+```bash
+model_name=ppyoloe # yolov7
+job_name=ppyoloe_plus_crn_l_80e_coco # yolov7_tiny_300e_coco
+
+config=configs/${model_name}/${job_name}.yml
+log_dir=log_dir/${job_name}
+# weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
+weights=output/${job_name}/model_final.pdparams
+
+# 1.training（single GPU / multi GPU）
+# CUDA_VISIBLE_DEVICES=0 python tools/train.py -c ${config} --eval --amp
+python -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
+
+# 2.eval
+CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c ${config} -o weights=${weights} --classwise
+
+# 3.infer
+CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg --draw_threshold=0.5
+
+# 4.export
+CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} # exclude_nms=True trt=True
+
+# 5.deploy infer
+CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
+
+# 6.deploy speed, add '--run_mode=trt_fp16' to test in TensorRT FP16 mode
+CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU --run_benchmark=True # --run_mode=trt_fp16
+
+# 7.export onnx
+paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmodel --params_filename model.pdiparams --opset_version 12 --save_file ${job_name}.onnx
+
+# 8.onnx speed
+/usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp16
+```
+
+**Note：**
+- If you want to switch models, just modify the first two lines, such as:
+  ```
+  model_name=yolov7
+  job_name=yolov7_tiny_300e_coco
+  ```
+- For **exporting onnx**, you should install [Paddle2ONNX](https://github.com/PaddlePaddle/Paddle2ONNX) by `pip install paddle2onnx` at first.
+- For **FLOPs(G) and Params(M)**, you should install [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim) by `pip install paddleslim` at first, then set `print_flops: True` and `print_params: True` in [runtime.yml](configs/runtime.yml). Make sure **single scale** like 640x640, **MACs are printed，FLOPs=2*MACs**.
+
+</details>
+
+
+<details open>
+<summary>Training Custom dataset</summary>
+- Please refer to [doc](docs/MODEL_ZOO_en.md#CustomDataset) and [issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43). 
+- Please **ensure COCO trained weights are loaded as pre-train weights** at first. 
+- We recommend to use YOLO detection model **with a total `batch_size` at least greater than `64` to train**. If the resources are insufficient, please **use the smaller model** or **reduce the input size of the model**. To ensure high detection accuracy, **you'd better not try to using single GPU or total `batch_size` less than `64` for training**;
+
+</details>
+
 
 ## Updates
 
 * 【2022/09/29】Support [RTMDet](configs/rtmdet) inference and deploy;
 * 【2022/09/26】Release [PaddleYOLO](https://github.com/PaddlePaddle/PaddleYOLO), see [ModelZoo](docs/MODEL_ZOO_en.md);
-* 【2022/09/19】Support the new version of [YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6), including n/t/s/m/l model;
+* 【2022/09/19】Support the new version of [YOLOv6](configs/yolov6), including n/t/s/m/l model;
 * 【2022/08/23】Release `YOLOSeries` codebase: support `YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6` and `YOLOv7`; support using `ConvNeXt` backbone to get high-precision version of `PP-YOLOE`,`YOLOX` and `YOLOv5`; support PaddleSlim accelerated quantitative training `PP-YOLOE`,`YOLOv5`,`YOLOv6` and `YOLOv7`. For details, please read this [article](https://mp.weixin.qq.com/s/Hki01Zs2lQgvLSLWS0btrA)；
-
-
-**Notes：**
- - The Licence of **PaddleYOLO** is **GPL 3.0**, the codes of [YOLOv5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5),[YOLOv7](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov7) and [YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6) will not be merged into [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection). Except for these three YOLO models, other YOLO models are recommended to use in [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **which will be the first to release the latest progress of PP-YOLO series detection model**;
- - To use **PaddleYOLO**, **PaddlePaddle-2.3.2 or above is recommended**，please refer to the [official website](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html) to download the appropriate version. **For Windows platforms, please install the paddle develop version**;
- - PaddleYOLO's [Roadmap](https://github.com/PaddlePaddle/PaddleYOLO/issues/44) issue collects feature requests from user, welcome to put forward any opinions and suggestions.
- - Training **Custom dataset** please refer to [doc](docs/MODEL_ZOO_en.md#CustomDataset) and [issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43). Please **ensure COCO trained weights are loaded as pre-train** at first. We recommend to use YOLO detection model **with a total `batch_size` at least greater than `64` to train**. If the resources are insufficient, please **use the smaller model** or **reduce the input size of the model**. To ensure high detection accuracy, **you'd better never try to using single GPU or total `batch_size` less than `32` for training**;
 
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157793354-6e7f381a-0aa6-4bb7-845c-9acf2ecc05c3.png" width="20"/> Product Update

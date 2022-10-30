@@ -12,21 +12,21 @@
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | YOLOv5-n        |  640     |    16     |   300e    |     2.6    |  28.0  | 45.7 |  1.87  | 4.52 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_n_300e_coco.pdparams) | [配置文件](./yolov5_n_300e_coco.yml) |
-| YOLOv5-s        |  640     |    16      |   300e    |     3.2    |  37.6  | 56.7 |  7.24  | 16.54 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_s_300e_coco.pdparams) | [配置文件](./yolov5_s_300e_coco.yml) |
-| YOLOv5-m        |  640     |    8      |   300e    |     5.2    |  45.4  | 64.1 |  21.19  | 49.08 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_m_300e_coco.pdparams) | [配置文件](./yolov5_m_300e_coco.yml) |
-| YOLOv5-l        |  640     |    8      |   300e    |     7.9    |  48.9  | 67.1 |  46.56  | 109.32 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) | [配置文件](./yolov5_l_300e_coco.yml) |
-| YOLOv5-x        |  640     |    8      |   300e    |     13.7    |  **50.6**  | **68.7** |  86.75  | 205.92 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [配置文件](./yolov5_x_300e_coco.yml) |
-| YOLOv5-s ConvNeXt|  640    |    8      |   36e     |     -      |  42.4  |  65.3  |  34.54 |  17.96 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_convnext_s_36e_coco.pdparams) | [配置文件](../convnext/yolov5_convnext_s_36e_coco.yml) |
+| YOLOv5-s        |  640     |    16      |   300e   |     3.2    |  37.6  | 56.7 |  7.24  | 16.54 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_s_300e_coco.pdparams) | [配置文件](./yolov5_s_300e_coco.yml) |
+| YOLOv5-m        |  640     |    16      |   300e   |     5.2    |  45.4  | 64.1 |  21.19  | 49.08 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_m_300e_coco.pdparams) | [配置文件](./yolov5_m_300e_coco.yml) |
+| YOLOv5-l        |  640     |    16      |   300e   |     7.9    |  48.9  | 67.1 |  46.56  | 109.32 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) | [配置文件](./yolov5_l_300e_coco.yml) |
+| YOLOv5-x        |  640     |    16      |   300e   |     13.7   |  50.6  | 68.7 |  86.75  | 205.92 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [配置文件](./yolov5_x_300e_coco.yml) |
+| YOLOv5-s ConvNeXt|  640    |    8       |   36e    |      -     |  42.4  | 65.3 |  34.54  |  17.96 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_convnext_s_36e_coco.pdparams) | [配置文件](../convnext/yolov5_convnext_s_36e_coco.yml) |
 
 ### P6大尺度模型
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | YOLOv5p6-n        |  1280     |    16     |   300e    |     -    |  35.9  | 54.2 |  3.25  | 9.23 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5p6_n_300e_coco.pdparams) | [配置文件](./yolov5p6_n_300e_coco.yml) |
-| YOLOv5p6-s        |  1280     |    8      |   300e    |     -    |  44.5  | 63.3 |  12.63  | 33.81 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5p6_s_300e_coco.pdparams) | [配置文件](./yolov5p6_s_300e_coco.yml) |
-| YOLOv5p6-m        |  1280     |    8      |   300e    |     -    |  51.1  | 69.0 |  35.73  | 100.21 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5p6_m_300e_coco.pdparams) | [配置文件](./yolov5p6_m_300e_coco.yml) |
+| YOLOv5p6-s        |  1280     |    16     |   300e    |     -    |  44.5  | 63.3 |  12.63  | 33.81 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5p6_s_300e_coco.pdparams) | [配置文件](./yolov5p6_s_300e_coco.yml) |
+| YOLOv5p6-m        |  1280     |    16     |   300e    |     -    |  51.1  | 69.0 |  35.73  | 100.21 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5p6_m_300e_coco.pdparams) | [配置文件](./yolov5p6_m_300e_coco.yml) |
 | YOLOv5p6-l        |  1280     |    8      |   300e    |     -    |  53.4  | 71.0 |  76.77  | 223.09 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5p6_l_300e_coco.pdparams) | [配置文件](./yolov5p6_l_300e_coco.yml) |
-| YOLOv5p6-x        |  1280     |    8      |   300e    |     -    |  54.7  | 72.4 |  140.80  | 420.03 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5p6_x_300e_coco.pdparams) | [配置文件](./yolov5p6_x_300e_coco.yml) |
+| YOLOv5p6-x        |  1280     |    8      |   300e    |     -    |  54.7  | 72.4 |  140.80 | 420.03 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5p6_x_300e_coco.pdparams) | [配置文件](./yolov5p6_x_300e_coco.yml) |
 
 
 **注意:**

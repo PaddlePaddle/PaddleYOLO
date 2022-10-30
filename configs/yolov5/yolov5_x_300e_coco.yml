@@ -14,7 +14,7 @@ weights: output/yolov5_x_300e_coco/model_final
 
 
 TrainReader:
-  batch_size: 2 # default 8 gpus, total bs = 16
+  batch_size: 16 # default 8 gpus, total bs = 128
 
 
 YOLOv5Loss:

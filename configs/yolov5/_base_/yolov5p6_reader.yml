@@ -13,7 +13,6 @@ TrainReader:
     - BboxXYXY2XYWH: {}
     - NormalizeBox: {}
     - NormalizeImage: {mean: [0., 0., 0.], std: [1., 1., 1.], norm_type: none}
-    - RGBReverse: {} # bgr->rgb
     - Permute: {}
   batch_size: 8
   shuffle: True

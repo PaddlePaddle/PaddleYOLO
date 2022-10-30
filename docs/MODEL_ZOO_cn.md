@@ -113,11 +113,16 @@
 | 网络模型        | 输入尺寸   | 图片数/GPU | 学习率策略 | TRT-FP16-Latency(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | YOLOv5-n        |  640     |    16     |   300e    |     2.6    |  28.0  | 45.7 |  1.87  | 4.52 | [model](https://paddledet.bj.bcebos.com/models/yolov5_n_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_n_300e_coco.yml) |
-| YOLOv5-s        |  640     |    8      |   300e    |     3.2    |  37.0  | 55.9 |  7.24  | 16.54 | [model](https://paddledet.bj.bcebos.com/models/yolov5_s_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_s_300e_coco.yml) |
-| YOLOv5-m        |  640     |    5      |   300e    |     5.2    |  45.3  | 63.8 |  21.19  | 49.08 | [model](https://paddledet.bj.bcebos.com/models/yolov5_m_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_m_300e_coco.yml) |
-| YOLOv5-l        |  640     |    3      |   300e    |     7.9    |  48.6  | 66.9 |  46.56  | 109.32 | [model](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_l_300e_coco.yml) |
-| YOLOv5-x        |  640     |    2      |   300e    |     13.7    |  **50.6**  | **68.7** |  86.75  | 205.92 | [model](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_x_300e_coco.yml) |
+| YOLOv5-s        |  640     |    16      |   300e    |     3.2    |  37.6  | 56.7 |  7.24  | 16.54 | [model](https://paddledet.bj.bcebos.com/models/yolov5_s_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_s_300e_coco.yml) |
+| YOLOv5-m        |  640     |    16      |   300e    |     5.2    |  45.4  | 64.1 |  21.19  | 49.08 | [model](https://paddledet.bj.bcebos.com/models/yolov5_m_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_m_300e_coco.yml) |
+| YOLOv5-l        |  640     |    16      |   300e    |     7.9    |  48.9  | 67.1 |  46.56  | 109.32 | [model](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_l_300e_coco.yml) |
+| YOLOv5-x        |  640     |    16      |   300e    |     13.7   |  50.6  | 68.7 |  86.75  | 205.92 | [model](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_x_300e_coco.yml) |
 | YOLOv5-s ConvNeXt|  640    |    8      |   36e     |     -      |  42.4  |  65.3  |  34.54 |  17.96 | [model](https://paddledet.bj.bcebos.com/models/yolov5_convnext_s_36e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_convnext_s_36e_coco.yml) |
+| *YOLOv5p6-n        |  1280     |    16     |   300e    |     -    |  35.9  | 54.2 |  3.25  | 9.23 | [model](https://paddledet.bj.bcebos.com/models/yolov5p6_n_300e_coco.pdparams) | [config](../configs/yolov5/yolov5p6_n_300e_coco.yml) |
+| *YOLOv5p6-s        |  1280     |    16     |   300e    |     -    |  44.5  | 63.3 |  12.63  | 33.81 | [model](https://paddledet.bj.bcebos.com/models/yolov5p6_s_300e_coco.pdparams) | [config](../configs/yolov5/yolov5p6_s_300e_coco.yml) |
+| *YOLOv5p6-m        |  1280     |    16     |   300e    |     -    |  51.1  | 69.0 |  35.73  | 100.21 | [model](https://paddledet.bj.bcebos.com/models/yolov5p6_m_300e_coco.pdparams) | [config](../configs/yolov5/yolov5p6_m_300e_coco.yml) |
+| *YOLOv5p6-l        |  1280     |    8      |   300e    |     -    |  53.4  | 71.0 |  76.77  | 223.09 | [model](https://paddledet.bj.bcebos.com/models/yolov5p6_l_300e_coco.pdparams) | [config](../configs/yolov5/yolov5p6_l_300e_coco.yml) |
+| *YOLOv5p6-x        |  1280     |    8      |   300e    |     -    |  54.7  | 72.4 |  140.80 | 420.03 | [model](https://paddledet.bj.bcebos.com/models/yolov5p6_x_300e_coco.pdparams) | [config](../configs/yolov5/yolov5p6_x_300e_coco.yml) |
 
 </details>
 
@@ -141,8 +146,8 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | TRT-FP16-Latency(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| *YOLOv6-n       |  416     |    32      |   400e    |     1.0    |  31.1 |    45.3 |  4.74  | 5.16 |[model](https://paddledet.bj.bcebos.com/models/yolov6_n_416_400e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_n_416_400e_coco.yml) |
-| *YOLOv6-n       |  640     |    32      |   400e    |     1.3    |  36.1 |    51.9 |  4.74  | 12.21 |[model](https://paddledet.bj.bcebos.com/models/yolov6_n_400e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_n_400e_coco.yml) |
+| YOLOv6-n       |  416     |    32      |   400e    |     1.0    |  31.1 |    45.3 |  4.74  | 5.16 |[model](https://paddledet.bj.bcebos.com/models/yolov6_n_416_400e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_n_416_400e_coco.yml) |
+| YOLOv6-n       |  640     |    32      |   400e    |     1.3    |  36.1 |    51.9 |  4.74  | 12.21 |[model](https://paddledet.bj.bcebos.com/models/yolov6_n_400e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_n_400e_coco.yml) |
 | *YOLOv6-t       |  640     |    32      |   400e    |     2.1    |  40.7 |    57.4 |  10.63  | 27.29 |[model](https://paddledet.bj.bcebos.com/models/yolov6_t_400e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_t_400e_coco.yml) |
 | *YOLOv6-s       |  640     |    32      |   400e    |     2.6    |  43.4 |    60.5 |  18.87  | 48.35 |[model](https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_s_400e_coco.yml) |
 | *YOLOv6-m       |  640     |    32      |   300e    |     5.0    |  49.0 |    66.5 |  37.17  | 88.82 |[model](https://paddledet.bj.bcebos.com/models/yolov6_m_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_m_300e_coco.yml) |
@@ -235,7 +240,7 @@
  - 所有模型均使用COCO train2017作为训练集，在COCO val2017上验证精度，模型前带*表示训练更新中。
  - 具体精度和速度细节请查看[PP-YOLOE](../../configs/ppyoloe),[YOLOX](../../configs/yolox),[YOLOv5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5),[YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6),[YOLOv7](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov7)，**其中YOLOv5,YOLOv6,YOLOv7评估并未采用`multi_label`形式**。
 - 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，**不包含数据预处理和模型输出后处理(NMS)的耗时**。测试采用**单卡Tesla T4 GPU，batch size=1**，测试环境为**paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考各自模型主页。
-- **统计FLOPs(G)和Params(M)**，首先安装[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`，然后设置[runtime.yml](../../configs/runtime.yml)里`print_flops: True`和`print_params: True`，并且注意确保是**单尺度**下如640x640。
+- **统计FLOPs(G)和Params(M)**，首先安装[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`，然后设置[runtime.yml](../../configs/runtime.yml)里`print_flops: True`和`print_params: True`，并且注意确保是**单尺度**下如640x640，**打印的是MACs，FLOPs=2*MACs**。
  - 各模型导出后的权重以及ONNX，分为**带(w)**和**不带(wo)**后处理NMS，都提供了下载链接，请参考各自模型主页下载。`w_nms`表示**带NMS后处理**，可以直接使用预测出最终检测框结果如```python deploy/python/infer.py --model_dir=ppyoloe_crn_l_300e_coco_w_nms/ --image_file=demo/000000014439.jpg --device=GPU```；`wo_nms`表示**不带NMS后处理**，是**测速**时使用，如需预测出检测框结果需要找到**对应head中的后处理相关代码**并修改为如下：
  ```
         if self.exclude_nms:
@@ -257,50 +262,52 @@ PaddleDetection团队提供的下载链接为：[coco](https://bj.bcebos.com/v1/
 
 
 ### **一键运行全流程**
-```
-model_type=ppyoloe # 可修改，如 yolov7
-job_name=ppyoloe_crn_l_300e_coco # 可修改，如 yolov7_l_300e_coco
 
-config=configs/${model_type}/${job_name}.yml
+将以下命令写在一个脚本文件里如```run.sh```，一键运行命令为：```sh run.sh```，也可命令行一句句去运行。
+
+```bash
+model_name=ppyoloe # 可修改，如 yolov7
+job_name=ppyoloe_plus_crn_l_300e_coco # 可修改，如 yolov7_tiny_300e_coco
+
+config=configs/${model_name}/${job_name}.yml
 log_dir=log_dir/${job_name}
 # weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
 weights=output/${job_name}/model_final.pdparams
 
 # 1.训练（单卡/多卡）
-# CUDA_VISIBLE_DEVICES=0 python3.7 tools/train.py -c ${config} --eval --amp
-python3.7 -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
+# CUDA_VISIBLE_DEVICES=0 python tools/train.py -c ${config} --eval --amp
+python -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
 
 # 2.评估
-CUDA_VISIBLE_DEVICES=0 python3.7 tools/eval.py -c ${config} -o weights=${weights} --classwise
+CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c ${config} -o weights=${weights} --classwise
 
 # 3.直接预测
-CUDA_VISIBLE_DEVICES=0 python3.7 tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg --draw_threshold=0.5
+CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg --draw_threshold=0.5
 
 # 4.导出模型
-CUDA_VISIBLE_DEVICES=0 python3.7 tools/export_model.py -c ${config} -o weights=${weights} # exclude_nms=True trt=True
+CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} # exclude_nms=True trt=True
 
 # 5.部署预测
-CUDA_VISIBLE_DEVICES=0 python3.7 deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
+CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
 
-# 6.部署测速
-CUDA_VISIBLE_DEVICES=0 python3.7 deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU --run_benchmark=True # --run_mode=trt_fp16
+# 6.部署测速，加 “--run_mode=trt_fp16” 表示在TensorRT FP16模式下测速
+CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU --run_benchmark=True # --run_mode=trt_fp16
 
 # 7.onnx导出
 paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmodel --params_filename model.pdiparams --opset_version 12 --save_file ${job_name}.onnx
 
 # 8.onnx测速
 /usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp16
-
 ```
 
-**注意:**
-- 将以上命令写在一个脚本文件里如```run.sh```，一键运行命令为：```sh run.sh```，也可命令行一句句去运行。
 - 如果想切换模型，只要修改开头两行即可，如:
   ```
-  model_type=yolov7
+  model_name=yolov7
   job_name=yolov7_l_300e_coco
   ```
-- **统计FLOPs(G)**，首先安装[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`，然后设置[runtime.yml](../../configs/runtime.yml)里`print_flops: True`，并且注意确保是**单尺度**下如640x640，**打印的是MACs，FLOPs=2*MACs**。
+- 导出**onnx**，首先安装[Paddle2ONNX](https://github.com/PaddlePaddle/Paddle2ONNX)，`pip install paddle2onnx`；
+- **统计FLOPs(G)和Params(M)**，首先安装[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim)，`pip install paddleslim`，然后设置[runtime.yml](../../configs/runtime.yml)里`print_flops: True`和`print_params: True`，并且注意确保是**单尺度**下如640x640，**打印的是MACs，FLOPs=2*MACs**。
+
 
 ### 自定义数据集
 
@@ -317,10 +324,10 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 
 ```base
 # 单卡fintune训练：
-# CUDA_VISIBLE_DEVICES=0 python3.7 tools/train.py -c ${config} --eval --amp -o pretrain_weights=https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams
+# CUDA_VISIBLE_DEVICES=0 python tools/train.py -c ${config} --eval --amp -o pretrain_weights=https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams
 
 # 多卡fintune训练：
-python3.7 -m paddle.distributed.launch --log_dir=./log_dir --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp -o pretrain_weights=https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams
+python -m paddle.distributed.launch --log_dir=./log_dir --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp -o pretrain_weights=https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams
 ```
 
 **注意:**

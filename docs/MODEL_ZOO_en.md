@@ -113,11 +113,16 @@
 | Model        | Input Size  | images/GPU | Epoch | TRT-FP16-Latency(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    download       | config |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
 | YOLOv5-n        |  640     |    16     |   300e    |     2.6    |  28.0  | 45.7 |  1.87  | 4.52 | [model](https://paddledet.bj.bcebos.com/models/yolov5_n_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_n_300e_coco.yml) |
-| YOLOv5-s        |  640     |    8      |   300e    |     3.2    |  37.0  | 55.9 |  7.24  | 16.54 | [model](https://paddledet.bj.bcebos.com/models/yolov5_s_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_s_300e_coco.yml) |
-| YOLOv5-m        |  640     |    5      |   300e    |     5.2    |  45.3  | 63.8 |  21.19  | 49.08 | [model](https://paddledet.bj.bcebos.com/models/yolov5_m_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_m_300e_coco.yml) |
-| YOLOv5-l        |  640     |    3      |   300e    |     7.9    |  48.6  | 66.9 |  46.56  | 109.32 | [model](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_l_300e_coco.yml) |
-| YOLOv5-x        |  640     |    2      |   300e    |     13.7    |  **50.6**  | **68.7** |  86.75  | 205.92 | [model](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_x_300e_coco.yml) |
+| YOLOv5-s        |  640     |    16      |   300e    |     3.2    |  37.6  | 56.7 |  7.24  | 16.54 | [model](https://paddledet.bj.bcebos.com/models/yolov5_s_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_s_300e_coco.yml) |
+| YOLOv5-m        |  640     |    16      |   300e    |     5.2    |  45.4  | 64.1 |  21.19  | 49.08 | [model](https://paddledet.bj.bcebos.com/models/yolov5_m_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_m_300e_coco.yml) |
+| YOLOv5-l        |  640     |    16      |   300e    |     7.9    |  48.9  | 67.1 |  46.56  | 109.32 | [model](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_l_300e_coco.yml) |
+| YOLOv5-x        |  640     |    16      |   300e    |     13.7   |  50.6  | 68.7 |  86.75  | 205.92 | [model](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_x_300e_coco.yml) |
 | YOLOv5-s ConvNeXt|  640    |    8      |   36e     |     -      |  42.4  |  65.3  |  34.54 |  17.96 | [model](https://paddledet.bj.bcebos.com/models/yolov5_convnext_s_36e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5/yolov5_convnext_s_36e_coco.yml) |
+| *YOLOv5p6-n        |  1280     |    16     |   300e    |     -    |  35.9  | 54.2 |  3.25  | 9.23 | [model](https://paddledet.bj.bcebos.com/models/yolov5p6_n_300e_coco.pdparams) | [config](../configs/yolov5/yolov5p6_n_300e_coco.yml) |
+| *YOLOv5p6-s        |  1280     |    16     |   300e    |     -    |  44.5  | 63.3 |  12.63  | 33.81 | [model](https://paddledet.bj.bcebos.com/models/yolov5p6_s_300e_coco.pdparams) | [config](../configs/yolov5/yolov5p6_s_300e_coco.yml) |
+| *YOLOv5p6-m        |  1280     |    16     |   300e    |     -    |  51.1  | 69.0 |  35.73  | 100.21 | [model](https://paddledet.bj.bcebos.com/models/yolov5p6_m_300e_coco.pdparams) | [config](../configs/yolov5/yolov5p6_m_300e_coco.yml) |
+| *YOLOv5p6-l        |  1280     |    8      |   300e    |     -    |  53.4  | 71.0 |  76.77  | 223.09 | [model](https://paddledet.bj.bcebos.com/models/yolov5p6_l_300e_coco.pdparams) | [config](../configs/yolov5/yolov5p6_l_300e_coco.yml) |
+| *YOLOv5p6-x        |  1280     |    8      |   300e    |     -    |  54.7  | 72.4 |  140.80 | 420.03 | [model](https://paddledet.bj.bcebos.com/models/yolov5p6_x_300e_coco.pdparams) | [config](../configs/yolov5/yolov5p6_x_300e_coco.yml) |
 
 </details>
 
@@ -141,8 +146,8 @@
 
 | Model        | Input Size  | images/GPU | Epoch | TRT-FP16-Latency(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    download       | config |
 | :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| *YOLOv6-n       |  416     |    32      |   400e    |     1.0    |  31.1 |    45.3 |  4.74  | 5.16 |[model](https://paddledet.bj.bcebos.com/models/yolov6_n_416_400e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_n_416_400e_coco.yml) |
-| *YOLOv6-n       |  640     |    32      |   400e    |     1.3    |  36.1 |    51.9 |  4.74  | 12.21 |[model](https://paddledet.bj.bcebos.com/models/yolov6_n_400e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_n_400e_coco.yml) |
+| YOLOv6-n       |  416     |    32      |   400e    |     1.0    |  31.1 |    45.3 |  4.74  | 5.16 |[model](https://paddledet.bj.bcebos.com/models/yolov6_n_416_400e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_n_416_400e_coco.yml) |
+| YOLOv6-n       |  640     |    32      |   400e    |     1.3    |  36.1 |    51.9 |  4.74  | 12.21 |[model](https://paddledet.bj.bcebos.com/models/yolov6_n_400e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_n_400e_coco.yml) |
 | *YOLOv6-t       |  640     |    32      |   400e    |     2.1    |  40.7 |    57.4 |  10.63  | 27.29 |[model](https://paddledet.bj.bcebos.com/models/yolov6_t_400e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_t_400e_coco.yml) |
 | *YOLOv6-s       |  640     |    32      |   400e    |     2.6    |  43.4 |    60.5 |  18.87  | 48.35 |[model](https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_s_400e_coco.yml) |
 | *YOLOv6-m       |  640     |    32      |   300e    |     5.0    |  49.0 |    66.5 |  37.17  | 88.82 |[model](https://paddledet.bj.bcebos.com/models/yolov6_m_300e_coco.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6/yolov6_m_300e_coco.yml) |
@@ -234,10 +239,10 @@
 
 ### **Notes：**
  - All the models are trained on COCO train2017 dataset and evaluated on val2017 dataset. The * in front of the model indicates that the training is being updated.
- - Please check the specific accuracy and speed details in [PP-YOLOE](../../configs/ppyoloe),[YOLOX](../../configs/yolox),[YOLOv5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5),[YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6),[YOLOv7](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov7). **Note that YOLOv5, YOLOv6 and YOLOv7 have not adopted `multi_label` to eval**。
+ - Please check the specific accuracy and speed details in [PP-YOLOE](../../configs/ppyoloe),[YOLOX](../../configs/yolox),[YOLOv5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5),[YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6),[YOLOv7](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov7). **Note that YOLOv5, YOLOv6 and YOLOv7 have not adopted `multi_label` to eval**.
 - TRT-FP16-Latency(ms) is the time spent in testing under TensorRT-FP16, **excluding data preprocessing and model output post-processing (NMS)**. The test adopts single card **Tesla T4 GPU, batch size=1**, and the test environment is **paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**. Please refer to the respective model homepage for details.
-- For **FLOPs(G) and Params(M)**, you should first install [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`, then set `print_flops: True` and `print_params: True` in [runtime.yml](../../configs/runtime.yml). Make sure **single scale** like 640x640。
- - Based on [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), quantitative training of YOLO series models can achieve basically lossless accuracy and generally improve the speed by more than 30%. For details, please refer to [auto_compression](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/example/auto_compression)。
+- For **FLOPs(G) and Params(M)**, you should first install [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`, then set `print_flops: True` and `print_params: True` in [runtime.yml](../../configs/runtime.yml). Make sure **single scale** like 640x640, **MACs are printed，FLOPs=2*MACs**.
+ - Based on [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), quantitative training of YOLO series models can achieve basically lossless accuracy and generally improve the speed by more than 30%. For details, please refer to [auto_compression](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/example/auto_compression).
 
 
 ## UserGuide
@@ -247,50 +252,53 @@ The download link provided by PaddleDetection team is: [coco](https://bj.bcebos.
 
 
 ### **Pipeline**
-```
-model_type=ppyoloe # can modify to 'yolov7'
-job_name=ppyoloe_crn_l_300e_coco # can modify to 'yolov7_l_300e_coco'
 
-config=configs/${model_type}/${job_name}.yml
+Write the following commands in a script file, such as ```run.sh```, and run as：```sh run.sh```. You can also run the command line sentence by sentence.
+
+```bash
+model_name=ppyoloe # yolov7
+job_name=ppyoloe_plus_crn_l_80e_coco # yolov7_tiny_300e_coco
+
+config=configs/${model_name}/${job_name}.yml
 log_dir=log_dir/${job_name}
 # weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
 weights=output/${job_name}/model_final.pdparams
 
 # 1.training（single GPU / multi GPU）
-# CUDA_VISIBLE_DEVICES=0 python3.7 tools/train.py -c ${config} --eval --amp
-python3.7 -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
+# CUDA_VISIBLE_DEVICES=0 python tools/train.py -c ${config} --eval --amp
+python -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
 
 # 2.eval
-CUDA_VISIBLE_DEVICES=0 python3.7 tools/eval.py -c ${config} -o weights=${weights} --classwise
+CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c ${config} -o weights=${weights} --classwise
 
 # 3.infer
-CUDA_VISIBLE_DEVICES=0 python3.7 tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg --draw_threshold=0.5
+CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg --draw_threshold=0.5
 
 # 4.export
-CUDA_VISIBLE_DEVICES=0 python3.7 tools/export_model.py -c ${config} -o weights=${weights} # exclude_nms=True trt=True
+CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} # exclude_nms=True trt=True
 
 # 5.deploy infer
-CUDA_VISIBLE_DEVICES=0 python3.7 deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
+CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
 
-# 6.deploy speed
-CUDA_VISIBLE_DEVICES=0 python3.7 deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU --run_benchmark=True # --run_mode=trt_fp16
+# 6.deploy speed, add '--run_mode=trt_fp16' to test in TensorRT FP16 mode
+CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU --run_benchmark=True # --run_mode=trt_fp16
 
 # 7.export onnx
 paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmodel --params_filename model.pdiparams --opset_version 12 --save_file ${job_name}.onnx
 
 # 8.onnx speed
 /usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp16
-
 ```
 
 **Note：**
-- Write the above commands in a script file, such as ```run.sh```, and run as：```sh run.sh```,You can also run the command line sentence by sentence.
 - If you want to switch models, just modify the first two lines, such as:
   ```
-  model_type=yolov7
-  job_name=yolov7_l_300e_coco
+  model_name=yolov7
+  job_name=yolov7_tiny_300e_coco
   ```
-- For **FLOPs(G)**, you should first install [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`, then set `print_flops: True` in [runtime.yml](../../configs/runtime.yml). Make sure **single scale** like 640x640, **MACs are printed，FLOPs=2*MACs**。
+- For **exporting onnx**, you should install [Paddle2ONNX](https://github.com/PaddlePaddle/Paddle2ONNX) by `pip install paddle2onnx` at first.
+- For **FLOPs(G) and Params(M)**, you should install [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim) by `pip install paddleslim` at first, then set `print_flops: True` and `print_params: True` in [runtime.yml](../../configs/runtime.yml). Make sure **single scale** like 640x640, **MACs are printed，FLOPs=2*MACs**.
+
 
 ### CustomDataset
 
@@ -298,7 +306,7 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 
 1.For the annotation of custom dataset, please refer to[DetAnnoTools](../tutorials/data/DetAnnoTools.md);
 
-2.For training preparation of custom dataset，please refer to[PrepareDataSet](../tutorials/PrepareDataSet.md)。
+2.For training preparation of custom dataset，please refer to[PrepareDataSet](../tutorials/PrepareDataSet.md).
 
 
 #### fintune：
@@ -307,10 +315,10 @@ In addition to changing the path of the dataset, it is generally recommended to 
 
 ```base
 # fintune with single GPU：
-# CUDA_VISIBLE_DEVICES=0 python3.7 tools/train.py -c ${config} --eval --amp -o pretrain_weights=https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams
+# CUDA_VISIBLE_DEVICES=0 python tools/train.py -c ${config} --eval --amp -o pretrain_weights=https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams
 
 # fintune with multi GPU：
-python3.7 -m paddle.distributed.launch --log_dir=./log_dir --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp -o pretrain_weights=https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams
+python -m paddle.distributed.launch --log_dir=./log_dir --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp -o pretrain_weights=https://paddledet.bj.bcebos.com/models/ppyoloe_crn_l_300e_coco.pdparams
 ```
 
 **Note:**

@@ -43,10 +43,10 @@
 
 ### **一键运行全流程**:
 ```
-model_type=rtmdet # 可修改，如 yolov7
+model_name=rtmdet # 可修改，如 yolov7
 job_name=rtmdet_s_300e_coco # 可修改，如 rtmdet_l_300e_coco
 
-config=configs/${model_type}/${job_name}.yml
+config=configs/${model_name}/${job_name}.yml
 log_dir=log_dir/${job_name}
 # weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
 weights=output/${job_name}/model_final.pdparams

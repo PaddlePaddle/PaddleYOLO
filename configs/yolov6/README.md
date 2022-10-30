@@ -47,10 +47,10 @@
 
 ### **一键运行全流程**:
 ```
-model_type=yolov6 # 可修改，如 yolov7
+model_name=yolov6 # 可修改，如 yolov7
 job_name=yolov6_s_400e_coco # 可修改，如 yolov6_l_silu_300e_coco
 
-config=configs/${model_type}/${job_name}.yml
+config=configs/${model_name}/${job_name}.yml
 log_dir=log_dir/${job_name}
 # weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
 weights=output/${job_name}/model_final.pdparams
