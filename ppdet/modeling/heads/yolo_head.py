@@ -151,7 +151,10 @@ class YOLOv3Head(nn.Layer):
 
 @register
 class YOLOXHead(nn.Layer):
-    __shared__ = ['num_classes', 'width_mult', 'act', 'trt', 'exclude_nms']
+    __shared__ = [
+        'num_classes', 'width_mult', 'act', 'trt', 'exclude_nms',
+        'exclude_post_process'
+    ]
     __inject__ = ['assigner', 'nms']
 
     def __init__(self,
@@ -172,6 +175,7 @@ class YOLOXHead(nn.Layer):
                      'l1': 1.0,
                  },
                  trt=False,
+                 exclude_post_process=False,
                  exclude_nms=False):
         super(YOLOXHead, self).__init__()
         self._dtype = paddle.framework.get_default_dtype()
@@ -186,6 +190,7 @@ class YOLOXHead(nn.Layer):
         if isinstance(self.nms, MultiClassNMS) and trt:
             self.nms.trt = trt
         self.exclude_nms = exclude_nms
+        self.exclude_post_process = exclude_post_process
         self.loss_weight = loss_weight
         self.iou_loss = IouLoss(loss_weight=1.0)  # default loss_weight 2.5
 
@@ -405,12 +410,20 @@ class YOLOXHead(nn.Layer):
         pred_scores, pred_bboxes, stride_tensor = head_outs
         pred_scores = pred_scores.transpose([0, 2, 1])
         pred_bboxes *= stride_tensor
+
         # scale bbox to origin image
         scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
         pred_bboxes /= scale_factor
-        if self.exclude_nms:
-            # `exclude_nms=True` just use in benchmark
-            return pred_bboxes.sum(), pred_scores.sum()
+
+        if self.exclude_post_process:
+            return paddle.concat(
+                [pred_bboxes, pred_scores.transpose([0, 2, 1])],
+                axis=-1), paddle.to_tensor(
+                    [1], dtype='int32')
         else:
-            bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
-            return bbox_pred, bbox_num
+            if self.exclude_nms:
+                # `exclude_nms=True` just use in benchmark
+                return pred_bboxes.sum(), pred_scores.sum()
+            else:
+                bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
+                return bbox_pred, bbox_num

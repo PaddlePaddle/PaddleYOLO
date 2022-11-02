@@ -275,19 +275,21 @@ class RTMDetHead(nn.Layer):
         pred_bboxes = batch_distance2bbox(anchor_points,
                                           pred_dist.transpose([0, 2, 1]))
         pred_bboxes *= stride_tensor
+        # scale bbox to origin
+        scale_y, scale_x = paddle.split(scale_factor, 2, axis=-1)
+        scale_factor = paddle.concat(
+            [scale_x, scale_y, scale_x, scale_y], axis=-1).reshape([-1, 1, 4])
+        pred_bboxes /= scale_factor
+
         if self.exclude_post_process:
             return paddle.concat(
-                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1), None
+                [pred_bboxes, pred_scores.transpose([0, 2, 1])],
+                axis=-1), paddle.to_tensor(
+                    [1], dtype='int32')
         else:
-            # scale bbox to origin
-            scale_y, scale_x = paddle.split(scale_factor, 2, axis=-1)
-            scale_factor = paddle.concat(
-                [scale_x, scale_y, scale_x, scale_y],
-                axis=-1).reshape([-1, 1, 4])
-            pred_bboxes /= scale_factor
             if self.exclude_nms:
                 # `exclude_nms=True` just use in benchmark
-                return pred_bboxes, pred_scores
+                return pred_bboxes.sum(), pred_scores.sum()
             else:
                 bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
                 return bbox_pred, bbox_num
