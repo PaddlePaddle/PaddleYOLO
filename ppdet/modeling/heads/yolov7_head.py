@@ -29,7 +29,7 @@ __all__ = ['YOLOv7Head']
 class YOLOv7Head(nn.Layer):
     __shared__ = [
         'num_classes', 'data_format', 'use_aux', 'use_implicit', 'trt',
-        'exclude_nms'
+        'exclude_nms', 'exclude_post_process'
     ]
     __inject__ = ['loss', 'nms']
 
@@ -46,6 +46,7 @@ class YOLOv7Head(nn.Layer):
                  data_format='NCHW',
                  nms='MultiClassNMS',
                  trt=False,
+                 exclude_post_process=False,
                  exclude_nms=False):
         """
         Head for YOLOv7
@@ -82,6 +83,7 @@ class YOLOv7Head(nn.Layer):
         if isinstance(self.nms, MultiClassNMS) and trt:
             self.nms.trt = trt
         self.exclude_nms = exclude_nms
+        self.exclude_post_process = exclude_post_process
 
         self.num_anchor = len(self.anchors[0])  # self.na
         self.num_out_ch = self.num_classes + 5  # self.no
@@ -248,12 +250,20 @@ class YOLOv7Head(nn.Layer):
             score_list.append(score)
         pred_bboxes = paddle.concat(bbox_list, axis=1)
         pred_scores = paddle.concat(score_list, axis=-1)
+
+        # scale bbox to origin
         scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
         pred_bboxes /= scale_factor
 
-        if self.exclude_nms:
-            # `exclude_nms=True` just use in benchmark for speed test
-            return pred_bboxes.sum(), pred_scores.sum()
+        if self.exclude_post_process:
+            return paddle.concat(
+                [pred_bboxes, pred_scores.transpose([0, 2, 1])],
+                axis=-1), paddle.to_tensor(
+                    [1], dtype='int32')
         else:
-            bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
-            return bbox_pred, bbox_num
+            if self.exclude_nms:
+                # `exclude_nms=True` just use in benchmark
+                return pred_bboxes.sum(), pred_scores.sum()
+            else:
+                bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
+                return bbox_pred, bbox_num
