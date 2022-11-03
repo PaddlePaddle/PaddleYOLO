@@ -80,7 +80,7 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 
 
 <details open>
-<summary>[Training Custom dataset](https://github.com/PaddlePaddle/PaddleYOLO/issues/43)</summary>
+<summary> [Training Custom dataset](https://github.com/PaddlePaddle/PaddleYOLO/issues/43) </summary>
 
 - Please refer to [doc](docs/MODEL_ZOO_en.md#CustomDataset) and [issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43). 
 - Please **ensure COCO trained weights are loaded as pre-train weights** at first. 
