@@ -70,7 +70,7 @@ class Trainer(object):
         self.custom_white_list = self.cfg.get('custom_white_list', None)
         self.custom_black_list = self.cfg.get('custom_black_list', None)
 
-        if self.cfg.architecture in ['RTMDet']:
+        if self.cfg.architecture in ['RTMDet'] and self.mode == 'train':
             raise NotImplementedError('RTMDet training not supported yet.')
 
         # build data loader
