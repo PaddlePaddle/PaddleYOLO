@@ -1,0 +1,29 @@
+_BASE_: [
+  '../yolov7/yolov7_tiny_300e_coco.yml',
+  '../datasets/voc.yml',
+]
+log_iter: 50
+snapshot_epoch: 5
+weights: output/yolov7_tiny_60e_voc/model_final
+
+pretrain_weights: https://paddledet.bj.bcebos.com/models/yolov7_tiny_300e_coco.pdparams
+arch: tiny
+act: LeakyReLU
+
+
+TrainReader:
+  batch_size: 32 # default 8 gpus, total bs = 256
+
+EvalReader:
+  batch_size: 4
+
+
+epoch: 60
+LearningRate:
+  base_lr: 0.001
+  schedulers:
+  - !YOLOv5LRDecay
+    max_epochs: 60
+    min_lr_ratio: 0.1
+  - !ExpWarmup
+    epochs: 1

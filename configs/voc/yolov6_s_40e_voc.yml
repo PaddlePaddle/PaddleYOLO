@@ -1,0 +1,34 @@
+_BASE_: [
+  '../yolov6/yolov6_s_400e_coco.yml',
+  '../yolov6/_base_/yolov6_reader_fintune.yml',
+  '../datasets/voc.yml',
+]
+log_iter: 50
+snapshot_epoch: 5
+weights: output/yolov6_s_40e_voc/model_final
+
+pretrain_weights: https://bj.bcebos.com/v1/paddledet/models/yolov6_s_400e_coco.pdparams
+depth_mult: 0.33
+width_mult: 0.50
+
+
+EffiDeHead:
+  static_assigner_epoch: -1
+
+
+TrainReader:
+  batch_size: 32 # default 8 gpus, total bs = 256
+
+EvalReader:
+  batch_size: 4
+
+
+epoch: 40
+LearningRate:
+  base_lr: 0.001
+  schedulers:
+  - !YOLOv5LRDecay
+    max_epochs: 40
+    min_lr_ratio: 0.01
+  - !ExpWarmup
+    epochs: 1

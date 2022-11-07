@@ -11,6 +11,7 @@
     - [YOLOv6](#YOLOv6)
     - [YOLOv7](#YOLOv7)
     - [RTMDet](#RTMDet)
+    - [VOC](#VOC)
 - [UserGuide](#UserGuide)
     - [Pipeline](#Pipeline)
     - [CustomDataset](#CustomDataset)
@@ -243,6 +244,25 @@
 - TRT-FP16-Latency(ms) is the time spent in testing under TensorRT-FP16, **excluding data preprocessing and model output post-processing (NMS)**. The test adopts single card **Tesla T4 GPU, batch size=1**, and the test environment is **paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**. Please refer to the respective model homepage for details.
 - For **FLOPs(G) and Params(M)**, you should first install [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`, then set `print_flops: True` and `print_params: True` in [runtime.yml](../../configs/runtime.yml). Make sure **single scale** like 640x640, **MACs are printed，FLOPs=2*MACs**.
  - Based on [PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), quantitative training of YOLO series models can achieve basically lossless accuracy and generally improve the speed by more than 30%. For details, please refer to [auto_compression](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/example/auto_compression).
+
+
+### VOC
+
+| Model        | Input Size  | images/GPU | Epoch | TRT-FP16-Latency(ms) | mAP(0.50,11point) | Params(M) | FLOPs(G) |    download       | config |
+| :-----------: | :-------: | :-------: | :------: | :------------: | :---------------: | :------------------: |:-----------------: | :------: |
+| YOLOv5-s        |  640     |    16     |   60e    |     3.2   |  80.3 |  7.24  | 16.54 | [model](https://paddledet.bj.bcebos.com/models/yolov5_s_60e_voc.pdparams) | [config](./yolov5_s_60e_voc.yml) |
+| YOLOv6-s        |  640     |    32     |   40e    |     2.7   |  84.7 |  18.87 | 48.35 | [model](https://paddledet.bj.bcebos.com/models/yolov6_s_40e_voc.pdparams) | [config](./yolov6_s_40e_voc.yml) |
+| YOLOv7-tiny     |  640     |    32     |   60e    |     2.6   |  80.2 |  6.23  | 6.90 | [model](https://paddledet.bj.bcebos.com/models/yolov7_tiny_60e_voc.pdparams) | [config](./yolov7_tiny_60e_voc.yml) |
+| YOLOX-s         |  640     |    8      |   40e    |     3.0   |  82.9 |  9.0   |  26.8 | [model](https://paddledet.bj.bcebos.com/models/yolox_s_40e_voc.pdparams) | [config](./yolox_s_40e_voc.yml) |
+| PP-YOLOE+_s     |  640     |    8      |   30e    |     2.9   |  86.7 |  7.93  |  17.36 | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_plus_crn_s_30e_voc.pdparams) | [config](./ppyoloe_plus_crn_s_30e_voc.yml) |
+
+
+**Note:**
+  - The VOC mAP is `mAP(IoU=0.5)`, and all the models **have not adopted `multi_label` to eval**.
+  - All YOLO VOC models are loaded with the COCO weights of their respective models as pre-train weights. Each config file uses 8 GPUs by default, which can be used as a reference for setting custom datasets. The specific mAP will vary depending on the datasets;
+  - We recommend to use YOLO detection model **with a total `batch_size` at least greater than `64` to train**. If the resources are insufficient, please **use the smaller model** or **reduce the input size of the model**. To ensure high detection accuracy, **you'd better not try to using single GPU or total `batch_size` less than `64` for training**;
+  - Params (M) and FLOPs (G) are measured during training. YOLOv7 has no s model, so tiny model is selected;
+  - For TRT-FP16 Latency (ms) speed measurement, please refer to the config homepage of each YOLO model;
 
 
 ## UserGuide

@@ -2,7 +2,7 @@
 
 ## 简介
 
-**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`、`PP-YOLO`、`PP-YOLOv2`、`PP-YOLOE`、`PP-YOLOE+`、`YOLOX`、`YOLOv5`、`YOLOv6`、`YOLOv7`、`RTMDet`等模型，请参照 [ModelZoo](docs/MODEL_ZOO_cn.md) 和 [configs](configs/)。
+**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`、`PP-YOLO`、`PP-YOLOv2`、`PP-YOLOE`、`PP-YOLOE+`、`YOLOX`、`YOLOv5`、`YOLOv6`、`YOLOv7`、`RTMDet`等模型，COCO数据集模型库请参照 [ModelZoo](docs/MODEL_ZOO_cn.md) 和 [configs](configs/)。
 
 
 **注意:**
@@ -83,7 +83,9 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 <summary> [训练自定义数据集](https://github.com/PaddlePaddle/PaddleYOLO/issues/43) </summary>
 
 - 请参照[文档](docs/MODEL_ZOO_cn.md#自定义数据集)和[issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43)；
-- 请首先**确保加载了COCO权重作为预训练**；
+- PaddleDetection团队提供了**基于PP-YOLOE的各种垂类检测模型**的配置文件和权重，用户也可以作为参考去使用自定义数据集。请参考 [PP-YOLOE application](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/ppyoloe/application)、[pphuman](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/pphuman)、[ppvehicle](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/ppvehicle)、[visdrone](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/visdrone) 和 [smalldet](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/smalldet)。
+- PaddleDetection团队也提供了**VOC数据集的各种YOLO模型**的配置文件和权重，用户也可以作为参考去使用自定义数据集。请参考 [voc](configs/voc)。
+- 训练自定义数据集之前请先**确保加载了对应COCO权重作为预训练**，将配置文件中的`pretrain_weights: `设置为对应COCO模型训好的权重，一般会提示head分类层卷积的通道数没对应上，属于正常现象，是由于自定义数据集一般和COCO数据集种类数不一致；
 - YOLO检测模型建议**总`batch_size`至少大于`64`**去训练，如果资源不够请**换小模型**或**减小模型的输入尺度**，为了保障较高检测精度，**尽量不要尝试单卡训和总`batch_size`小于`64`训**；
 
 </details>
