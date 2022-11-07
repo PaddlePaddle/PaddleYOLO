@@ -2,13 +2,13 @@
 
 ## Introduction
 
-**PaddleYOLO** is a YOLO Series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`RTMDet` and so on, see [ModelZoo](docs/MODEL_ZOO_en.md) and [configs](configs/).
+**PaddleYOLO** is a YOLO Series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`RTMDet` and so on, see COCO dataset ModelZoo in [ModelZoo](docs/MODEL_ZOO_en.md) and [configs](configs/).
 
 **Notes：**
  - The Licence of **PaddleYOLO** is **[GPL 3.0](LICENSE)**, the codes of [YOLOv5](configs/yolov5),[YOLOv7](configs/yolov7) and [YOLOv6](configs/yolov6) will not be merged into [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection). Except for these three YOLO models, other YOLO models are recommended to use in [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **which will be the first to release the latest progress of PP-YOLO series detection model**;
  - To use **PaddleYOLO**, **PaddlePaddle-2.3.2 or above is recommended**，please refer to the [official website](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html) to download the appropriate version. **For Windows platforms, please install the paddle develop version**;
  - **PaddleYOLO's [Roadmap](https://github.com/PaddlePaddle/PaddleYOLO/issues/44)** issue collects feature requests from user, welcome to put forward any opinions and suggestions.
- 
+
 ## Tutorials
 
 <details open>
@@ -82,8 +82,10 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 <details open>
 <summary> [Training Custom dataset](https://github.com/PaddlePaddle/PaddleYOLO/issues/43) </summary>
 
-- Please refer to [doc](docs/MODEL_ZOO_en.md#CustomDataset) and [issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43). 
-- Please **ensure COCO trained weights are loaded as pre-train weights** at first. 
+- Please refer to [doc](docs/MODEL_ZOO_en.md#CustomDataset) and [issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43).
+- PaddleDetection team provides various **feature detection models based on PP-YOLOE** , which can also be used as a reference to modify on your custom dataset. Please refer to [PP-YOLOE application](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/ppyoloe/application), [pphuman](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/pphuman), [ppvehicle](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/ppvehicle), [visdrone](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/visdrone) and [smalldet](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/smalldet).
+- PaddleDetection also provides **various YOLO models  for VOC dataset** , which can also be used as a reference to modify on your custom dataset. Please refer to [voc](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc).
+- Please **ensure the corresponding COCO trained weights are loaded as pre-train weights** at first. Set the `pretrain_weights: ` with corresponding COCO trained weights in the config file, and it will generally prompt that the number of channels convolved by the head classification layer does not correspond, which is a normal phenomenon, because the number of types of user-defined data sets is generally inconsistent with that of COCO data sets.
 - We recommend to use YOLO detection model **with a total `batch_size` at least greater than `64` to train**. If the resources are insufficient, please **use the smaller model** or **reduce the input size of the model**. To ensure high detection accuracy, **you'd better not try to using single GPU or total `batch_size` less than `64` for training**;
 
 </details>
