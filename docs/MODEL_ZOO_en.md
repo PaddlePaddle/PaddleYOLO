@@ -252,7 +252,7 @@
 <summary> Baseline </summary>
 
 | Model        | Input Size  | images/GPU | Epoch | TRT-FP16-Latency(ms) | mAP(0.50,11point) | Params(M) | FLOPs(G) |    download       | config |
-| :-----------: | :-------: | :-------: | :------: | :------------: | :---------------: | :------------------: |:-----------------: | :------: |
+| :-----------: | :-------: | :-------: | :------: | :------------: | :---------------: | :------------------: |:-----------------: | :------: | :------: |
 | YOLOv5-s        |  640     |    16     |   60e    |     3.2   |  80.3 |  7.24  | 16.54 | [model](https://paddledet.bj.bcebos.com/models/yolov5_s_60e_voc.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/yolov5_s_60e_voc.yml) |
 | YOLOv6-s        |  640     |    32     |   40e    |     2.7   |  84.7 |  18.87 | 48.35 | [model](https://paddledet.bj.bcebos.com/models/yolov6_s_40e_voc.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/yolov6_s_40e_voc.yml) |
 | YOLOv7-tiny     |  640     |    32     |   60e    |     2.6   |  80.2 |  6.23  | 6.90 | [model](https://paddledet.bj.bcebos.com/models/yolov7_tiny_60e_voc.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/yolov7_tiny_60e_voc.yml) |
