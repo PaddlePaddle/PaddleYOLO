@@ -18,7 +18,7 @@ from paddle import ParamAttr
 from ppdet.core.workspace import register, serializable
 from ppdet.modeling.initializer import normal_
 from paddle.nn.initializer import Constant
-from .csp_darknet import BaseConv, get_activation, SiLU
+from .csp_darknet import BaseConv, get_activation, SiLU, Focus
 from ..shape_spec import ShapeSpec
 
 __all__ = [
