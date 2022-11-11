@@ -28,10 +28,10 @@ logger = setup_logger('ppdet.engine')
 
 # Global dictionary
 TRT_MIN_SUBGRAPH = {
-    'YOLO': 3,
-    'YOLOX': 8,
-    'YOLOv5': 10,
-    'RTMDet': 10,
+    'YOLO': 10,
+    'YOLOX': 20,
+    'YOLOv5': 20,
+    'RTMDet': 20,
 }
 
 
