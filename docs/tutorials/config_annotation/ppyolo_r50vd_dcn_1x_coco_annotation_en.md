@@ -215,7 +215,7 @@ YOLOv3Loss:
   ignore_thresh: 0.7
   # downsample
   downsample: [32, 16, 8]
-  # whether label_smooth or not 
+  # whether label_smooth or not
   label_smooth: false
   # scale_x_y
   scale_x_y: 1.05
