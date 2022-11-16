@@ -282,8 +282,10 @@ def voc_xmls_to_cocojson(annotation_paths, label2id, output_dir, output_file):
 
 
 def widerface_to_cocojson(root_path):
-    train_gt_txt = os.path.join(root_path, "wider_face_split", "wider_face_train_bbx_gt.txt")
-    val_gt_txt = os.path.join(root_path, "wider_face_split", "wider_face_val_bbx_gt.txt")
+    train_gt_txt = os.path.join(root_path, "wider_face_split",
+                                "wider_face_train_bbx_gt.txt")
+    val_gt_txt = os.path.join(root_path, "wider_face_split",
+                              "wider_face_val_bbx_gt.txt")
     train_img_dir = os.path.join(root_path, "WIDER_train", "images")
     val_img_dir = os.path.join(root_path, "WIDER_val", "images")
     assert train_gt_txt
@@ -292,10 +294,12 @@ def widerface_to_cocojson(root_path):
     assert val_img_dir
     save_path = os.path.join(root_path, "widerface_train.json")
     widerface_convert(train_gt_txt, train_img_dir, save_path)
-    print("Wider Face train dataset converts sucess, the json path: {}".format(save_path))
+    print("Wider Face train dataset converts sucess, the json path: {}".format(
+        save_path))
     save_path = os.path.join(root_path, "widerface_val.json")
     widerface_convert(val_gt_txt, val_img_dir, save_path)
-    print("Wider Face val dataset converts sucess, the json path: {}".format(save_path))
+    print("Wider Face val dataset converts sucess, the json path: {}".format(
+        save_path))
 
 
 def widerface_convert(gt_txt, img_dir, save_path):
@@ -303,7 +307,11 @@ def widerface_convert(gt_txt, img_dir, save_path):
         "images": [],
         "type": "instances",
         "annotations": [],
-        "categories": [{'supercategory': 'none', 'id': 0, 'name': "human_face"}]
+        "categories": [{
+            'supercategory': 'none',
+            'id': 0,
+            'name': "human_face"
+        }]
     }
     bnd_id = 1  # bounding box start id
     im_id = 0
@@ -325,7 +333,8 @@ def widerface_convert(gt_txt, img_dir, save_path):
                 output_json_dict['annotations'].append(anno)
                 bnd_id += 1
         else:
-            print("The image dose not exist: {}".format(os.path.join(img_dir, image_name)))
+            print("The image dose not exist: {}".format(
+                os.path.join(img_dir, image_name)))
         bbox_num = 1 if bbox_num == 0 else bbox_num
         i += bbox_num
         im_id += 1
@@ -339,9 +348,9 @@ def get_widerface_image_info(img_root, img_relative_path, img_id):
     save_path = os.path.join(img_root, img_relative_path)
     if os.path.exists(save_path):
         img = cv2.imread(save_path)
-        image_info["file_name"] = os.path.join(os.path.basename(
-            os.path.dirname(img_root)), os.path.basename(img_root),
-            img_relative_path)
+        image_info["file_name"] = os.path.join(
+            os.path.basename(os.path.dirname(img_root)),
+            os.path.basename(img_root), img_relative_path)
         image_info["height"] = img.shape[0]
         image_info["width"] = img.shape[1]
         image_info["id"] = img_id
@@ -371,7 +380,8 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '--dataset_type',
-        help='the type of dataset, can be `voc`, `widerface`, `labelme` or `cityscape`')
+        help='the type of dataset, can be `voc`, `widerface`, `labelme` or `cityscape`'
+    )
     parser.add_argument('--json_input_dir', help='input annotated directory')
     parser.add_argument('--image_input_dir', help='image directory')
     parser.add_argument(
