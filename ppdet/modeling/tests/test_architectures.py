@@ -35,21 +35,6 @@ class TestYOLOv3(unittest.TestCase):
         trainer = ppdet.engine.Trainer(cfg, mode='test')
 
 
-class TestPPYOLO(TestYOLOv3):
-    def set_config(self):
-        self.cfg_file = 'configs/ppyolo/ppyolo_mbv3_large_coco.yml'
-
-
-class TestPPYOLOTiny(TestYOLOv3):
-    def set_config(self):
-        self.cfg_file = 'configs/ppyolo/ppyolo_tiny_650e_coco.yml'
-
-
-class TestPPYOLOv2(TestYOLOv3):
-    def set_config(self):
-        self.cfg_file = 'configs/ppyolo/ppyolov2_r50vd_dcn_365e_coco.yml'
-
-
 class TestPPYOLOE(TestYOLOv3):
     def set_config(self):
         self.cfg_file = 'configs/ppyoloe/ppyoloe_plus_crn_s_80e_coco.yml'
