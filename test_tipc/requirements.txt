@@ -1,0 +1,7 @@
+pynvml
+psutil
+GPUtil
+paddleslim
+onnx
+onnxruntime
+paddle2onnx
