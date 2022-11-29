@@ -17,22 +17,17 @@ import paddle.nn.functional as F
 import paddle.nn as nn
 from paddle import ParamAttr
 from paddle.regularizer import L2Decay
-from paddle import _C_ops
+try:
+    import paddle._legacy_C_ops as C_ops
+except:
+    import paddle._C_ops as C_ops
 
 from paddle import in_dynamic_mode
-from paddle.common_ops_import import LayerHelper, check_variable_and_dtype, check_type
+from paddle.common_ops_import import Variable, LayerHelper, check_variable_and_dtype, check_type, check_dtype
 
 __all__ = [
-    'identity',
-    'mish',
-    'silu',
-    'swish',
-    'get_act_fn',
-    'batch_norm',
-    'multiclass_nms',
-    'matrix_nms',
-    'sigmoid_cross_entropy_with_logits',
-    'get_static_shape',
+    'multiclass_nms', 'matrix_nms', 'batch_norm', 'mish', 'silu', 'swish',
+    'identity'
 ]
 
 
@@ -225,8 +220,8 @@ def multiclass_nms(bboxes,
                  score_threshold, 'nms_top_k', nms_top_k, 'nms_threshold',
                  nms_threshold, 'keep_top_k', keep_top_k, 'nms_eta', nms_eta,
                  'normalized', normalized)
-        output, index, nms_rois_num = _C_ops.multiclass_nms3(bboxes, scores,
-                                                             rois_num, *attrs)
+        output, index, nms_rois_num = C_ops.multiclass_nms3(bboxes, scores,
+                                                            rois_num, *attrs)
         if not return_index:
             index = None
         return output, nms_rois_num, index
@@ -367,7 +362,7 @@ def matrix_nms(bboxes,
                  nms_top_k, 'gaussian_sigma', gaussian_sigma, 'use_gaussian',
                  use_gaussian, 'keep_top_k', keep_top_k, 'normalized',
                  normalized)
-        out, index, rois_num = _C_ops.matrix_nms(bboxes, scores, *attrs)
+        out, index, rois_num = C_ops.matrix_nms(bboxes, scores, *attrs)
         if not return_index:
             index = None
         if not return_rois_num:
