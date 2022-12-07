@@ -171,11 +171,8 @@ class YOLOv5Loss(nn.Layer):
         loss_box = paddle.to_tensor([0.])
         loss_cls = paddle.to_tensor([0.])
         if n:
-            ps = pi.gather_nd(
-                paddle.concat([
-                    b.reshape([-1, 1]), a.reshape([-1, 1]), gj.reshape([-1, 1]),
-                    gi.reshape([-1, 1])
-                ], 1))
+            mask = paddle.stack([b, a, gj, gi], 1)
+            ps = pi.gather_nd(mask)
             # Regression
             pxy = F.sigmoid(ps[:, :2]) * 2 - 0.5
             pwh = (F.sigmoid(ps[:, 2:4]) * 2)**2 * t_anchor
@@ -187,8 +184,9 @@ class YOLOv5Loss(nn.Layer):
             # Objectness
             score_iou = paddle.cast(iou.detach().clip(0), tobj.dtype)
             with paddle.no_grad():
-                tobj[b, a, gj, gi] = (1.0 - self.gr
-                                      ) + self.gr * score_iou  # iou ratio
+                x = paddle.gather_nd(tobj, mask)
+                paddle.scatter_nd_add(tobj, mask,
+                                      (1.0 - self.gr) + self.gr * score_iou - x)
 
             # Classification
             t = paddle.full_like(ps[:, 5:], self.cls_neg_label)

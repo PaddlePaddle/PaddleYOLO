@@ -127,7 +127,8 @@ class YOLOv7Loss(nn.Layer):
             tobj = paddle.zeros_like(pi[..., 0])
             n = b.shape[0]  # number of targets
             if n:
-                ps = pi[b, a, gj, gi]
+                mask = paddle.stack([b, a, gj, gi], 1)
+                ps = pi.gather_nd(mask)
                 # Regression
                 grid = paddle.stack([gi, gj], 1)
                 if len(ps.shape) == 1:
@@ -148,7 +149,9 @@ class YOLOv7Loss(nn.Layer):
                 # Objectness
                 score_iou = paddle.cast(iou.detach().clip(0), tobj.dtype)
                 with paddle.no_grad():
-                    tobj[b, a, gj, gi] = (1.0 - self.gr) + self.gr * score_iou
+                    x = paddle.gather_nd(tobj, mask)
+                    paddle.scatter_nd_add(
+                        tobj, mask, (1.0 - self.gr) + self.gr * score_iou - x)
 
                 # Classification
                 selected_tcls = paddle.cast(targets[i][:, 1], 'int64')
