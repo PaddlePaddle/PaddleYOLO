@@ -13,14 +13,15 @@ TrainReader:
         mixup_prob: 1.0
         mixup_scale: [0.5, 1.5]
     - AugmentHSV: {is_bgr: False, hgain: 5, sgain: 30, vgain: 30}
-    - PadResize: {target_size: 640}
     - RandomFlip: {}
   batch_transforms:
     - Permute: {}
+    - PadGT: {}
   batch_size: 8
   shuffle: True
   drop_last: True
-  collate_batch: False
+  use_shared_memory: True
+  collate_batch: True
   mosaic_epoch: 285
 
 
