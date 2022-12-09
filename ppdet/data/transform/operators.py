@@ -3311,6 +3311,31 @@ class Mosaic(BaseOperator):
 
         return (x1, y1, x2, y2), small_coords
 
+    def letterbox_resize(self,
+                         img,
+                         gt_bboxes,
+                         new_shape=(640, 640),
+                         color=(114, 114, 114)):
+        shape = img.shape[:2]  # [height, width]
+        r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])
+        ratio = r, r
+        new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
+        dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]
+        dw /= 2
+        dh /= 2
+        if shape[::-1] != new_unpad:
+            img = cv2.resize(img, new_unpad, interpolation=cv2.INTER_LINEAR)
+        top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
+        left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+        img = cv2.copyMakeBorder(
+            img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+
+        gt_bboxes[:, 0] = ratio[0] * gt_bboxes[:, 0] + dw
+        gt_bboxes[:, 1] = ratio[1] * gt_bboxes[:, 1] + dh
+        gt_bboxes[:, 2] = ratio[0] * gt_bboxes[:, 2] + dw
+        gt_bboxes[:, 3] = ratio[1] * gt_bboxes[:, 3] + dh
+        return img, gt_bboxes
+
     def random_affine_augment(self,
                               img,
                               labels=[],
@@ -3374,10 +3399,14 @@ class Mosaic(BaseOperator):
 
         assert len(
             sample) == 5, "Mosaic needs 5 samples, 4 for mosaic and 1 for mixup."
-        if np.random.uniform(0., 1.) > self.prob:
-            return sample[0]
 
-        mosaic_gt_bbox, mosaic_gt_class, mosaic_is_crowd, mosaic_difficult = [], [], [], []
+        if np.random.uniform(0., 1.) > self.prob:
+            sample0 = sample[0]
+            sample0['image'], sample0['gt_bbox'] = self.letterbox_resize(
+                sample0['image'], sample0['gt_bbox'], self.input_dim)
+            return sample0
+
+        mosaic_gt_bbox, mosaic_gt_class = [], []
         input_h, input_w = self.input_dim
         yc = int(random.uniform(0.5 * input_h, 1.5 * input_h))
         xc = int(random.uniform(0.5 * input_w, 1.5 * input_w))
@@ -3412,33 +3441,14 @@ class Mosaic(BaseOperator):
 
             mosaic_gt_bbox.append(_gt_bbox)
             mosaic_gt_class.append(sp['gt_class'])
-            if 'is_crowd' in sp:
-                mosaic_is_crowd.append(sp['is_crowd'])
-            if 'difficult' in sp:
-                mosaic_difficult.append(sp['difficult'])
 
-        # 2. clip bbox and get mosaic_labels([gt_bbox, gt_class, is_crowd])
+        # 2. clip bbox and get mosaic_labels([gt_bbox, gt_class])
         if len(mosaic_gt_bbox):
             mosaic_gt_bbox = np.concatenate(mosaic_gt_bbox, 0)
             mosaic_gt_class = np.concatenate(mosaic_gt_class, 0)
-            if mosaic_is_crowd:
-                mosaic_is_crowd = np.concatenate(mosaic_is_crowd, 0)
-                mosaic_labels = np.concatenate([
-                    mosaic_gt_bbox,
-                    mosaic_gt_class.astype(mosaic_gt_bbox.dtype),
-                    mosaic_is_crowd.astype(mosaic_gt_bbox.dtype)
-                ], 1)
-            elif mosaic_difficult:
-                mosaic_difficult = np.concatenate(mosaic_difficult, 0)
-                mosaic_labels = np.concatenate([
-                    mosaic_gt_bbox,
-                    mosaic_gt_class.astype(mosaic_gt_bbox.dtype),
-                    mosaic_difficult.astype(mosaic_gt_bbox.dtype)
-                ], 1)
-            else:
-                mosaic_labels = np.concatenate([
-                    mosaic_gt_bbox, mosaic_gt_class.astype(mosaic_gt_bbox.dtype)
-                ], 1)
+            mosaic_labels = np.concatenate(
+                [mosaic_gt_bbox,
+                 mosaic_gt_class.astype(mosaic_gt_bbox.dtype)], 1)
             if self.remove_outside_box:
                 # for MOT dataset
                 flag1 = mosaic_gt_bbox[:, 0] < 2 * input_w
@@ -3475,23 +3485,10 @@ class Mosaic(BaseOperator):
                 random.random() < self.mixup_prob):
             sample_mixup = sample[4]
             mixup_img = sample_mixup['image']
-            if 'is_crowd' in sample_mixup:
-                cp_labels = np.concatenate([
-                    sample_mixup['gt_bbox'],
-                    sample_mixup['gt_class'].astype(mosaic_labels.dtype),
-                    sample_mixup['is_crowd'].astype(mosaic_labels.dtype)
-                ], 1)
-            elif 'difficult' in sample_mixup:
-                cp_labels = np.concatenate([
-                    sample_mixup['gt_bbox'],
-                    sample_mixup['gt_class'].astype(mosaic_labels.dtype),
-                    sample_mixup['difficult'].astype(mosaic_labels.dtype)
-                ], 1)
-            else:
-                cp_labels = np.concatenate([
-                    sample_mixup['gt_bbox'],
-                    sample_mixup['gt_class'].astype(mosaic_labels.dtype)
-                ], 1)
+            cp_labels = np.concatenate([
+                sample_mixup['gt_bbox'],
+                sample_mixup['gt_class'].astype(mosaic_labels.dtype)
+            ], 1)
             mosaic_img, mosaic_labels = self.mixup_augment(
                 mosaic_img, mosaic_labels, self.input_dim, cp_labels, mixup_img)
 
@@ -3503,10 +3500,10 @@ class Mosaic(BaseOperator):
         sample0['im_shape'][1] = sample0['w']
         sample0['gt_bbox'] = mosaic_labels[:, :4].astype(np.float32)
         sample0['gt_class'] = mosaic_labels[:, 4:5].astype(np.float32)
-        if 'is_crowd' in sample[0]:
-            sample0['is_crowd'] = mosaic_labels[:, 5:6].astype(np.float32)
-        if 'difficult' in sample[0]:
-            sample0['difficult'] = mosaic_labels[:, 5:6].astype(np.float32)
+        if 'difficult' in sample0:
+            sample0.pop('difficult')
+        if 'is_crowd' in sample0:
+            sample0.pop('is_crowd')
         return sample0
 
     def mixup_augment(self, origin_img, origin_labels, input_dim, cp_labels,
@@ -3642,6 +3639,10 @@ class PadResize(BaseOperator):
         sample['image'] = self._pad(image).astype(np.float32)
         sample['gt_bbox'] = bboxes
         sample['gt_class'] = labels
+        if 'is_crowd' in sample:
+            sample.pop('is_crowd')
+        if 'difficult' in sample:
+            sample.pop('difficult')
         return sample
 
 

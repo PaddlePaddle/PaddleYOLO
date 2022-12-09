@@ -180,8 +180,9 @@ class BottleNeck(nn.Layer):
     def forward(self, x):
         y = self.conv2(self.conv1(x))
         if self.add_shortcut:
-            y = y + x
-        return y
+            return paddle.add(y, x)
+        else:
+            return y
 
 
 class SPPLayer(nn.Layer):
