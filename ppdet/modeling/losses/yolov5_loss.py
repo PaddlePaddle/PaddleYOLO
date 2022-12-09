@@ -61,7 +61,7 @@ class YOLOv5Loss(nn.Layer):
         self.cls_neg_label = 0.5 * eps
 
         self.downsample_ratios = downsample_ratios
-        self.bias = bias
+        self.bias = bias  # named 'g' in torch yolov5
         self.off = paddle.to_tensor(
             [
                 [0, 0],
@@ -70,13 +70,13 @@ class YOLOv5Loss(nn.Layer):
                 [-1, 0],
                 [0, -1],  # j,k,l,m
             ],
-            dtype='float32') * self.bias
+            dtype='float32') * bias
         self.anchor_t = anchor_t
 
     def build_targets(self, outputs, targets, anchors):
-        # targets['gt_class'] [16, 30, 1]
-        # targets['gt_bbox'] [16, 30, 4]
-        # targets['pad_gt_mask'] [16, 30, 1]
+        # targets['gt_class'] [bs, max_gt_nums, 1]
+        # targets['gt_bbox'] [bs, max_gt_nums, 4]
+        # targets['pad_gt_mask'] [bs, max_gt_nums, 1]
         gt_nums = targets['pad_gt_mask'].sum(1).squeeze(-1)
         nt = int(sum(gt_nums))
         na = anchors.shape[1]  # not len(anchors)
@@ -93,25 +93,18 @@ class YOLOv5Loss(nn.Layer):
                 continue
             gt_bbox = targets['gt_bbox'][idx][:gt_num]
             gt_class = targets['gt_class'][idx][:gt_num] * 1.0
-            img_idx = paddle.tile(paddle.to_tensor([idx]).reshape([-1, 1]), [gt_num, 1]) * 1.0
+            img_idx = paddle.tile(
+                paddle.to_tensor([idx]).reshape([-1, 1]), [gt_num, 1]) * 1.0
             gt_labels.append(paddle.concat([img_idx, gt_class, gt_bbox], 1))
         if (len(gt_labels)):
-            gt_labels = paddle.concat(gt_labels) # [22, 6]
+            gt_labels = paddle.concat(gt_labels)
         else:
             gt_labels = paddle.zeros([0, 6])
 
         targets_labels = paddle.concat(
-            [paddle.tile(gt_labels.unsqueeze(0), [na, 1, 1]), ai[:, :, None]], 2)
-        g = 0.5  # bias
-        off = paddle.to_tensor(
-            [
-                [0, 0],
-                [1, 0],
-                [0, 1],
-                [-1, 0],
-                [0, -1],  # j,k,l,m
-            ],
-            dtype='float32') * g  # offsets
+            [paddle.tile(gt_labels.unsqueeze(0), [na, 1, 1]), ai[:, :, None]],
+            2)
+        g = self.bias  # 0.5
 
         for i in range(len(anchors)):
             anchor = anchors[i] / self.downsample_ratios[i]
@@ -131,15 +124,24 @@ class YOLOv5Loss(nn.Layer):
                 gxi = gain[[2, 3]] - gxy  # inverse
                 j, k = ((gxy % 1 < g) & (gxy > 1)).T
                 l, m = ((gxi % 1 < g) & (gxi > 1)).T
-                jjj = paddle.cast(paddle.stack([paddle.ones_like(j)*1.0, j*1.0, k*1.0, l*1.0, m*1.0], 0), 'int32')
+                # paddle stack: bool->int32
+                # paddle masked_select: int32->bool
+                j_mask = paddle.cast(
+                    paddle.stack([
+                        paddle.ones_like(j) * 1.0, j * 1.0, k * 1.0, l * 1.0,
+                        m * 1.0
+                    ], 0), 'int32')
 
-                j7 = paddle.cast(paddle.tile(jjj.unsqueeze(-1), [1, 1, 7]), 'bool')
-                t = paddle.masked_select(
-                    paddle.tile(t, [5, 1, 1]), j7).reshape([-1, 7]) #paddle.tile(t, [5, 1, 1])[j] # (5, 14, 7)[(5, 14)] = (42, 7)
+                j7_mask = paddle.cast(
+                    paddle.tile(j_mask.unsqueeze(-1), [1, 1, 7]), 'bool')
+                t = paddle.masked_select(paddle.tile(t, [5, 1, 1]),
+                                         j7_mask).reshape([-1, 7])
 
-                j2 = paddle.cast(paddle.tile(jjj.unsqueeze(-1), [1, 1, 2]), 'bool')
+                j2_mask = paddle.cast(
+                    paddle.tile(j_mask.unsqueeze(-1), [1, 1, 2]), 'bool')
                 offsets = paddle.masked_select(
-                    (paddle.zeros_like(gxy)[None] + off[:, None]), j2).reshape([-1, 2]) #[j] # (5, 14, 2)[(5, 14)] = (42, 2)
+                    (paddle.zeros_like(gxy)[None] + self.off[:, None]),
+                    j2_mask).reshape([-1, 2])
             else:
                 t = targets_labels[0]
                 offsets = 0
@@ -173,24 +175,23 @@ class YOLOv5Loss(nn.Layer):
             # Regression
             pxy = F.sigmoid(ps[:, :2]) * 2 - 0.5
             pwh = (F.sigmoid(ps[:, 2:4]) * 2)**2 * t_anchor
-            pbox = paddle.concat((pxy, pwh), 1)  # predicted box # [21, 4]
+            pbox = paddle.concat((pxy, pwh), 1)
             iou = bbox_iou(pbox.T, t_box.T, x1y1x2y2=False, ciou=True)
-            # iou.stop_gradient = True
             loss_box = (1.0 - iou).mean()
 
             # Objectness
             score_iou = paddle.cast(iou.detach().clip(0), tobj.dtype)
             with paddle.no_grad():
                 x = paddle.gather_nd(tobj, mask)
-                tobj = paddle.scatter_nd_add(tobj, mask,
-                                      (1.0 - self.gr) + self.gr * score_iou - x)
+                tobj = paddle.scatter_nd_add(
+                    tobj, mask, (1.0 - self.gr) + self.gr * score_iou - x)
 
             # Classification
             t = paddle.full_like(ps[:, 5:], self.cls_neg_label)
             t[range(n), t_cls] = self.cls_pos_label
             loss_cls = self.BCEcls(ps[:, 5:], t)
 
-        obji = self.BCEobj(pi[:, :, :, :, 4], tobj)  # [4, 3, 80, 80]
+        obji = self.BCEobj(pi[:, :, :, :, 4], tobj)  # [bs, 3, h, w]
 
         loss_obj = obji * balance
 
@@ -200,8 +201,6 @@ class YOLOv5Loss(nn.Layer):
         return loss
 
     def forward(self, inputs, targets, anchors):
-        assert len(inputs) == len(anchors)
-        assert len(inputs) == len(self.downsample_ratios)
         yolo_losses = dict()
         tcls, tbox, indices, anch = self.build_targets(inputs, targets, anchors)
 
