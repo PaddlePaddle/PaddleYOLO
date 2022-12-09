@@ -1,4 +1,4 @@
-# Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -150,7 +150,7 @@ class YOLOv7Loss(nn.Layer):
                 score_iou = paddle.cast(iou.detach().clip(0), tobj.dtype)
                 with paddle.no_grad():
                     x = paddle.gather_nd(tobj, mask)
-                    paddle.scatter_nd_add(
+                    tobj = paddle.scatter_nd_add(
                         tobj, mask, (1.0 - self.gr) + self.gr * score_iou - x)
 
                 # Classification
