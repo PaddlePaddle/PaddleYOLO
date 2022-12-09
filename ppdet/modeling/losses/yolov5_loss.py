@@ -182,7 +182,7 @@ class YOLOv5Loss(nn.Layer):
             score_iou = paddle.cast(iou.detach().clip(0), tobj.dtype)
             with paddle.no_grad():
                 x = paddle.gather_nd(tobj, mask)
-                paddle.scatter_nd_add(tobj, mask,
+                tobj = paddle.scatter_nd_add(tobj, mask,
                                       (1.0 - self.gr) + self.gr * score_iou - x)
 
             # Classification
