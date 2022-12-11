@@ -3311,31 +3311,6 @@ class Mosaic(BaseOperator):
 
         return (x1, y1, x2, y2), small_coords
 
-    def letterbox_resize(self,
-                         img,
-                         gt_bboxes,
-                         new_shape=(640, 640),
-                         color=(114, 114, 114)):
-        shape = img.shape[:2]  # [height, width]
-        r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])
-        ratio = r, r
-        new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
-        dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]
-        dw /= 2
-        dh /= 2
-        if shape[::-1] != new_unpad:
-            img = cv2.resize(img, new_unpad, interpolation=cv2.INTER_LINEAR)
-        top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
-        left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
-        img = cv2.copyMakeBorder(
-            img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
-
-        gt_bboxes[:, 0] = ratio[0] * gt_bboxes[:, 0] + dw
-        gt_bboxes[:, 1] = ratio[1] * gt_bboxes[:, 1] + dh
-        gt_bboxes[:, 2] = ratio[0] * gt_bboxes[:, 2] + dw
-        gt_bboxes[:, 3] = ratio[1] * gt_bboxes[:, 3] + dh
-        return img, gt_bboxes
-
     def random_affine_augment(self,
                               img,
                               labels=[],
@@ -3402,8 +3377,10 @@ class Mosaic(BaseOperator):
 
         if np.random.uniform(0., 1.) > self.prob:
             sample0 = sample[0]
-            sample0['image'], sample0['gt_bbox'] = self.letterbox_resize(
-                sample0['image'], sample0['gt_bbox'], self.input_dim)
+            if 'difficult' in sample0:
+                sample0.pop('difficult')
+            if 'is_crowd' in sample0:
+                sample0.pop('is_crowd')
             return sample0
 
         mosaic_gt_bbox, mosaic_gt_class = [], []
