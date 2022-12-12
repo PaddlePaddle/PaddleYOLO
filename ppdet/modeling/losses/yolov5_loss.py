@@ -119,29 +119,33 @@ class YOLOv5Loss(nn.Layer):
                 j = paddle.maximum(r, 1 / r).max(2) < self.anchor_t
                 t = t[j]  # filter
 
-                # Offsets
-                gxy = t[:, 2:4]  # grid xy
-                gxi = gain[[2, 3]] - gxy  # inverse
-                j, k = ((gxy % 1 < g) & (gxy > 1)).T
-                l, m = ((gxi % 1 < g) & (gxi > 1)).T
-                # paddle stack: bool->int32
-                # paddle masked_select: int32->bool
-                j_mask = paddle.cast(
-                    paddle.stack([
-                        paddle.ones_like(j) * 1.0, j * 1.0, k * 1.0, l * 1.0,
-                        m * 1.0
-                    ], 0), 'int32')
+                if t.shape[0] == 0:
+                    t = targets_labels[0]
+                    offsets = 0
+                else:
+                    # Offsets
+                    gxy = t[:, 2:4]  # grid xy
+                    gxi = gain[[2, 3]] - gxy  # inverse
+                    j, k = ((gxy % 1 < g) & (gxy > 1)).T
+                    l, m = ((gxi % 1 < g) & (gxi > 1)).T
+                    # paddle stack: bool->int32
+                    # paddle masked_select: int32->bool
+                    j_mask = paddle.cast(
+                        paddle.stack([
+                            paddle.ones_like(j) * 1.0, j * 1.0, k * 1.0,
+                            l * 1.0, m * 1.0
+                        ], 0), 'int32')
 
-                j7_mask = paddle.cast(
-                    paddle.tile(j_mask.unsqueeze(-1), [1, 1, 7]), 'bool')
-                t = paddle.masked_select(paddle.tile(t, [5, 1, 1]),
-                                         j7_mask).reshape([-1, 7])
+                    j7_mask = paddle.cast(
+                        paddle.tile(j_mask.unsqueeze(-1), [1, 1, 7]), 'bool')
+                    t = paddle.masked_select(
+                        paddle.tile(t, [5, 1, 1]), j7_mask).reshape([-1, 7])
 
-                j2_mask = paddle.cast(
-                    paddle.tile(j_mask.unsqueeze(-1), [1, 1, 2]), 'bool')
-                offsets = paddle.masked_select(
-                    (paddle.zeros_like(gxy)[None] + self.off[:, None]),
-                    j2_mask).reshape([-1, 2])
+                    j2_mask = paddle.cast(
+                        paddle.tile(j_mask.unsqueeze(-1), [1, 1, 2]), 'bool')
+                    offsets = paddle.masked_select(
+                        (paddle.zeros_like(gxy)[None] + self.off[:, None]),
+                        j2_mask).reshape([-1, 2])
             else:
                 t = targets_labels[0]
                 offsets = 0
