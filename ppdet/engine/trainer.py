@@ -90,10 +90,12 @@ class Trainer(object):
             self.model = self.cfg.model
             self.is_loaded_weights = True
 
-        if self.cfg.architecture in ['YOLOv5', 'YOLOv7']:
+        if self.cfg.architecture in ['YOLOv5', 'YOLOv7', 'YOLOv8']:
             reset_initialized_parameter(self.model)
 
-        if cfg.architecture in ['YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7']:
+        if cfg.architecture in [
+                'YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8'
+        ]:
             for k, m in self.model.named_sublayers():
                 if isinstance(m, nn.BatchNorm2D):
                     m._epsilon = 1e-3  # for amp(fp16)
@@ -374,7 +376,9 @@ class Trainer(object):
             model.train()
             iter_tic = time.time()
             for step_id, data in enumerate(self.loader):
-                if self.cfg.architecture in ['YOLOv5', 'YOLOv6', 'YOLOv7']:
+                if self.cfg.architecture in [
+                        'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8'
+                ]:
                     # TODO: YOLOv5 Warmup, always 3 epoch
                     nw = 3 * len(self.loader)
                     ni = len(self.loader) * epoch_id + step_id

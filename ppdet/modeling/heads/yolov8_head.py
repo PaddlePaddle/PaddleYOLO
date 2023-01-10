@@ -44,6 +44,7 @@ class YOLOv8Head(nn.Layer):
                  grid_cell_scale=5.0,
                  grid_cell_offset=0.5,
                  reg_max=16,
+                 use_varifocal_loss=False,
                  assigner='TaskAlignedAssigner',
                  nms='MultiClassNMS',
                  eval_size=None,
@@ -61,16 +62,21 @@ class YOLOv8Head(nn.Layer):
         self.fpn_strides = fpn_strides
         self.grid_cell_scale = grid_cell_scale
         self.grid_cell_offset = grid_cell_offset
-
         self.reg_max = reg_max
+        self.use_varifocal_loss = use_varifocal_loss
         self.assigner = assigner
         self.nms = nms
         if isinstance(self.nms, MultiClassNMS) and trt:
             self.nms.trt = trt
+        self.eval_size = eval_size
         self.loss_weight = loss_weight
         self.exclude_nms = exclude_nms
 
+        # loss
         self.iou_loss = GIoULoss()
+        self.bce_cls = nn.BCEWithLogitsLoss(
+            pos_weight=paddle.to_tensor([1.0]), reduction="mean")
+
         # pred head
         c2 = max((16, in_channels[0] // 4, self.reg_max * 4))
         c3 = max(in_channels[0], self.num_classes)
@@ -104,22 +110,22 @@ class YOLOv8Head(nn.Layer):
         # projection conv
         self.dfl_conv = nn.Conv2D(self.reg_max, 1, 1, bias_attr=False)
         self.dfl_conv.skip_quant = True
-        #self._init_weights()
+        self.proj = paddle.linspace(0, self.reg_max - 1, self.reg_max)
+        self.dfl_conv.weight.set_value(
+            self.proj.reshape([1, self.reg_max, 1, 1]))
+        self.dfl_conv.weight.stop_gradient = True
+
+        # self._init_bias()
 
     @classmethod
     def from_config(cls, cfg, input_shape):
         return {'in_channels': [i.channels for i in input_shape], }
 
-    def _init_weights(self):
+    def _init_bias(self):
         for a, b, s in zip(self.conv_reg, self.conv_cls, self.fpn_strides):
             a[-1].bias.set_value(1.0)  # box
             b[-1].bias[:self.num_classes] = math.log(5 / self.num_classes /
                                                      (640 / s)**2)
-
-        self.proj = paddle.linspace(0, self.reg_max - 1, self.reg_max)
-        self.dfl_conv.weight.set_value(
-            self.proj.reshape([1, self.reg_max, 1, 1]))
-        self.dfl_conv.weight.stop_gradient = True
 
     def forward(self, feats, targets=None):
         if self.training:
@@ -128,6 +134,11 @@ class YOLOv8Head(nn.Layer):
             return self.forward_eval(feats)
 
     def forward_train(self, feats, targets):
+        anchors, anchor_points, num_anchors_list, stride_tensor = \
+            generate_anchors_for_grid_cell(
+                feats, self.fpn_strides, self.grid_cell_scale,
+                self.grid_cell_offset)
+
         cls_list, reg_list = [], []
         for i, feat in enumerate(feats):
             pred_reg = self.conv_reg[i](feat)
@@ -136,7 +147,10 @@ class YOLOv8Head(nn.Layer):
             cls_list.append(pred_cls.flatten(2).transpose([0, 2, 1]))
         cls_concat = paddle.concat(cls_list, axis=1)
         reg_concat = paddle.concat(reg_list, axis=1)
-        return self.get_loss([cls_concat, reg_concat], targets)
+        return self.get_loss([
+            cls_concat, reg_concat, anchors, anchor_points, num_anchors_list,
+            stride_tensor
+        ], targets)
 
     def forward_eval(self, feats):
         anchor_points, stride_tensor = self._generate_anchors(feats)
@@ -200,7 +214,7 @@ class YOLOv8Head(nn.Layer):
 
     def _bbox_decode(self, anchor_points, pred_dist):
         b, l, _ = get_static_shape(pred_dist)
-        pred_dist = F.softmax(pred_dist.reshape([b, l, 4, self.reg_max + 1
+        pred_dist = F.softmax(pred_dist.reshape([b, l, 4, self.reg_max
                                                  ])).matmul(self.proj)
         return batch_distance2bbox(anchor_points, pred_dist)
 
@@ -269,30 +283,16 @@ class YOLOv8Head(nn.Layer):
         gt_labels = gt_meta['gt_class']
         gt_bboxes = gt_meta['gt_bbox']
         pad_gt_mask = gt_meta['pad_gt_mask']
-        # label assignment
-        # if gt_meta['epoch_id'] < self.static_assigner_epoch:
-        #     assigned_labels, assigned_bboxes, assigned_scores = \
-        #         self.static_assigner(
-        #             anchors,
-        #             num_anchors_list,
-        #             gt_labels,
-        #             gt_bboxes,
-        #             pad_gt_mask,
-        #             bg_index=self.num_classes,
-        #             pred_bboxes=pred_bboxes.detach() * stride_tensor)
-        #     alpha_l = 0.25
-        if 1:
-            assigned_labels, assigned_bboxes, assigned_scores = \
-                self.assigner(
-                pred_scores.detach(),
-                pred_bboxes.detach() * stride_tensor,
-                anchor_points,
-                num_anchors_list,
-                gt_labels,
-                gt_bboxes,
-                pad_gt_mask,
-                bg_index=self.num_classes)
-            alpha_l = -1
+        assigned_labels, assigned_bboxes, assigned_scores = \
+            self.assigner(
+            pred_scores.detach(),
+            pred_bboxes.detach() * stride_tensor,
+            anchor_points,
+            num_anchors_list,
+            gt_labels,
+            gt_bboxes,
+            pad_gt_mask,
+            bg_index=self.num_classes)
         # rescale bbox
         assigned_bboxes /= stride_tensor
         # cls loss
@@ -302,7 +302,7 @@ class YOLOv8Head(nn.Layer):
             loss_cls = self._varifocal_loss(pred_scores, assigned_scores,
                                             one_hot_label)
         else:
-            loss_cls = self._focal_loss(pred_scores, assigned_scores, alpha_l)
+            loss_cls = self.bce_cls(pred_scores, assigned_scores)
 
         assigned_scores_sum = assigned_scores.sum()
         if paddle.distributed.get_world_size() > 1:

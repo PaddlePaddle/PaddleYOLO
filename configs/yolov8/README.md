@@ -11,11 +11,11 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
-| YOLOv8-n        |  640     |    16     |   300e    |     2.6    |  -  | - |  1.87  | 4.52 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_n_300e_coco.pdparams) | [配置文件](./yolov8_n_300e_coco.yml) |
-| YOLOv8-s        |  640     |    16      |   300e   |     3.2    |  -  | - |  7.24  | 16.54 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams) | [配置文件](./yolov8_s_300e_coco.yml) |
-| YOLOv8-m        |  640     |    16      |   300e   |     5.2    |  -  | - |  21.19  | 49.08 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_m_300e_coco.pdparams) | [配置文件](./yolov8_m_300e_coco.yml) |
-| YOLOv8-l        |  640     |    16      |   300e   |     7.9    |  -  | - |  46.56  | 109.32 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_l_300e_coco.pdparams) | [配置文件](./yolov8_l_300e_coco.yml) |
-| YOLOv8-x        |  640     |    16      |   300e   |     13.7   |  -  | - |  86.75  | 205.92 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_x_300e_coco.pdparams) | [配置文件](./yolov8_x_300e_coco.yml) |
+| *YOLOv8-n        |  640     |    16      |   300e   |     -    |  37.3  | 53.0 |  3.16   | 8.7 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_n_300e_coco.pdparams) | [配置文件](./yolov8_n_300e_coco.yml) |
+| *YOLOv8-s        |  640     |    16      |   300e   |     -    |  44.9  | 61.8 |  11.17  | 28.6 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams) | [配置文件](./yolov8_s_300e_coco.yml) |
+| *YOLOv8-m        |  640     |    16      |   300e   |     -    |  50.2  | 67.3 |  25.90  | 78.9 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_m_300e_coco.pdparams) | [配置文件](./yolov8_m_300e_coco.yml) |
+| *YOLOv8-l        |  640     |    16      |   300e   |     -    |  52.7  | 69.8 |  43.69  | 165.2 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_l_300e_coco.pdparams) | [配置文件](./yolov8_l_300e_coco.yml) |
+| *YOLOv8-x        |  640     |    16      |   300e   |     -    |  53.7  | 70.8 |  68.23  | 257.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_x_300e_coco.pdparams) | [配置文件](./yolov8_x_300e_coco.yml) |
 
 
 **注意:**
