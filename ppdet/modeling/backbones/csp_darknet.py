@@ -23,6 +23,7 @@ from ..shape_spec import ShapeSpec
 
 __all__ = [
     'CSPDarkNet',
+    'YOLOv8CSPDarkNet',
     'BaseConv',
     'DWConv',
     'BottleNeck',
@@ -159,6 +160,7 @@ class BottleNeck(nn.Layer):
                  in_channels,
                  out_channels,
                  shortcut=True,
+                 kernel_sizes=(1, 3),
                  expansion=0.5,
                  depthwise=False,
                  bias=False,
@@ -167,11 +169,16 @@ class BottleNeck(nn.Layer):
         hidden_channels = int(out_channels * expansion)
         Conv = DWConv if depthwise else BaseConv
         self.conv1 = BaseConv(
-            in_channels, hidden_channels, ksize=1, stride=1, bias=bias, act=act)
+            in_channels,
+            hidden_channels,
+            ksize=kernel_sizes[0],
+            stride=1,
+            bias=bias,
+            act=act)
         self.conv2 = Conv(
             hidden_channels,
             out_channels,
-            ksize=3,
+            ksize=kernel_sizes[1],
             stride=1,
             bias=bias,
             act=act)
@@ -290,6 +297,47 @@ class CSPLayer(nn.Layer):
         return x
 
 
+class C2fLayer(nn.Layer):
+    """C2f layer with 3 convs, named C2f in YOLOv8"""
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 num_blocks=1,
+                 shortcut=False,
+                 expansion=0.5,
+                 depthwise=False,
+                 bias=False,
+                 act="silu"):
+        super(C2fLayer, self).__init__()
+        self.c = int(out_channels * expansion)  # hidden channels
+        self.conv1 = BaseConv(
+            in_channels, 2 * self.c, ksize=1, stride=1, bias=bias, act=act)
+        self.conv2 = BaseConv(
+            (2 + num_blocks) * self.c,
+            out_channels,
+            ksize=1,
+            stride=1,
+            bias=bias,
+            act=act)
+        self.bottlenecks = nn.LayerList([
+            BottleNeck(
+                self.c,
+                self.c,
+                shortcut=shortcut,
+                kernel_sizes=(3, 3),
+                expansion=1.0,
+                depthwise=depthwise,
+                bias=bias,
+                act=act) for _ in range(num_blocks)
+        ])
+
+    def forward(self, x):
+        y = list(self.conv1(x).split((self.c, self.c), 1))
+        y.extend(m(y[-1]) for m in self.bottlenecks)
+        return self.conv2(paddle.concat(y, 1))
+
+
 @register
 @serializable
 class CSPDarkNet(nn.Layer):
@@ -401,6 +449,132 @@ class CSPDarkNet(nn.Layer):
 
             if use_spp and arch in ['P5', 'P6']:
                 # in latest YOLOv5 use SPPFLayer instead of SPPLayer
+                sppf_layer = self.add_sublayer(
+                    'layers{}.stage{}.sppf_layer'.format(layers_num, i + 1),
+                    SPPFLayer(
+                        out_channels,
+                        out_channels,
+                        ksize=5,
+                        bias=False,
+                        act=act))
+                stage.append(sppf_layer)
+                layers_num += 1
+
+            self.csp_dark_blocks.append(nn.Sequential(*stage))
+
+        self._out_channels = [_out_channels[i] for i in self.return_idx]
+        self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
+
+    def forward(self, inputs):
+        x = inputs['image']
+        outputs = []
+        x = self.stem(x)
+        for i, layer in enumerate(self.csp_dark_blocks):
+            x = layer(x)
+            if i + 1 in self.return_idx:
+                outputs.append(x)
+        return outputs
+
+    @property
+    def out_shape(self):
+        return [
+            ShapeSpec(
+                channels=c, stride=s)
+            for c, s in zip(self._out_channels, self.strides)
+        ]
+
+
+@register
+@serializable
+class YOLOv8CSPDarkNet(nn.Layer):
+    """
+    YOLOv8 CSPDarkNet backbone.
+    diff with YOLOv5 CSPDarkNet:
+    1. self.stem ksize 3 rather than 6 in YOLOv5
+    2. use C2fLayer rather than CSPLayer in YOLOv5
+    3. num_blocks [3,6,6,3] rather than [3,6,9,3] in YOLOv5
+    4. channels each stages
+
+    Args:
+        arch (str): Architecture of YOLOv8 CSPDarkNet, from {P5, P6}
+        depth_mult (float): Depth multiplier, multiply number of channels in
+            each layer, default as 1.0.
+        width_mult (float): Width multiplier, multiply number of blocks in
+            CSPLayer/C2fLayer, default as 1.0.
+        depthwise (bool): Whether to use depth-wise conv layer.
+        act (str): Activation function type, default as 'silu'.
+        return_idx (list): Index of stages whose feature maps are returned.
+    """
+
+    __shared__ = ['arch', 'depth_mult', 'width_mult', 'act', 'trt']
+
+    # in_channels, out_channels, num_blocks, add_shortcut, use_sppf
+    # Note: last stage's out channels are different
+    arch_settings = {
+        'n': [[64, 128, 3, True, False], [128, 256, 6, True, False],
+              [256, 512, 6, True, False], [512, 1024, 3, True, True]],
+        's': [[64, 128, 3, True, False], [128, 256, 6, True, False],
+              [256, 512, 6, True, False], [512, 1024, 3, True, True]],
+        'm': [[64, 128, 3, True, False], [128, 256, 6, True, False],
+              [256, 512, 6, True, False], [512, 768, 3, True, True]],  # 768
+        'l': [[64, 128, 3, True, False], [128, 256, 6, True, False],
+              [256, 512, 6, True, False], [512, 512, 3, True, True]],  # 512
+        'x': [[64, 128, 3, True, False], [128, 256, 6, True, False],
+              [256, 512, 6, True, False], [512, 512, 3, True, True]],  # 512
+    }
+
+    def __init__(self,
+                 arch='L',
+                 depth_mult=1.0,
+                 width_mult=1.0,
+                 depthwise=False,
+                 act='silu',
+                 trt=False,
+                 return_idx=[2, 3, 4]):
+        super(YOLOv8CSPDarkNet, self).__init__()
+        self.arch = arch.lower()
+        self.return_idx = return_idx
+        Conv = DWConv if depthwise else BaseConv
+
+        arch_setting = self.arch_settings[self.arch]
+        base_channels = int(arch_setting[0][0] * width_mult)
+
+        self.stem = Conv(
+            3, base_channels, ksize=3, stride=2, bias=False, act=act)
+
+        _out_channels = [base_channels]
+        layers_num = 1
+        self.csp_dark_blocks = []
+
+        for i, (in_channels, out_channels, num_blocks, shortcut,
+                use_sppf) in enumerate(arch_setting):
+            in_channels = int(in_channels * width_mult)
+            out_channels = int(out_channels * width_mult)
+            _out_channels.append(out_channels)
+            num_blocks = max(round(num_blocks * depth_mult), 1)
+            stage = []
+
+            conv_layer = self.add_sublayer(
+                'layers{}.stage{}.conv_layer'.format(layers_num, i + 1),
+                Conv(
+                    in_channels, out_channels, 3, 2, bias=False, act=act))
+            stage.append(conv_layer)
+            layers_num += 1
+
+            c2f_layer = self.add_sublayer(
+                'layers{}.stage{}.c2f_layer'.format(layers_num, i + 1),
+                C2fLayer(
+                    out_channels,
+                    out_channels,
+                    num_blocks=num_blocks,
+                    shortcut=shortcut,
+                    depthwise=depthwise,
+                    bias=False,
+                    act=act))
+            stage.append(c2f_layer)
+            layers_num += 1
+
+            if use_sppf:
                 sppf_layer = self.add_sublayer(
                     'layers{}.stage{}.sppf_layer'.format(layers_num, i + 1),
                     SPPFLayer(

@@ -32,6 +32,7 @@ TRT_MIN_SUBGRAPH = {
     'YOLOX': 20,
     'YOLOv5': 20,
     'RTMDet': 20,
+    'YOLOv8': 10,
 }
 
 
@@ -127,7 +128,7 @@ def _dump_infer_config(config, path, image_shape, model):
             arch_state = True
             break
 
-    if infer_arch in ['YOLOX', 'YOLOv5']:
+    if infer_arch in ['YOLOX', 'YOLOv5', 'YOLOv8']:
         infer_cfg['arch'] = infer_arch
         infer_cfg['min_subgraph_size'] = TRT_MIN_SUBGRAPH[infer_arch]
         arch_state = True
