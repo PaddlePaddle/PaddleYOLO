@@ -5,6 +5,7 @@ _BASE_: [
   '_base_/yolov8_cspdarknet.yml',
   '_base_/yolov8_reader_high_aug.yml',
 ]
+arch: 'L'
 depth_mult: 1.0
 width_mult: 1.0
 
