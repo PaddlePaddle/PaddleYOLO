@@ -26,13 +26,8 @@ from paddle import in_dynamic_mode
 from paddle.common_ops_import import Variable, LayerHelper, check_variable_and_dtype, check_type, check_dtype
 
 __all__ = [
-     'multiclass_nms',
-     'matrix_nms', 
-     'batch_norm', 
-     'mish', 
-     'silu',
-     'swish', 
-     'identity'
+    'multiclass_nms', 'matrix_nms', 'batch_norm', 'mish', 'silu', 'swish',
+    'identity'
 ]
 
 
