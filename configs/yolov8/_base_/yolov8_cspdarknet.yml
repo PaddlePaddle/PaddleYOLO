@@ -24,11 +24,11 @@ YOLOv8CSPDarkNet:
 
 YOLOv8Head:
   fpn_strides: [8, 16, 32]
-  loss_weight: {class: 1.0, iou: 2.5, dfl: 0.5}
+  loss_weight: {class: 0.5, iou: 7.5, dfl: 1.5}
   assigner:
     name: TaskAlignedAssigner
-    topk: 13
-    alpha: 1.0
+    topk: 10
+    alpha: 0.5
     beta: 6.0
   nms:
     name: MultiClassNMS

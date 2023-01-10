@@ -1,4 +1,4 @@
-# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,11 +21,10 @@ from paddle.regularizer import L2Decay
 from ppdet.core.workspace import register
 
 from ..bbox_utils import batch_distance2bbox
-from ..losses import GIoULoss, SIoULoss
-from ..initializer import bias_init_with_prob, constant_, normal_
+from ..bbox_utils import bbox_iou
 from ..assigners.utils import generate_anchors_for_grid_cell
-from ..backbones.yolov6_efficientrep import BaseConv
-from ppdet.modeling.ops import get_static_shape, get_act_fn
+from ppdet.modeling.backbones.csp_darknet import BaseConv
+from ppdet.modeling.ops import get_static_shape
 from ppdet.modeling.layers import MultiClassNMS
 
 __all__ = ['YOLOv8Head']
@@ -72,9 +71,8 @@ class YOLOv8Head(nn.Layer):
         self.loss_weight = loss_weight
         self.exclude_nms = exclude_nms
 
-        # loss
-        self.iou_loss = GIoULoss()
-        self.bce_cls = nn.BCEWithLogitsLoss(
+        # cls loss
+        self.bce = nn.BCEWithLogitsLoss(
             pos_weight=paddle.to_tensor([1.0]), reduction="mean")
 
         # pred head
@@ -218,11 +216,11 @@ class YOLOv8Head(nn.Layer):
                                                  ])).matmul(self.proj)
         return batch_distance2bbox(anchor_points, pred_dist)
 
-    def _bbox2distance(self, points, bbox):
+    def _bbox2distance(self, points, bbox, reg_max):
         x1y1, x2y2 = paddle.split(bbox, 2, -1)
         lt = points - x1y1
         rb = x2y2 - points
-        return paddle.concat([lt, rb], -1).clip(0, self.reg_max - 0.01)
+        return paddle.concat([lt, rb], -1).clip(0, reg_max - 0.01)
 
     def _df_loss(self, pred_dist, target):
         target_left = paddle.cast(target, 'int64')
@@ -251,17 +249,20 @@ class YOLOv8Head(nn.Layer):
             bbox_weight = paddle.masked_select(
                 assigned_scores.sum(-1), mask_positive).unsqueeze(-1)
 
+            # loss_l1 just see if train well
             loss_l1 = F.l1_loss(pred_bboxes_pos, assigned_bboxes_pos)
 
-            loss_iou = self.iou_loss(pred_bboxes_pos,
-                                     assigned_bboxes_pos) * bbox_weight
-            loss_iou = loss_iou.sum() / assigned_scores_sum
+            # ciou loss
+            iou = bbox_iou(
+                pred_bboxes_pos, assigned_bboxes_pos, x1y1x2y2=False, ciou=True)
+            loss_iou = ((1.0 - iou) * bbox_weight).sum() / assigned_scores_sum
 
             dist_mask = mask_positive.unsqueeze(-1).tile(
-                [1, 1, (self.reg_max + 1) * 4])
+                [1, 1, (self.reg_max) * 4])
             pred_dist_pos = paddle.masked_select(
-                pred_dist, dist_mask).reshape([-1, 4, self.reg_max + 1])
-            assigned_ltrb = self._bbox2distance(anchor_points, assigned_bboxes)
+                pred_dist, dist_mask).reshape([-1, 4, self.reg_max])
+            assigned_ltrb = self._bbox2distance(anchor_points, assigned_bboxes,
+                                                self.reg_max - 1)
             assigned_ltrb_pos = paddle.masked_select(
                 assigned_ltrb, bbox_mask).reshape([-1, 4])
             loss_dfl = self._df_loss(pred_dist_pos,
@@ -302,7 +303,7 @@ class YOLOv8Head(nn.Layer):
             loss_cls = self._varifocal_loss(pred_scores, assigned_scores,
                                             one_hot_label)
         else:
-            loss_cls = self.bce_cls(pred_scores, assigned_scores)
+            loss_cls = self.bce(pred_scores, assigned_scores)
 
         assigned_scores_sum = assigned_scores.sum()
         if paddle.distributed.get_world_size() > 1:
@@ -310,7 +311,7 @@ class YOLOv8Head(nn.Layer):
             assigned_scores_sum = paddle.clip(
                 assigned_scores_sum / paddle.distributed.get_world_size(),
                 min=1)
-        loss_cls /= assigned_scores_sum
+        # loss_cls /= assigned_scores_sum
 
         loss_l1, loss_iou, loss_dfl = \
             self._bbox_loss(pred_distri, pred_bboxes, anchor_points_s,
