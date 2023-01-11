@@ -9,31 +9,25 @@
 
 ### 基础模型
 
-| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | TRT-FP16-Latency(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
-| *YOLOv8-n        |  640     |    16      |   300e   |     -    |  37.3  | 53.0 |  3.16   | 8.7 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_n_300e_coco.pdparams) | [配置文件](./yolov8_n_300e_coco.yml) |
-| *YOLOv8-s        |  640     |    16      |   300e   |     -    |  44.9  | 61.8 |  11.17  | 28.6 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams) | [配置文件](./yolov8_s_300e_coco.yml) |
-| *YOLOv8-m        |  640     |    16      |   300e   |     -    |  50.2  | 67.3 |  25.90  | 78.9 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_m_300e_coco.pdparams) | [配置文件](./yolov8_m_300e_coco.yml) |
-| *YOLOv8-l        |  640     |    16      |   300e   |     -    |  52.8  | 69.6 |  43.69  | 165.2 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_l_300e_coco.pdparams) | [配置文件](./yolov8_l_300e_coco.yml) |
-| *YOLOv8-x        |  640     |    16      |   300e   |     -    |  53.8  | 70.6 |  68.23  | 257.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_x_300e_coco.pdparams) | [配置文件](./yolov8_x_300e_coco.yml) |
+| *YOLOv8-n        |  640     |    16      |   300e   |    2.4   |  37.3  | 53.0 |  3.16   | 8.7 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_n_300e_coco.pdparams) | [配置文件](./yolov8_n_300e_coco.yml) |
+| *YOLOv8-s        |  640     |    16      |   300e   |    3.4   |  44.9  | 61.8 |  11.17  | 28.6 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams) | [配置文件](./yolov8_s_300e_coco.yml) |
+| *YOLOv8-m        |  640     |    16      |   300e   |    6.5   |  50.2  | 67.3 |  25.90  | 78.9 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_m_300e_coco.pdparams) | [配置文件](./yolov8_m_300e_coco.yml) |
+| *YOLOv8-l        |  640     |    16      |   300e   |    10.0  |  52.8  | 69.6 |  43.69  | 165.2 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_l_300e_coco.pdparams) | [配置文件](./yolov8_l_300e_coco.yml) |
+| *YOLOv8-x        |  640     |    16      |   300e   |    15.1  |  53.8  | 70.6 |  68.23  | 257.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_x_300e_coco.pdparams) | [配置文件](./yolov8_x_300e_coco.yml) |
 
 
 **注意:**
   - YOLOv8模型暂未支持完全训练，mAP为部署权重在COCO val2017上的`mAP(IoU=0.5:0.95)`结果，且评估未使用`multi_label`等trick；
   - YOLOv8模型训练使用COCO train2017作为训练集，Box AP为在COCO val2017上的`mAP(IoU=0.5:0.95)`结果；
   - YOLOv8模型训练过程中默认使用8 GPUs进行混合精度训练，默认lr为0.01为8卡总batch_size的设置，如果**GPU卡数**或者每卡**batch size**发生改动，也不需要改动学习率，但为了保证高精度最好使用**总batch size大于64**的配置去训练；
-  - 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用单卡Tesla T4 GPU，batch size=1，测试环境为**paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考[速度测试](#速度测试)。
+  - TRT-FP16-Latency(ms)模型推理耗时为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用**单卡Tesla T4 GPU**，batch size=1，测试环境为**paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考[速度测试](#速度测试)。
   - 如果你设置了`--run_benchmark=True`, 你首先需要安装以下依赖`pip install pynvml psutil GPUtil`。
 
 ### 部署模型
 
-| 网络模型     | 输入尺寸 | 导出后的权重(w/o NMS) | ONNX(w/o NMS)  |
-| :-------- | :--------: | :---------------------: | :----------------: |
-| YOLOv8-n |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_300e_coco_wo_nms.onnx) |
-| YOLOv8-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_300e_coco_wo_nms.onnx) |
-| YOLOv8-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_300e_coco_wo_nms.onnx) |
-| YOLOv8-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_300e_coco_wo_nms.onnx) |
-| YOLOv8-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_300e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_300e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_300e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_300e_coco_wo_nms.onnx) |
+
 
 ## 使用教程
 

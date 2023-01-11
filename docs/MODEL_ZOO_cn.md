@@ -210,6 +210,28 @@
 
 </details>
 
+
+### [YOLOv8](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov8)
+
+<details>
+<summary> 基础模型 </summary>
+
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | TRT-FP16-Latency(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| *YOLOv8-n        |  640     |    16      |   300e   |    2.4   |  37.3  | 53.0 |  3.16   | 8.7 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_n_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov8/yolov8_n_300e_coco.yml) |
+| *YOLOv8-s        |  640     |    16      |   300e   |    3.4   |  44.9  | 61.8 |  11.17  | 28.6 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov8/yolov8_s_300e_coco.yml) |
+| *YOLOv8-m        |  640     |    16      |   300e   |    6.5   |  50.2  | 67.3 |  25.90  | 78.9 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_m_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov8/yolov8_m_300e_coco.yml) |
+| *YOLOv8-l        |  640     |    16      |   300e   |    10.0   |  52.8  | 69.6 |  43.69  | 165.2 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_l_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov8/yolov8_l_300e_coco.yml) |
+| *YOLOv8-x        |  640     |    16      |   300e   |    15.1  |  53.8  | 70.6 |  68.23  | 257.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_x_300e_coco.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov8/yolov8_x_300e_coco.yml) |
+
+</details>
+
+<details>
+<summary> 部署模型  </summary>
+
+</details>
+
+
 ### [RTMDet](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/rtmdet)
 
 <details>
