@@ -4,8 +4,11 @@
 
 **PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`、`PP-YOLO`、`PP-YOLOv2`、`PP-YOLOE`、`PP-YOLOE+`、`YOLOX`、`YOLOv5`、`YOLOv6`、`YOLOv7`、`YOLOv8`、`RTMDet`等模型，COCO数据集模型库请参照 [ModelZoo](docs/MODEL_ZOO_cn.md) 和 [configs](configs/)。
 
-
+<div  align="center">
+  <img src="https://user-images.githubusercontent.com/59380685/212282929-550a4a4e-793b-45c6-b051-2bf5beea244d.png" width="640"/>
+</div>
 **注意:**
+
  - **PaddleYOLO** 代码库协议为 **[GPL 3.0](LICENSE)**，[YOLOv5](configs/yolov5)、[YOLOv6](configs/yolov6)、[YOLOv7](configs/yolov7)和[YOLOv8](configs/yolov8)这几类模型代码不合入[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)，其余YOLO模型推荐在[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)中使用，**会最先发布PP-YOLO系列特色检测模型的最新进展**；
  - **PaddleYOLO**代码库**推荐使用paddlepaddle-2.3.2以上的版本**，请参考[官网](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html)下载对应适合版本，**Windows平台请安装paddle develop版本**；
  - **PaddleYOLO 的[Roadmap](https://github.com/PaddlePaddle/PaddleYOLO/issues/44)** issue用于收集用户的需求，欢迎提出您的建议和需求；
