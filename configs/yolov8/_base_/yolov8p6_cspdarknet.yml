@@ -11,21 +11,21 @@ width_mult: 1.0
 
 YOLOv8:
   backbone: YOLOv8CSPDarkNet
-  neck: YOLOv8CSPPAN
+  neck: YOLOv8CSPPANP6
   yolo_head: YOLOv8Head
   post_process: ~
 
 YOLOv8CSPDarkNet:
-  arch: 'P5'
-  return_idx: [2, 3, 4]
+  arch: 'P6'
+  return_idx: [2, 3, 4, 5]
   last_stage_ch: -1
   last2_stage_ch: -1
 
 # use default config
-# YOLOv8CSPPAN:
+# YOLOv8CSPPANP6:
 
 YOLOv8Head:
-  fpn_strides: [8, 16, 32]
+  fpn_strides: [8, 16, 32, 64]
   loss_weight: {class: 0.5, iou: 7.5, dfl: 1.5}
   assigner:
     name: TaskAlignedAssigner

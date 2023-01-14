@@ -4,6 +4,7 @@
 - [模型库](#模型库)
 - [使用说明](#使用说明)
 - [速度测试](#速度测试)
+- [引用](#引用)
 
 ## 模型库
 
@@ -11,11 +12,17 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | TRT-FP16-Latency(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
-| *YOLOv8-n        |  640     |    16      |   300e   |    2.4   |  37.3  | 53.0 |  3.16   | 8.7 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_n_300e_coco.pdparams) | [配置文件](./yolov8_n_300e_coco.yml) |
-| *YOLOv8-s        |  640     |    16      |   300e   |    3.4   |  44.9  | 61.8 |  11.17  | 28.6 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams) | [配置文件](./yolov8_s_300e_coco.yml) |
-| *YOLOv8-m        |  640     |    16      |   300e   |    6.5   |  50.2  | 67.3 |  25.90  | 78.9 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_m_300e_coco.pdparams) | [配置文件](./yolov8_m_300e_coco.yml) |
-| *YOLOv8-l        |  640     |    16      |   300e   |    10.0  |  52.8  | 69.6 |  43.69  | 165.2 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_l_300e_coco.pdparams) | [配置文件](./yolov8_l_300e_coco.yml) |
-| *YOLOv8-x        |  640     |    16      |   300e   |    15.1  |  53.8  | 70.6 |  68.23  | 257.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_x_300e_coco.pdparams) | [配置文件](./yolov8_x_300e_coco.yml) |
+| *YOLOv8-n        |  640     |    16      |   500e   |    2.4   |  37.3  | 53.0 |  3.16   | 8.7 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_n_500e_coco.pdparams) | [配置文件](./yolov8_n_500e_coco.yml) |
+| *YOLOv8-s        |  640     |    16      |   500e   |    3.4   |  44.9  | 61.8 |  11.17  | 28.6 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams) | [配置文件](./yolov8_s_500e_coco.yml) |
+| *YOLOv8-m        |  640     |    16      |   500e   |    6.5   |  50.2  | 67.3 |  25.90  | 78.9 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_m_500e_coco.pdparams) | [配置文件](./yolov8_m_500e_coco.yml) |
+| *YOLOv8-l        |  640     |    16      |   500e   |    10.0  |  52.8  | 69.6 |  43.69  | 165.2 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_l_500e_coco.pdparams) | [配置文件](./yolov8_l_500e_coco.yml) |
+| *YOLOv8-x        |  640     |    16      |   500e   |    15.1  |  53.8  | 70.6 |  68.23  | 257.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8_x_500e_coco.pdparams) | [配置文件](./yolov8_x_500e_coco.yml) |
+
+### P6大尺度模型
+
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | TRT-FP16-Latency(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| *YOLOv8-P6-x     |  1280    |    16      |   500e   |    -  |  -  | - |  -  | - | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8p6_x_500e_coco.pdparams) | [配置文件](./yolov8p6_x_500e_coco.yml) |
 
 
 **注意:**
@@ -34,7 +41,7 @@
 ### 1. 训练
 执行以下指令使用混合精度训练YOLOv8
 ```bash
-python -m paddle.distributed.launch --gpus 0,1,2,3,4,5,6,7 tools/train.py -c configs/yolov8/yolov8_s_300e_coco.yml --amp --eval
+python -m paddle.distributed.launch --gpus 0,1,2,3,4,5,6,7 tools/train.py -c configs/yolov8/yolov8_s_500e_coco.yml --amp --eval
 ```
 **注意:**
 - `--amp`表示开启混合精度训练以避免显存溢出，`--eval`表示边训边验证。
@@ -42,17 +49,17 @@ python -m paddle.distributed.launch --gpus 0,1,2,3,4,5,6,7 tools/train.py -c con
 ### 2. 评估
 执行以下命令在单个GPU上评估COCO val2017数据集
 ```bash
-CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c configs/yolov8/yolov8_s_300e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams
+CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c configs/yolov8/yolov8_s_500e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams
 ```
 
 ### 3. 推理
 使用以下命令在单张GPU上预测图片，使用`--infer_img`推理单张图片以及使用`--infer_dir`推理文件中的所有图片。
 ```bash
 # 推理单张图片
-CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c configs/yolov8/yolov8_s_300e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams --infer_img=demo/000000014439_640x640.jpg
+CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c configs/yolov8/yolov8_s_500e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams --infer_img=demo/000000014439_640x640.jpg
 
 # 推理文件中的所有图片
-CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c configs/yolov8/yolov8_s_300e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams --infer_dir=demo
+CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c configs/yolov8/yolov8_s_500e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams --infer_dir=demo
 ```
 
 ### 4.导出模型
@@ -61,13 +68,13 @@ YOLOv8在GPU上推理部署或benchmark测速等需要通过`tools/export_model.
 当你**使用Paddle Inference但不使用TensorRT**时，运行以下的命令导出模型
 
 ```bash
-python tools/export_model.py -c configs/yolov8/yolov8_s_300e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams
+python tools/export_model.py -c configs/yolov8/yolov8_s_500e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams
 ```
 
 当你**使用Paddle Inference且使用TensorRT**时，需要指定`-o trt=True`来导出模型。
 
 ```bash
-python tools/export_model.py -c configs/yolov8/yolov8_s_300e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams trt=True
+python tools/export_model.py -c configs/yolov8/yolov8_s_500e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams trt=True
 ```
 
 如果你想将YOLOv8模型导出为**ONNX格式**，参考
@@ -76,13 +83,13 @@ python tools/export_model.py -c configs/yolov8/yolov8_s_300e_coco.yml -o weights
 ```bash
 
 # 导出推理模型
-python tools/export_model.py -c configs/yolov8/yolov8_s_300e_coco.yml --output_dir=output_inference -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams
+python tools/export_model.py -c configs/yolov8/yolov8_s_500e_coco.yml --output_dir=output_inference -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams
 
 # 安装paddle2onnx
 pip install paddle2onnx
 
 # 转换成onnx格式
-paddle2onnx --model_dir output_inference/yolov8_s_300e_coco --model_filename model.pdmodel --params_filename model.pdiparams --opset_version 11 --save_file yolov8_s_300e_coco.onnx
+paddle2onnx --model_dir output_inference/yolov8_s_500e_coco --model_filename model.pdmodel --params_filename model.pdiparams --opset_version 11 --save_file yolov8_s_500e_coco.onnx
 ```
 
 **注意：** ONNX模型目前只支持batch_size=1
@@ -98,7 +105,7 @@ YOLOv8可以使用以下方式进行部署：
 运行以下命令导出模型
 
 ```bash
-python tools/export_model.py -c configs/yolov8/yolov8_s_300e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams trt=True
+python tools/export_model.py -c configs/yolov8/yolov8_s_500e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams trt=True
 ```
 
 **注意：**
@@ -110,17 +117,17 @@ python tools/export_model.py -c configs/yolov8/yolov8_s_300e_coco.yml -o weights
 
 ```bash
 # Python部署推理单张图片
-python deploy/python/infer.py --model_dir=output_inference/yolov8_s_300e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu
+python deploy/python/infer.py --model_dir=output_inference/yolov8_s_500e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu
 
 # 推理文件夹下的所有图片
-python deploy/python/infer.py --model_dir=output_inference/yolov8_s_300e_coco --image_dir=demo/ --device=gpu
+python deploy/python/infer.py --model_dir=output_inference/yolov8_s_500e_coco --image_dir=demo/ --device=gpu
 ```
 
 #### 5.2. C++部署
 `deploy/cpp/build/main`使用上述导出后的Paddle Inference模型用于C++推理部署, 首先按照[docs](../../deploy/cpp/docs)编译安装环境。
 ```bash
 # C++部署推理单张图片
-./deploy/cpp/build/main --model_dir=output_inference/yolov8_s_300e_coco/ --image_file=demo/000000014439_640x640.jpg --run_mode=paddle --device=GPU --threshold=0.5 --output_dir=cpp_infer_output/yolov8_s_300e_coco
+./deploy/cpp/build/main --model_dir=output_inference/yolov8_s_500e_coco/ --image_file=demo/000000014439_640x640.jpg --run_mode=paddle --device=GPU --threshold=0.5 --output_dir=cpp_infer_output/yolov8_s_500e_coco
 ```
 
 
@@ -132,27 +139,33 @@ python deploy/python/infer.py --model_dir=output_inference/yolov8_s_300e_coco --
 
 ```bash
 # 导出模型
-python tools/export_model.py -c configs/yolov8/yolov8_s_300e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams exclude_nms=True
+python tools/export_model.py -c configs/yolov8/yolov8_s_500e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams exclude_nms=True
 
 # 速度测试，使用run_benchmark=True
-python deploy/python/infer.py --model_dir=output_inference/yolov8_s_300e_coco --image_file=demo/000000014439_640x640.jpg --run_mode=paddle --device=gpu --run_benchmark=True
+python deploy/python/infer.py --model_dir=output_inference/yolov8_s_500e_coco --image_file=demo/000000014439_640x640.jpg --run_mode=paddle --device=gpu --run_benchmark=True
 ```
 
 **使用Paddle Inference且使用TensorRT**进行测速，执行以下命令：
 
 ```bash
 # 导出模型，使用trt=True
-python tools/export_model.py -c configs/yolov8/yolov8_s_300e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_300e_coco.pdparams exclude_nms=True trt=True
+python tools/export_model.py -c configs/yolov8/yolov8_s_500e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams exclude_nms=True trt=True
 
 # 速度测试，使用run_benchmark=True
-python deploy/python/infer.py --model_dir=output_inference/yolov8_s_300e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu --run_benchmark=True
+python deploy/python/infer.py --model_dir=output_inference/yolov8_s_500e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu --run_benchmark=True
 
 # tensorRT-FP32测速
-python deploy/python/infer.py --model_dir=output_inference/yolov8_s_300e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu --run_benchmark=True --run_mode=trt_fp32
+python deploy/python/infer.py --model_dir=output_inference/yolov8_s_500e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu --run_benchmark=True --run_mode=trt_fp32
 
 # tensorRT-FP16测速
-python deploy/python/infer.py --model_dir=output_inference/yolov8_s_300e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu --run_benchmark=True --run_mode=trt_fp16
+python deploy/python/infer.py --model_dir=output_inference/yolov8_s_500e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu --run_benchmark=True --run_mode=trt_fp16
 ```
 **注意:**
 - 导出模型时指定`-o exclude_nms=True`仅作为测速时用，这样导出的模型其推理部署预测的结果不是最终检出框的结果。
 - [模型库](#模型库)中的速度测试结果为tensorRT-FP16测速后的最快速度，为不包含数据预处理和模型输出后处理(NMS)的耗时。
+
+
+## 引用
+```
+
+```

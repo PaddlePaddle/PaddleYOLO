@@ -32,7 +32,9 @@ __all__ = ['YOLOv8Head']
 
 @register
 class YOLOv8Head(nn.Layer):
-    __shared__ = ['num_classes', 'eval_size', 'trt', 'exclude_nms']
+    __shared__ = [
+        'num_classes', 'eval_size', 'trt', 'exclude_nms', 'exclude_post_process'
+    ]
     __inject__ = ['assigner', 'nms']
 
     def __init__(self,
@@ -53,7 +55,9 @@ class YOLOv8Head(nn.Layer):
                      'dfl': 0.5,
                  },
                  trt=False,
-                 exclude_nms=False):
+                 exclude_nms=False,
+                 exclude_post_process=False,
+                 print_l1_loss=True):
         super(YOLOv8Head, self).__init__()
         assert len(in_channels) > 0, "len(in_channels) should > 0"
         self.in_channels = in_channels
@@ -70,6 +74,8 @@ class YOLOv8Head(nn.Layer):
         self.eval_size = eval_size
         self.loss_weight = loss_weight
         self.exclude_nms = exclude_nms
+        self.exclude_post_process = exclude_post_process
+        self.print_l1_loss = print_l1_loss
 
         # cls loss
         self.bce = nn.BCEWithLogitsLoss(
@@ -250,7 +256,10 @@ class YOLOv8Head(nn.Layer):
                 assigned_scores.sum(-1), mask_positive).unsqueeze(-1)
 
             # loss_l1 just see if train well
-            loss_l1 = F.l1_loss(pred_bboxes_pos, assigned_bboxes_pos)
+            if self.print_l1_loss:
+                loss_l1 = F.l1_loss(pred_bboxes_pos, assigned_bboxes_pos)
+            else:
+                loss_l1 = paddle.zeros([1])
 
             # ciou loss
             iou = bbox_iou(
@@ -325,8 +334,10 @@ class YOLOv8Head(nn.Layer):
             'loss_cls': loss_cls,
             'loss_iou': loss_iou,
             'loss_dfl': loss_dfl,
-            'loss_l1': loss_l1,
         }
+        if self.print_l1_loss:
+            # just see convergence
+            out_dict.update({'loss_l1': loss_l1})
         return out_dict
 
     def post_process(self, head_outs, im_shape, scale_factor):
@@ -334,15 +345,19 @@ class YOLOv8Head(nn.Layer):
         pred_bboxes = batch_distance2bbox(anchor_points,
                                           reg_concat.transpose([0, 2, 1]))
         pred_bboxes *= stride_tensor
-        # scale bbox to origin
-        scale_y, scale_x = paddle.split(scale_factor, 2, axis=-1)
-        scale_factor = paddle.concat(
-            [scale_x, scale_y, scale_x, scale_y], axis=-1).reshape([-1, 1, 4])
-        pred_bboxes /= scale_factor
-
-        if self.exclude_nms:
-            # `exclude_nms=True` just use in benchmark
-            return pred_bboxes.sum(), pred_scores.sum()
+        if self.exclude_post_process:
+            return paddle.concat(
+                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1), None
         else:
-            bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
-            return bbox_pred, bbox_num
+            # scale bbox to origin
+            scale_y, scale_x = paddle.split(scale_factor, 2, axis=-1)
+            scale_factor = paddle.concat(
+                [scale_x, scale_y, scale_x, scale_y],
+                axis=-1).reshape([-1, 1, 4])
+            pred_bboxes /= scale_factor
+            if self.exclude_nms:
+                # `exclude_nms=True` just use in benchmark
+                return pred_bboxes.sum(), pred_scores.sum()
+            else:
+                bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
+                return bbox_pred, bbox_num
