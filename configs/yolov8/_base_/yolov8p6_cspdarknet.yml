@@ -18,8 +18,8 @@ YOLOv8:
 YOLOv8CSPDarkNet:
   arch: 'P6'
   return_idx: [2, 3, 4, 5]
-  last_stage_ch: -1
-  last2_stage_ch: -1
+  last_stage_ch: 1024
+  last2_stage_ch: 768
 
 # use default config
 # YOLOv8CSPPANP6:

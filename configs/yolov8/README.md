@@ -22,7 +22,7 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | TRT-FP16-Latency(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
-| *YOLOv8-P6-x     |  1280    |    16      |   500e   |    -  |  -  | - |  -  | - | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8p6_x_500e_coco.pdparams) | [配置文件](./yolov8p6_x_500e_coco.yml) |
+| *YOLOv8-P6-x     |  1280    |    16      |   500e   |    -  |  -  | - |  97.42  | 522.93 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov8p6_x_500e_coco.pdparams) | [配置文件](./yolov8p6_x_500e_coco.yml) |
 
 
 **注意:**
