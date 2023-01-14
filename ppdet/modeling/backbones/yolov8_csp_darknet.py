@@ -136,7 +136,7 @@ class YOLOv8CSPDarkNet(nn.Layer):
                  depth_mult=1.0,
                  width_mult=1.0,
                  last_stage_ch=1024,
-                 last2_stage_ch=768,
+                 last2_stage_ch=512,
                  depthwise=False,
                  act='silu',
                  trt=False,
@@ -148,10 +148,12 @@ class YOLOv8CSPDarkNet(nn.Layer):
         arch_setting = self.arch_settings[arch]
         # channels of last stage in M/L/X will be smaller
         if last_stage_ch != 1024:
-            arch_setting[-1][1] = min(last_stage_ch, arch_setting[-1][1])
-            if arch == 'P6' and last2_stage_ch > 0:
-                arch_setting[-2][1] = min(last2_stage_ch, arch_setting[-2][1])
-                arch_setting[-1][0] = arch_setting[-2][1]
+            assert last_stage_ch > 0
+            arch_setting[-1][1] = last_stage_ch
+            if arch == 'P6' and last2_stage_ch != 768:
+                assert last2_stage_ch > 0
+                arch_setting[-2][1] = last2_stage_ch
+                arch_setting[-1][0] = last2_stage_ch
         base_channels = int(arch_setting[0][0] * width_mult)
 
         self.stem = Conv(
