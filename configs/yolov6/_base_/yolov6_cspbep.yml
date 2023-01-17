@@ -15,7 +15,7 @@ width_mult: 1.0
 YOLOv6:
   backbone: CSPBepBackbone
   neck: CSPRepBiFPAN
-  yolo_head: EffiDeHead
+  yolo_head: EffiDeHead_fuseab
 
 CSPBepBackbone:
   arch: 'P5'
@@ -26,6 +26,31 @@ CSPBepBackbone:
 
 CSPRepBiFPAN:
   csp_e: 0.5
+
+EffiDeHead_fuseab:
+  fpn_strides: [8, 16, 32]
+  grid_cell_scale: 5.0
+  grid_cell_offset: 0.5
+  reg_max: 16
+  use_dfl: True # in m/l version
+  static_assigner_epoch: 3 # warmup_epoch
+  loss_weight: {cls: 1.0, iou: 2.5, dfl: 0.5, cwd: 10.0}
+  iou_type: 'giou'  # 'siou' in n/t version, 'giou' in s/m/l version
+  distill_weight: {cls: 1.0, dfl: 1.0}
+  static_assigner:
+    name: ATSSAssigner
+    topk: 9
+  assigner:
+    name: TaskAlignedAssigner
+    topk: 13
+    alpha: 1.0
+    beta: 6.0
+  nms:
+    name: MultiClassNMS
+    nms_top_k: 10000
+    keep_top_k: 300
+    score_threshold: 0.03
+    nms_threshold: 0.65
 
 EffiDeHead:
   fpn_strides: [8, 16, 32]

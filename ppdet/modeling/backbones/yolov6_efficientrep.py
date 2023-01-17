@@ -280,8 +280,9 @@ class BottleRep(nn.Layer):
                  in_channels,
                  out_channels,
                  basic_block=RepConv,
-                 alpha=False):
+                 alpha=True):
         super(BottleRep, self).__init__()
+        # basic_block: RepConv or ConvBNSiLUBlock
         self.conv1 = basic_block(in_channels, out_channels)
         self.conv2 = basic_block(out_channels, out_channels)
         if in_channels != out_channels:
@@ -302,20 +303,24 @@ class BottleRep(nn.Layer):
         return outputs + self.alpha * x if self.shortcut else outputs
 
 
-class RepLayerBepC3(nn.Layer):
+class RepLayer_BottleRep(nn.Layer):
     """
     RepLayer with RepConvs for M/L, like CSPLayer(C3) in YOLOv5/YOLOX
     named RepBlock in YOLOv6
     """
 
-    def __init__(self, in_channels, out_channels, num_repeats=1, block=RepConv):
-        super(RepLayerBepC3, self).__init__()
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 num_repeats=1,
+                 basic_block=RepConv):
+        super(RepLayer_BottleRep, self).__init__()
         # in m/l
         self.conv1 = BottleRep(
-            in_channels, out_channels, basic_block=block, alpha=True)
+            in_channels, out_channels, basic_block=basic_block, alpha=True)
         num_repeats = num_repeats // 2
         self.block = nn.Sequential(*(BottleRep(
-            out_channels, out_channels, basic_block=block, alpha=True
+            out_channels, out_channels, basic_block=basic_block, alpha=True
         ) for _ in range(num_repeats - 1))) if num_repeats > 1 else None
 
     def forward(self, x):
@@ -339,12 +344,12 @@ class BepC3Layer(nn.Layer):
         self.cv1 = BaseConv_C3(in_channels, c_, 1, 1)
         self.cv2 = BaseConv_C3(in_channels, c_, 1, 1)
         self.cv3 = BaseConv_C3(2 * c_, out_channels, 1, 1)
-        if act == 'silu':
+        if block == ConvBNSiLUBlock and act == 'silu':
             self.cv1 = BaseConv_C3(in_channels, c_, 1, 1, act=nn.Silu())
             self.cv2 = BaseConv_C3(in_channels, c_, 1, 1, act=nn.Silu())
             self.cv3 = BaseConv_C3(2 * c_, out_channels, 1, 1, act=nn.Silu())
 
-        self.m = RepLayerBepC3(c_, c_, num_repeats, block=block)
+        self.m = RepLayer_BottleRep(c_, c_, num_repeats, basic_block=block)
 
     def forward(self, x):
         return self.cv3(paddle.concat((self.m(self.cv1(x)), self.cv2(x)), 1))

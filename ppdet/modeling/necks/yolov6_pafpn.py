@@ -69,7 +69,7 @@ class RepPAN(nn.Layer):
         self.in_channels = in_channels
         self._out_channels = ch_list[6], ch_list[8], ch_list[10]
 
-        # block = get_block(training_mode) # RepLayer(RepVGGBlock) as default
+        # block = get_block(training_mode) # RepConv(RepVGGBlock) as default
         # Rep_p4
         in_ch, out_ch = self.in_channels[2], ch_list[5]
         self.lateral_conv1 = SimConv(in_ch, out_ch, 1, 1)
@@ -159,7 +159,7 @@ class RepBiFPAN(nn.Layer):
         self.in_channels = in_channels
         self._out_channels = ch_list[6], ch_list[8], ch_list[10]
 
-        # block = get_block(training_mode) # RepLayer(RepVGGBlock) as default
+        # block = get_block(training_mode) # RepConv(RepVGGBlock) as default
         # Rep_p4
         self.reduce_layer0 = SimConv(ch_list[4], ch_list[5], 1, 1)
         self.Bifusion0 = BiFusion([ch_list[3], ch_list[5]], ch_list[5])
@@ -359,6 +359,7 @@ class CSPRepBiFPAN(nn.Layer):
         if csp_e == 0.67:
             csp_e = float(2) / 3
         block = get_block(training_mode)
+        # RepConv(or RepVGGBlock) in M, but ConvBNSiLUBlock(or ConvWrapper) in L
 
         # Rep_p4
         self.reduce_layer0 = SimConv(ch_list[4], ch_list[5], 1, 1)
