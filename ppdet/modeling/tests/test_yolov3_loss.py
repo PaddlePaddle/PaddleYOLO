@@ -356,8 +356,8 @@ class TestYolov3LossOp(unittest.TestCase):
             x, t, gtbox, anchor, self.downsample_ratio, self.scale_x_y)
         for k in yolo_loss2:
             self.assertAlmostEqual(
-                yolo_loss1[k].numpy()[0],
-                yolo_loss2[k].numpy()[0],
+                float(yolo_loss1[k]),
+                float(yolo_loss2[k]),
                 delta=1e-2,
                 msg=k)
 
