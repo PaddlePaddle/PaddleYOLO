@@ -21,7 +21,6 @@ from ppdet.core.workspace import register, serializable
 from ..backbones.yolov6_efficientrep import SimConv, Transpose, RepLayer, BepC3Layer, make_divisible, get_block
 from ..shape_spec import ShapeSpec
 
-#__all__ = ['RepPAN', 'RepBiFPAN', 'RepBiFPANP6', 'CSPRepPAN', 'CSPRepBiFPAN', 'CSPRepBiFPANP6']
 __all__ = ['RepPAN', 'RepBiFPAN', 'CSPRepPAN', 'CSPRepBiFPAN']
 
 
@@ -52,7 +51,7 @@ class BiFusion(nn.Layer):
 class RepPAN(nn.Layer):
     """RepPAN of YOLOv6 n/t/s
     """
-    __shared__ = ['depth_mult', 'width_mult', 'act', 'trt', 'training_mode']
+    __shared__ = ['depth_mult', 'width_mult', 'training_mode']
 
     def __init__(self,
                  depth_mult=1.0,
@@ -60,9 +59,7 @@ class RepPAN(nn.Layer):
                  in_channels=[256, 512, 1024],
                  out_channels=[128, 256, 512],
                  num_repeats=[12, 12, 12, 12],
-                 training_mode='repvgg',
-                 act='relu',
-                 trt=False):
+                 training_mode='repvgg'):
         super(RepPAN, self).__init__()
         backbone_ch_list = [64, 128, 256, 512, 1024]
         ch_list = backbone_ch_list + [256, 128, 128, 256, 256, 512]
@@ -133,9 +130,6 @@ class RepPAN(nn.Layer):
         return [ShapeSpec(channels=c) for c in self._out_channels]
 
 
-from IPython import embed
-
-
 @register
 @serializable
 class RepBiFPAN(nn.Layer):
@@ -143,16 +137,14 @@ class RepBiFPAN(nn.Layer):
     RepBiFPAN Neck for YOLOv6 n/s in v3.0
     change lateral_conv + up(Transpose) to BiFusion
     """
-    __shared__ = ['depth_mult', 'width_mult', 'act', 'trt', 'training_mode']
+    __shared__ = ['depth_mult', 'width_mult', 'training_mode']
 
     def __init__(self,
                  depth_mult=0.33,
                  width_mult=0.50,
                  in_channels=[128, 256, 512, 1024],
                  out_channels=[128, 256, 512],
-                 training_mode='repvgg',
-                 act='relu',
-                 trt=False):
+                 training_mode='repvgg'):
         super(RepBiFPAN, self).__init__()
         backbone_ch_list = [64, 128, 256, 512, 1024]
         backbone_num_repeats = [1, 6, 12, 18, 6]
@@ -228,7 +220,7 @@ class CSPRepPAN(nn.Layer):
     CSPRepPAN of YOLOv6 m/l
     """
 
-    __shared__ = ['depth_mult', 'width_mult', 'trt', 'act', 'training_mode']
+    __shared__ = ['depth_mult', 'width_mult', 'act', 'training_mode']
 
     def __init__(self,
                  depth_mult=1.0,
@@ -238,8 +230,7 @@ class CSPRepPAN(nn.Layer):
                  num_repeats=[12, 12, 12, 12],
                  training_mode='repvgg',
                  csp_e=0.5,
-                 act='relu',
-                 trt=False):
+                 act='relu'):
         super(CSPRepPAN, self).__init__()
         backbone_ch_list = [64, 128, 256, 512, 1024]
         ch_list = backbone_ch_list + [256, 128, 128, 256, 256, 512]
@@ -248,9 +239,10 @@ class CSPRepPAN(nn.Layer):
         ch_list = [make_divisible(i * width_mult, 8) for i in (ch_list)]
         self.in_channels = in_channels
         self._out_channels = ch_list[6], ch_list[8], ch_list[10]
-
-        if csp_e == 0.67: csp_e = float(2) / 3
-        block = get_block(training_mode)  # RepLayer(RepVGGBlock) as default
+        if csp_e == 0.67:
+            csp_e = float(2) / 3
+        block = get_block(training_mode)
+        # RepConv(or RepVGGBlock) in M, but ConvBNSiLUBlock(or ConvWrapper) in L
 
         # Rep_p4
         in_ch, out_ch = self.in_channels[2], ch_list[5]
@@ -341,7 +333,7 @@ class CSPRepBiFPAN(nn.Layer):
     CSPRepBiFPAN of YOLOv6 m/l in v3.0
     change lateral_conv + up(Transpose) to BiFusion
     """
-    __shared__ = ['depth_mult', 'width_mult', 'trt', 'act', 'training_mode']
+    __shared__ = ['depth_mult', 'width_mult', 'act', 'training_mode']
 
     def __init__(self,
                  depth_mult=1.0,
@@ -350,8 +342,7 @@ class CSPRepBiFPAN(nn.Layer):
                  out_channels=[128, 256, 512],
                  training_mode='repvgg',
                  csp_e=0.5,
-                 act='relu',
-                 trt=False):
+                 act='relu'):
         super(CSPRepBiFPAN, self).__init__()
         backbone_ch_list = [64, 128, 256, 512, 1024]
         backbone_num_repeats = [1, 6, 12, 18, 6]
@@ -365,9 +356,9 @@ class CSPRepBiFPAN(nn.Layer):
 
         self.in_channels = in_channels
         self._out_channels = ch_list[6], ch_list[8], ch_list[10]
-
-        if csp_e == 0.67: csp_e = float(2) / 3
-        block = get_block(training_mode)  # RepLayer(RepVGGBlock) as default
+        if csp_e == 0.67:
+            csp_e = float(2) / 3
+        block = get_block(training_mode)
 
         # Rep_p4
         self.reduce_layer0 = SimConv(ch_list[4], ch_list[5], 1, 1)

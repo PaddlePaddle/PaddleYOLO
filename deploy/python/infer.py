@@ -43,6 +43,7 @@ SUPPORT_MODELS = {
     'YOLOv5',
     'RTMDet',
     'YOLOv6',
+    'YOLOv7',
     'YOLOv8',
 }
 

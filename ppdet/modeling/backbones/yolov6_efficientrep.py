@@ -28,18 +28,6 @@ from ..shape_spec import ShapeSpec
 __all__ = ['EfficientRep', 'CSPBepBackbone']
 
 
-def get_activation(name="silu"):
-    if name == "silu":
-        module = nn.Silu()
-    elif name == "relu":
-        module = nn.ReLU()
-    elif name in ["LeakyReLU", 'leakyrelu', 'lrelu']:
-        module = nn.LeakyReLU(0.1)
-    else:
-        raise AttributeError("Unsupported act type: {}".format(name))
-    return module
-
-
 class SiLU(nn.Layer):
     def __init__(self):
         super(SiLU, self).__init__()
@@ -68,15 +56,50 @@ class BaseConv(nn.Layer):
             bias_attr=bias)
         self.bn = nn.BatchNorm2D(
             out_channels,
-            epsilon=1e-3,  # for amp(fp16)
-            momentum=0.97,
             weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
             bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
-        self.act = get_activation(act)  # silu
+        self.act = nn.Silu()
         self._init_weights()
 
     def _init_weights(self):
         conv_init_(self.conv)
+
+    def forward(self, x):
+        x = self.bn(self.conv(x))
+        if self.training:
+            y = self.act(x)
+        else:
+            if isinstance(self.act, nn.Silu):
+                self.act = SiLU()
+            y = self.act(x)
+        return y
+
+
+def autopad(k, p=None):  # kernel, padding
+    # Pad to 'same'
+    if p is None:
+        p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # auto-pad
+    return p
+
+
+class BaseConv_C3(nn.Layer):
+    '''Standard convolution in BepC3-Block'''
+
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):
+        super(BaseConv_C3, self).__init__()
+        self.conv = nn.Conv2D(
+            c1, c2, k, s, autopad(k, p), groups=g, bias_attr=False)
+        self.bn = nn.BatchNorm2D(
+            c2,
+            weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
+            bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
+        if act == True:
+            self.act = nn.ReLU()
+        else:
+            if isinstance(act, nn.Layer):
+                self.act = act
+            else:
+                self.act = nn.Identity()
 
     def forward(self, x):
         x = self.bn(self.conv(x))
@@ -114,7 +137,7 @@ class RepConv(nn.Layer):
         padding_11 = padding - kernel_size // 2
         self.stride = stride  # not always 1
 
-        self.act = nn.ReLU()  # get_activation(act)
+        self.nonlinearity = nn.ReLU()  # always relu in YOLOv6
 
         if self.deploy:
             self.rbr_reparam = nn.Conv2D(
@@ -126,8 +149,7 @@ class RepConv(nn.Layer):
                 groups=groups,
                 bias_attr=True)
         else:
-            self.rbr_identity = (nn.BatchNorm2D(
-                in_channels, epsilon=1e-3, momentum=0.97)
+            self.rbr_identity = (nn.BatchNorm2D(in_channels)
                                  if out_channels == in_channels and stride == 1
                                  else None)
             self.rbr_dense = nn.Sequential(* [
@@ -135,7 +157,7 @@ class RepConv(nn.Layer):
                     in_channels,
                     out_channels,
                     kernel_size,
-                    stride,
+                    stride,  #
                     padding,
                     groups=groups,
                     bias_attr=False),
@@ -147,7 +169,7 @@ class RepConv(nn.Layer):
                     out_channels,
                     1,
                     stride,
-                    padding_11,
+                    padding_11,  #
                     groups=groups,
                     bias_attr=False),
                 nn.BatchNorm2D(out_channels),
@@ -156,7 +178,7 @@ class RepConv(nn.Layer):
     def forward(self, inputs):
         if hasattr(self, "rbr_reparam"):
             x = self.rbr_reparam(inputs)
-            y = self.act(x)
+            y = self.nonlinearity(x)
             return y
 
         if self.rbr_identity is None:
@@ -165,16 +187,15 @@ class RepConv(nn.Layer):
             id_out = self.rbr_identity(inputs)
 
         x = self.rbr_dense(inputs) + self.rbr_1x1(inputs) + id_out
-        y = self.act(x)
+        y = self.nonlinearity(x)
         return y
 
     def get_equivalent_kernel_bias(self):
         kernel3x3, bias3x3 = self._fuse_bn_tensor(self.rbr_dense)
         kernel1x1, bias1x1 = self._fuse_bn_tensor(self.rbr_1x1)
         kernelid, biasid = self._fuse_bn_tensor(self.rbr_identity)
-        return (
-            kernel3x3 + self._pad_1x1_to_3x3_tensor(kernel1x1) + kernelid,
-            bias3x3 + bias1x1 + biasid, )
+        return kernel3x3 + self._pad_1x1_to_3x3_tensor(
+            kernel1x1) + kernelid, bias3x3 + bias1x1 + biasid
 
     def _pad_1x1_to_3x3_tensor(self, kernel1x1):
         if kernel1x1 is None:
@@ -197,7 +218,6 @@ class RepConv(nn.Layer):
             if not hasattr(self, "id_tensor"):
                 input_dim = self.in_channels // self.groups
                 kernel_value = paddle.zeros([self.in_channels, input_dim, 3, 3])
-
                 for i in range(self.in_channels):
                     kernel_value[i, i % input_dim, 1, 1] = 1
                 self.id_tensor = kernel_value
@@ -216,12 +236,12 @@ class RepConv(nn.Layer):
             return
         kernel, bias = self.get_equivalent_kernel_bias()
         self.rbr_reparam = nn.Conv2D(
-            self.in_channels,
-            self.out_channels,
-            3,
-            self.stride,
-            padding=1,
-            groups=self.groups,
+            self.rbr_dense[0]._in_channels,
+            self.rbr_dense[0]._out_channels,
+            self.rbr_dense[0]._kernel_size,
+            self.rbr_dense[0]._stride,
+            padding=self.rbr_dense[0]._padding,
+            groups=self.rbr_dense[0]._groups,
             bias_attr=True)
         self.rbr_reparam.weight.set_value(kernel)
         self.rbr_reparam.bias.set_value(bias)
@@ -240,28 +260,13 @@ class RepLayer(nn.Layer):
     named RepBlock in YOLOv6
     """
 
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 num_repeats=1,
-                 block=RepConv,
-                 basic_block=RepConv):
+    def __init__(self, in_channels, out_channels, num_repeats=1, block=RepConv):
         super(RepLayer, self).__init__()
-        if block == RepConv:
-            # in n/t/s
-            self.conv1 = block(in_channels, out_channels)
-            self.block = (nn.Sequential(*(block(out_channels, out_channels)
-                                          for _ in range(num_repeats - 1)))
-                          if num_repeats > 1 else None)
-
-        elif block == BottleRep:
-            # in m/l
-            self.conv1 = BottleRep(
-                in_channels, out_channels, basic_block=basic_block, alpha=True)
-            num_repeats = num_repeats // 2
-            self.block = nn.Sequential(*(BottleRep(
-                out_channels, out_channels, basic_block=basic_block, alpha=True
-            ) for _ in range(num_repeats - 1))) if num_repeats > 1 else None
+        # in n/s
+        self.conv1 = block(in_channels, out_channels)
+        self.block = (nn.Sequential(*(block(out_channels, out_channels)
+                                      for _ in range(num_repeats - 1)))
+                      if num_repeats > 1 else None)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -297,29 +302,49 @@ class BottleRep(nn.Layer):
         return outputs + self.alpha * x if self.shortcut else outputs
 
 
-class BepC3Layer(nn.Layer):
-    '''Beer-mug RepC3 Block
-       named BepC3 in YOLOv6
-    '''
+class RepLayerBepC3(nn.Layer):
+    """
+    RepLayer with RepConvs for M/L, like CSPLayer(C3) in YOLOv5/YOLOX
+    named RepBlock in YOLOv6
+    """
 
+    def __init__(self, in_channels, out_channels, num_repeats=1, block=RepConv):
+        super(RepLayerBepC3, self).__init__()
+        # in m/l
+        self.conv1 = BottleRep(
+            in_channels, out_channels, basic_block=block, alpha=True)
+        num_repeats = num_repeats // 2
+        self.block = nn.Sequential(*(BottleRep(
+            out_channels, out_channels, basic_block=block, alpha=True
+        ) for _ in range(num_repeats - 1))) if num_repeats > 1 else None
+
+    def forward(self, x):
+        x = self.conv1(x)
+        if self.block is not None:
+            x = self.block(x)
+        return x
+
+
+class BepC3Layer(nn.Layer):
+    # Beer-mug RepC3 Block, named BepC3 in YOLOv6
     def __init__(self,
                  in_channels,
                  out_channels,
                  num_repeats=1,
                  csp_e=0.5,
                  block=RepConv,
-                 act='silu'):
+                 act='relu'):
         super(BepC3Layer, self).__init__()
         c_ = int(out_channels * csp_e)  # hidden channels
-        self.cv1 = BaseConv(in_channels, c_, 1, 1, act="relu")
-        self.cv2 = BaseConv(in_channels, c_, 1, 1, act="relu")
-        self.cv3 = BaseConv(2 * c_, out_channels, 1, 1, act="relu")
+        self.cv1 = BaseConv_C3(in_channels, c_, 1, 1)
+        self.cv2 = BaseConv_C3(in_channels, c_, 1, 1)
+        self.cv3 = BaseConv_C3(2 * c_, out_channels, 1, 1)
         if act == 'silu':
-            self.cv1 = BaseConv(in_channels, c_, 1, 1)
-            self.cv2 = BaseConv(in_channels, c_, 1, 1)
-            self.cv3 = BaseConv(2 * c_, out_channels, 1, 1)
-        self.m = RepLayer(
-            c_, c_, num_repeats, block=BottleRep, basic_block=block)
+            self.cv1 = BaseConv_C3(in_channels, c_, 1, 1, act=nn.Silu())
+            self.cv2 = BaseConv_C3(in_channels, c_, 1, 1, act=nn.Silu())
+            self.cv3 = BaseConv_C3(2 * c_, out_channels, 1, 1, act=nn.Silu())
+
+        self.m = RepLayerBepC3(c_, c_, num_repeats, block=block)
 
     def forward(self, x):
         return self.cv3(paddle.concat((self.m(self.cv1(x)), self.cv2(x)), 1))
@@ -347,8 +372,6 @@ class SimConv(nn.Layer):
             bias_attr=bias)
         self.bn = nn.BatchNorm2D(
             out_channels,
-            epsilon=1e-3,
-            momentum=0.97,
             weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
             bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
         self.act = nn.ReLU()
@@ -484,7 +507,7 @@ def make_divisible(x, divisor):
 @serializable
 class EfficientRep(nn.Layer):
     """EfficientRep backbone of YOLOv6 n/s """
-    __shared__ = ['width_mult', 'depth_mult', 'trt', 'act', 'training_mode']
+    __shared__ = ['width_mult', 'depth_mult', 'act', 'training_mode']
 
     # num_repeats, channels_list, 'P6' means add P6 layer
     arch_settings = {
@@ -495,14 +518,13 @@ class EfficientRep(nn.Layer):
     def __init__(
             self,
             arch='P5',
-            width_mult=1.0,
-            depth_mult=1.0,
+            width_mult=0.33,
+            depth_mult=0.50,
             return_idx=[2, 3, 4],
             training_mode='repvgg',
             fuse_P2=True,  # add P2 and return 4 layers
-            cspsppf=False,
-            act='relu',
-            trt=False):
+            cspsppf=True,
+            act='relu'):
         super(EfficientRep, self).__init__()
         num_repeats, channels_list = self.arch_settings[arch]
         num_repeats = [(max(round(i * depth_mult), 1) if i > 1 else i)
@@ -519,6 +541,7 @@ class EfficientRep(nn.Layer):
         self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
 
         block = get_block(training_mode)
+        # default block is RepConv
         self.stem = block(3, channels_list[0], 3, 2)
         self.blocks = []
         for i, (out_ch,
@@ -575,7 +598,7 @@ class EfficientRep(nn.Layer):
 @serializable
 class CSPBepBackbone(nn.Layer):
     """CSPBepBackbone of YOLOv6 m/l in v3.0"""
-    __shared__ = ['width_mult', 'depth_mult', 'trt', 'act', 'training_mode']
+    __shared__ = ['width_mult', 'depth_mult', 'act', 'training_mode']
 
     # num_repeats, channels_list, 'P6' means add P6 layer
     arch_settings = {
@@ -592,8 +615,7 @@ class CSPBepBackbone(nn.Layer):
                  training_mode='repvgg',
                  fuse_P2=True,
                  cspsppf=False,
-                 act='relu',
-                 trt=False):
+                 act='relu'):
         super(CSPBepBackbone, self).__init__()
         num_repeats, channels_list = self.arch_settings[arch]
         num_repeats = [(max(round(i * depth_mult), 1) if i > 1 else i)
@@ -610,9 +632,12 @@ class CSPBepBackbone(nn.Layer):
         self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
 
         block = get_block(training_mode)
+        # RepConv(or RepVGGBlock) in M, but ConvBNSiLUBlock(or ConvWrapper) in L
+
         self.stem = block(3, channels_list[0], 3, 2)
         self.blocks = []
-        if csp_e == 0.67: csp_e = float(2) / 3
+        if csp_e == 0.67:
+            csp_e = float(2) / 3
         for i, (out_ch,
                 num_repeat) in enumerate(zip(channels_list, num_repeats)):
             if i == 0: continue
@@ -683,9 +708,6 @@ class CSPBepBackbone(nn.Layer):
         ]
 
 
-from IPython import embed
-
-
 def get_block(mode):
     if mode == 'repvgg':
         return RepConv
@@ -698,6 +720,7 @@ def get_block(mode):
 
 
 class ConvBNSiLUBlock(nn.Layer):
+    # ConvWrapper
     def __init__(self,
                  in_channels,
                  out_channels,

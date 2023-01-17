@@ -23,10 +23,12 @@ EvalReader:
 ### model config
 act: 'relu'
 training_mode: "repvgg"
+
 YOLOv6:
   backbone: EfficientRep
   neck: RepBiFPAN
   yolo_head: EffiDeHead
+
 EffiDeHead:
   reg_max: 0
   use_dfl: False # False in n/s

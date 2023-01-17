@@ -24,7 +24,7 @@ from ..losses import GIoULoss, SIoULoss
 from ..initializer import bias_init_with_prob, constant_, normal_
 from ..assigners.utils import generate_anchors_for_grid_cell
 from ..backbones.yolov6_efficientrep import BaseConv
-from ppdet.modeling.ops import get_static_shape, get_act_fn
+from ppdet.modeling.ops import get_static_shape
 from ppdet.modeling.layers import MultiClassNMS
 
 __all__ = ['EffiDeHead', 'EffiDeHead_distill_ns', 'EffiDeHead_fuseab']
@@ -42,7 +42,6 @@ class EffiDeHead(nn.Layer):
             self,
             in_channels=[128, 256, 512],
             num_classes=80,
-            act='relu',
             fpn_strides=[8, 16, 32],
             grid_cell_scale=5.0,
             grid_cell_offset=0.5,
@@ -445,7 +444,6 @@ class EffiDeHead_distill_ns(nn.Layer):
             self,
             in_channels=[128, 256, 512],
             num_classes=80,
-            act='relu',
             fpn_strides=[8, 16, 32],
             grid_cell_scale=5.0,
             grid_cell_offset=0.5,
@@ -509,13 +507,6 @@ class EffiDeHead_distill_ns(nn.Layer):
         # for self-distillation
         self.self_distill = self_distill
         self.distill_weight = distill_weight
-
-        # stem
-        act = get_act_fn(
-            act, trt=trt) if act is None or isinstance(act,
-                                                       (str, dict)) else act
-        # for in_c in self.in_channels:
-        #     self.stems.append(BaseConv(in_c, in_c, 1, 1))
 
         # Init decouple head
         self.stems = nn.LayerList()
@@ -857,7 +848,6 @@ class EffiDeHead_fuseab(nn.Layer):
             self,
             in_channels=[128, 256, 512],
             num_classes=80,
-            act='relu',
             fpn_strides=[8, 16, 32],
             grid_cell_scale=5.0,
             grid_cell_offset=0.5,
@@ -921,13 +911,6 @@ class EffiDeHead_fuseab(nn.Layer):
         # for self-distillation
         self.self_distill = self_distill
         self.distill_weight = distill_weight
-
-        # stem
-        act = get_act_fn(
-            act, trt=trt) if act is None or isinstance(act,
-                                                       (str, dict)) else act
-        # for in_c in self.in_channels:
-        #     self.stems.append(BaseConv(in_c, in_c, 1, 1))
 
         # Init decouple head
         self.stems = nn.LayerList()
@@ -1056,7 +1039,7 @@ class EffiDeHead_fuseab(nn.Layer):
             cls_feat = self.cls_convs[i](cls_x)
             cls_output = self.cls_preds[i](cls_feat)
             reg_feat = self.reg_convs[i](reg_x)
-            reg_output = self.reg_preds[i](reg_feat)
+            # reg_output = self.reg_preds[i](reg_feat)
             reg_output_lrtb = self.reg_preds_lrtb[i](reg_feat)
             # cls and reg_lrtb 
             cls_output = F.sigmoid(cls_output)
