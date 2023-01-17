@@ -1,28 +1,30 @@
-architecture: YOLOv5 # YOLOv6 is based on YOLOv5
+architecture: YOLOv6
 norm_type: sync_bn
 use_ema: True
 ema_decay: 0.9999
 ema_decay_type: "exponential"
-act: 'relu' # not 'silu'
 find_unused_parameters: True
 
+act: 'relu' # not 'silu'
 training_mode: "repvgg"
-# self_distill: True # only used in Step 2 for m/l version
+self_distill: False
 
 depth_mult: 1.0 # default: L version
 width_mult: 1.0
 
-YOLOv5:
+YOLOv6:
   backbone: CSPBepBackbone
-  neck: CSPRepPAN
+  neck: CSPRepBiFPAN
   yolo_head: EffiDeHead
-  post_process: ~
 
 CSPBepBackbone:
+  arch: 'P5'
   return_idx: [2, 3, 4]
   csp_e: 0.5
+  fuse_P2: True # add P2 and return 4 layers
+  cspsppf: False
 
-CSPRepPAN:
+CSPRepBiFPAN:
   csp_e: 0.5
 
 EffiDeHead:

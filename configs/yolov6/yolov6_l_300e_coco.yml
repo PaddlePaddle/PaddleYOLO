@@ -7,42 +7,58 @@ _BASE_: [
 ]
 depth_mult: 1.0
 width_mult: 1.0
-
 log_iter: 20
 snapshot_epoch: 10
 weights: output/yolov6_l_300e_coco/model_final
 
 
-CSPBepBackbone:
-  csp_e: 0.50
-
-CSPRepPAN:
-  csp_e: 0.50
-
-EffiDeHead:
-  reg_max: 16
-  use_dfl: True
-  iou_type: 'giou'
-  loss_weight: {cls: 1.0, iou: 2.5, dfl: 0.5, cwd: 10.0}
-  distill_weight: {cls: 1.0, dfl: 1.0} # 1:1, will not work default (self_distill=False)
-
-
-# Step 1: Training the base model, get 50.0+ mAP
+### reader config
 TrainReader:
-  batch_size: 32 # total batch_size = 32 * gpu_num
+  batch_size: 32 # default 8 gpus, total bs = 256
 
 EvalReader:
   batch_size: 4
 
 
-# Step 2: Self-distillation training, get 51.0+ mAP
-# Please cancel the following comment and train again
-#
+### model config
+act: 'silu'
+training_mode: "conv_silu" # Note: L use silu
+
+YOLOv6:
+  backbone: CSPBepBackbone
+  neck: CSPRepBiFPAN
+  yolo_head: EffiDeHead_fuseab
+
+EffiDeHead_fuseab:
+  reg_max: 16
+  use_dfl: True
+  iou_type: 'giou'
+  loss_weight: {cls: 1.0, iou: 2.5, dfl: 0.5, cwd: 10.0}
+  distill_weight: {cls: 2.0, dfl: 1.0} # 2:1 in L-relu version, will not work default (self_distill=False)
+
+CSPBepBackbone:
+  csp_e: 0.50
+
+CSPRepBiFPAN:
+  csp_e: 0.50
+
+
+### distill config
+## Step 1: Training the base model, get about 51.8 mAP
+
+## Step 2: Self-distillation training, get about 52.8 mAP
+
+YOLOv6:
+  backbone: CSPBepBackbone
+  neck: CSPRepBiFPAN
+  yolo_head: EffiDeHead
+
+EffiDeHead:
+  reg_max: 16
+  use_dfl: True
+
+## Please cancel the following comment and train again:
 # self_distill: True
 # pretrain_weights: output/yolov6_l_300e_coco/model_final.pdparams
 # save_dir: output_distill
 # weights: output_distill/yolov6_l_300e_coco/model_final
-#
-# TrainReader:
-#   batch_size: 16
-#

@@ -17,6 +17,7 @@ from . import yolo
 from . import yolox
 from . import yolov5
 from . import rtmdet
+from . import yolov6
 from . import yolov8
 
 from .meta_arch import *
@@ -24,4 +25,5 @@ from .yolo import *
 from .yolox import *
 from .yolov5 import *
 from .rtmdet import *
+from .yolov6 import *
 from .yolov8 import *

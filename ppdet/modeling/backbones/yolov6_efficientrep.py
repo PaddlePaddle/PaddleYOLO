@@ -387,7 +387,7 @@ class SPPF(nn.Layer):
     def __init__(self, in_channels, out_channels, kernel_size=5, act='silu'):
         super(SPPF, self).__init__()
         hidden_channels = in_channels // 2
-        self.cv1 = BaseConv(
+        self.conv1 = BaseConv(
             in_channels, hidden_channels, ksize=1, stride=1, act=act)
         self.conv2 = BaseConv(
             hidden_channels * 4, out_channels, ksize=1, stride=1, act=act)
@@ -395,12 +395,69 @@ class SPPF(nn.Layer):
             kernel_size=kernel_size, stride=1, padding=kernel_size // 2)
 
     def forward(self, x):
-        x = self.cv1(x)
+        x = self.conv1(x)
         y1 = self.mp(x)
         y2 = self.mp(y1)
         y3 = self.mp(y2)
         concats = paddle.concat([x, y1, y2, y3], 1)
         return self.conv2(concats)
+
+
+class SimCSPSPPF(nn.Layer):
+    """Simplified CSP SPPF with SimConv, use relu, YOLOv6 v3.0 added"""
+
+    def __init__(self, in_channels, out_channels, kernel_size=5, e=0.5):
+        super(SimCSPSPPF, self).__init__()
+        c_ = int(out_channels * e)  # hidden channels
+        self.cv1 = SimConv(in_channels, c_, 1, 1)
+        self.cv2 = SimConv(in_channels, c_, 1, 1)
+        self.cv3 = SimConv(c_, c_, 3, 1)
+        self.cv4 = SimConv(c_, c_, 1, 1)
+
+        self.mp = nn.MaxPool2D(
+            kernel_size=kernel_size, stride=1, padding=kernel_size // 2)
+        self.cv5 = SimConv(4 * c_, c_, 1, 1)
+        self.cv6 = SimConv(c_, c_, 3, 1)
+        self.cv7 = SimConv(2 * c_, out_channels, 1, 1)
+
+    def forward(self, x):
+        x1 = self.cv4(self.cv3(self.cv1(x)))
+        y0 = self.cv2(x)
+        y1 = self.mp(x1)
+        y2 = self.mp(y1)
+        y3 = self.cv6(self.cv5(paddle.concat([x1, y1, y2, self.mp(y2)], 1)))
+        return self.cv7(paddle.concat([y0, y3], 1))
+
+
+class CSPSPPF(nn.Layer):
+    """CSP SPPF with BaseConv, use silu, YOLOv6 v3.0 added"""
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size=5,
+                 e=0.5,
+                 act='silu'):
+        super(CSPSPPF, self).__init__()
+        c_ = int(out_channels * e)  # hidden channels
+        self.cv1 = BaseConv(in_channels, c_, 1, 1)
+        self.cv2 = BaseConv(in_channels, c_, 1, 1)
+        self.cv3 = BaseConv(c_, c_, 3, 1)
+        self.cv4 = BaseConv(c_, c_, 1, 1)
+
+        self.mp = nn.MaxPool2D(
+            kernel_size=kernel_size, stride=1, padding=kernel_size // 2)
+        self.cv5 = BaseConv(4 * c_, c_, 1, 1)
+        self.cv6 = BaseConv(c_, c_, 3, 1)
+        self.cv7 = BaseConv(2 * c_, out_channels, 1, 1)
+
+    def forward(self, x):
+        x1 = self.cv4(self.cv3(self.conv1(x)))
+        y0 = self.cv2(x)
+        y1 = self.mp(x1)
+        y2 = self.mp(y1)
+        y3 = self.cv6(self.cv5(paddle.concat([x1, y1, y2, self.mp(y2)], 1)))
+        return self.cv7(paddle.concat([y0, y3], 1))
 
 
 class Transpose(nn.Layer):
@@ -426,25 +483,38 @@ def make_divisible(x, divisor):
 @register
 @serializable
 class EfficientRep(nn.Layer):
-    """EfficientRep backbone of YOLOv6 n/t/s """
+    """EfficientRep backbone of YOLOv6 n/s """
     __shared__ = ['width_mult', 'depth_mult', 'trt', 'act', 'training_mode']
 
-    def __init__(self,
-                 width_mult=1.0,
-                 depth_mult=1.0,
-                 num_repeats=[1, 6, 12, 18, 6],
-                 channels_list=[64, 128, 256, 512, 1024],
-                 return_idx=[2, 3, 4],
-                 training_mode='repvgg',
-                 act='relu',
-                 trt=False):
+    # num_repeats, channels_list, 'P6' means add P6 layer
+    arch_settings = {
+        'P5': [[1, 6, 12, 18, 6], [64, 128, 256, 512, 1024]],
+        'P6': [[1, 6, 12, 18, 6, 6], [64, 128, 256, 512, 768, 1024]],
+    }
+
+    def __init__(
+            self,
+            arch='P5',
+            width_mult=1.0,
+            depth_mult=1.0,
+            return_idx=[2, 3, 4],
+            training_mode='repvgg',
+            fuse_P2=True,  # add P2 and return 4 layers
+            cspsppf=False,
+            act='relu',
+            trt=False):
         super(EfficientRep, self).__init__()
+        num_repeats, channels_list = self.arch_settings[arch]
         num_repeats = [(max(round(i * depth_mult), 1) if i > 1 else i)
                        for i in (num_repeats)]
         channels_list = [
             make_divisible(i * width_mult, 8) for i in (channels_list)
         ]
         self.return_idx = return_idx
+        self.fuse_P2 = fuse_P2
+        if self.fuse_P2:
+            # stem,p2,p3,p4,p5: [0,1,2,3,4]
+            self.return_idx = [1] + self.return_idx
         self._out_channels = [channels_list[i] for i in self.return_idx]
         self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
 
@@ -468,11 +538,18 @@ class EfficientRep(nn.Layer):
             stage.append(replayer)
 
             if i == len(channels_list) - 1:
-                simsppf_layer = self.add_sublayer(
-                    'stage{}.simsppf'.format(i + 1),
-                    SimSPPF(
-                        out_ch, out_ch, kernel_size=5))
-                stage.append(simsppf_layer)
+                if cspsppf:
+                    simsppf_layer = self.add_sublayer(
+                        'stage{}.simcspsppf'.format(i + 1),
+                        SimCSPSPPF(
+                            out_ch, out_ch, kernel_size=5))
+                    stage.append(simsppf_layer)
+                else:
+                    simsppf_layer = self.add_sublayer(
+                        'stage{}.simsppf'.format(i + 1),
+                        SimSPPF(
+                            out_ch, out_ch, kernel_size=5))
+                    stage.append(simsppf_layer)
             self.blocks.append(nn.Sequential(*stage))
 
     def forward(self, inputs):
@@ -497,26 +574,38 @@ class EfficientRep(nn.Layer):
 @register
 @serializable
 class CSPBepBackbone(nn.Layer):
-    """CSPBepBackbone of YOLOv6 m/l """
+    """CSPBepBackbone of YOLOv6 m/l in v3.0"""
     __shared__ = ['width_mult', 'depth_mult', 'trt', 'act', 'training_mode']
 
+    # num_repeats, channels_list, 'P6' means add P6 layer
+    arch_settings = {
+        'P5': [[1, 6, 12, 18, 6], [64, 128, 256, 512, 1024]],
+        'P6': [[1, 6, 12, 18, 6, 6], [64, 128, 256, 512, 768, 1024]],
+    }
+
     def __init__(self,
+                 arch='P5',
                  width_mult=1.0,
                  depth_mult=1.0,
-                 num_repeats=[1, 6, 12, 18, 6],
-                 channels_list=[64, 128, 256, 512, 1024],
                  return_idx=[2, 3, 4],
                  csp_e=0.5,
                  training_mode='repvgg',
+                 fuse_P2=True,
+                 cspsppf=False,
                  act='relu',
                  trt=False):
         super(CSPBepBackbone, self).__init__()
+        num_repeats, channels_list = self.arch_settings[arch]
         num_repeats = [(max(round(i * depth_mult), 1) if i > 1 else i)
                        for i in (num_repeats)]
         channels_list = [
             make_divisible(i * width_mult, 8) for i in (channels_list)
         ]
         self.return_idx = return_idx
+        self.fuse_P2 = fuse_P2
+        if self.fuse_P2:
+            # stem,p2,p3,p4,p5: [0,1,2,3,4]
+            self.return_idx = [1] + self.return_idx
         self._out_channels = [channels_list[i] for i in self.return_idx]
         self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
 
@@ -546,18 +635,33 @@ class CSPBepBackbone(nn.Layer):
             stage.append(bepc3layer)
 
             if i == len(channels_list) - 1:
-                if training_mode == 'conv_silu':
-                    sppf_layer = self.add_sublayer(
-                        'stage{}.sppf'.format(i + 1),
-                        SPPF(
-                            out_ch, out_ch, kernel_size=5, act='silu'))
-                    stage.append(sppf_layer)
+                if cspsppf:
+                    # m/l never use cspsppf=True
+                    if training_mode == 'conv_silu':
+                        sppf_layer = self.add_sublayer(
+                            'stage{}.cspsppf'.format(i + 1),
+                            CSPSPPF(
+                                out_ch, out_ch, kernel_size=5, act='silu'))
+                        stage.append(sppf_layer)
+                    else:
+                        simsppf_layer = self.add_sublayer(
+                            'stage{}.simcspsppf'.format(i + 1),
+                            SimCSPSPPF(
+                                out_ch, out_ch, kernel_size=5))
+                        stage.append(simsppf_layer)
                 else:
-                    simsppf_layer = self.add_sublayer(
-                        'stage{}.simsppf'.format(i + 1),
-                        SimSPPF(
-                            out_ch, out_ch, kernel_size=5))
-                    stage.append(simsppf_layer)
+                    if training_mode == 'conv_silu':
+                        sppf_layer = self.add_sublayer(
+                            'stage{}.sppf'.format(i + 1),
+                            SPPF(
+                                out_ch, out_ch, kernel_size=5, act='silu'))
+                        stage.append(sppf_layer)
+                    else:
+                        simsppf_layer = self.add_sublayer(
+                            'stage{}.simsppf'.format(i + 1),
+                            SimSPPF(
+                                out_ch, out_ch, kernel_size=5))
+                        stage.append(simsppf_layer)
             self.blocks.append(nn.Sequential(*stage))
 
     def forward(self, inputs):
@@ -577,6 +681,9 @@ class CSPBepBackbone(nn.Layer):
                 channels=c, stride=s)
             for c, s in zip(self._out_channels, self.strides)
         ]
+
+
+from IPython import embed
 
 
 def get_block(mode):

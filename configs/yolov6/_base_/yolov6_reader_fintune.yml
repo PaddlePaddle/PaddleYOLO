@@ -3,7 +3,7 @@ input_width: &input_width 640
 input_size: &input_size [*input_height, *input_width]
 mosaic_epoch: &mosaic_epoch 400
 
-worker_num: 4
+worker_num: 0 #4
 TrainReader:
   sample_transforms:
     - Decode: {}
@@ -49,4 +49,4 @@ TestReader:
     - NormalizeImage: {mean: [0., 0., 0.], std: [1., 1., 1.], norm_type: none}
     - Permute: {}
   batch_size: 1
-  fuse_normalize: True
+  fuse_normalize: False

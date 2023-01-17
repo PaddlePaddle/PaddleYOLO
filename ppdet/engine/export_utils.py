@@ -32,6 +32,7 @@ TRT_MIN_SUBGRAPH = {
     'YOLOX': 20,
     'YOLOv5': 20,
     'RTMDet': 20,
+    'YOLOv6': 10,
     'YOLOv8': 10,
 }
 
