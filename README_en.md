@@ -5,7 +5,11 @@
 **PaddleYOLO** is a YOLO Series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`YOLOv8`,`RTMDet` and so on, see COCO dataset ModelZoo in [ModelZoo](docs/MODEL_ZOO_en.md) and [configs](configs/).
 
 <div  align="center">
-  <img src="https://user-images.githubusercontent.com/59380685/212291265-c14f1bf0-76b4-4d63-b20e-dd0807fba196.png" width="640"/>
+  <img src="https://user-images.githubusercontent.com/13104100/213197403-c8257486-9ac4-486f-a0d5-4e3fe27ca852.jpg" width="640"/>
+</div>
+
+<div  align="center">
+  <img src="https://user-images.githubusercontent.com/13104100/213197635-eeb55433-bb2d-44f6-b374-73c616cfab24.jpg" width="640"/>
 </div>
 
 
