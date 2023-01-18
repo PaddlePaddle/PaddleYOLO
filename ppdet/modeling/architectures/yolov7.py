@@ -1,4 +1,4 @@
-# Copyright (c) 2023 PaddlePaddle Authors. All Rights Reserved. 
+# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved. 
 #
 # Licensed under the Apache License, Version 2.0 (the "License");   
 # you may not use this file except in compliance with the License.  
@@ -19,22 +19,22 @@ from __future__ import print_function
 from ppdet.core.workspace import register, create
 from .meta_arch import BaseArch
 
-__all__ = ['YOLOv8']
+__all__ = ['YOLOv7']
 
 
 @register
-class YOLOv8(BaseArch):
+class YOLOv7(BaseArch):
     __category__ = 'architecture'
     __inject__ = ['post_process']
 
     def __init__(self,
-                 backbone='YOLOv8CSPDarkNet',
-                 neck='YOLOCSPPAN',
-                 yolo_head='YOLOv8Head',
+                 backbone='ELANNet',
+                 neck='ELANFPN',
+                 yolo_head='YOLOv7Head',
                  post_process='BBoxPostProcess',
                  for_mot=False):
         """
-        YOLOv8
+        YOLOv7(https://arxiv.org/abs/2207.02696)
 
         Args:
             backbone (nn.Layer): backbone instance
@@ -43,7 +43,7 @@ class YOLOv8(BaseArch):
             for_mot (bool): whether return other features for multi-object tracking
                 models, default False in pure object detection models.
         """
-        super(YOLOv8, self).__init__()
+        super(YOLOv7, self).__init__()
         self.backbone = backbone
         self.neck = neck
         self.yolo_head = yolo_head
@@ -72,14 +72,20 @@ class YOLOv8(BaseArch):
     def _forward(self):
         body_feats = self.backbone(self.inputs)
         neck_feats = self.neck(body_feats, self.for_mot)
+
         if self.training:
             yolo_losses = self.yolo_head(neck_feats, self.inputs)
             return yolo_losses
         else:
             yolo_head_outs = self.yolo_head(neck_feats)
-            bbox, bbox_num = self.yolo_head.post_process(
-                yolo_head_outs, self.inputs['im_shape'],
-                self.inputs['scale_factor'])
+            if self.post_process is not None:
+                bbox, bbox_num = self.post_process(yolo_head_outs,
+                                                   self.inputs['im_shape'],
+                                                   self.inputs['scale_factor'])
+            else:
+                bbox, bbox_num = self.yolo_head.post_process(
+                    yolo_head_outs, self.inputs['im_shape'],
+                    self.inputs['scale_factor'])
             return {'bbox': bbox, 'bbox_num': bbox_num}
 
     def get_loss(self):

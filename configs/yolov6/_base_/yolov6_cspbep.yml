@@ -5,17 +5,18 @@ ema_decay: 0.9999
 ema_decay_type: "exponential"
 find_unused_parameters: True
 
-act: 'relu' # not 'silu'
+act: 'relu' # 'silu' in L model
 training_mode: "repvgg"
 self_distill: False
 
-depth_mult: 1.0 # default: L version
+depth_mult: 1.0 # default: L model
 width_mult: 1.0
 
 YOLOv6:
   backbone: CSPBepBackbone
   neck: CSPRepBiFPAN
   yolo_head: EffiDeHead_fuseab
+  post_process: ~
 
 CSPBepBackbone:
   arch: 'P5'
@@ -47,7 +48,7 @@ EffiDeHead_fuseab:
     beta: 6.0
   nms:
     name: MultiClassNMS
-    nms_top_k: 10000
+    nms_top_k: 3000
     keep_top_k: 300
     score_threshold: 0.03
     nms_threshold: 0.65
@@ -72,7 +73,7 @@ EffiDeHead:
     beta: 6.0
   nms:
     name: MultiClassNMS
-    nms_top_k: 10000
+    nms_top_k: 3000
     keep_top_k: 300
     score_threshold: 0.03
     nms_threshold: 0.65

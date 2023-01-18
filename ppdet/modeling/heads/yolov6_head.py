@@ -164,13 +164,20 @@ class EffiDeHead(nn.Layer):
             self.anchor_points = anchor_points
             self.stride_tensor = stride_tensor
 
+    def forward(self, feats, targets=None):
+        assert len(feats) == len(self.fpn_strides)
+        if self.training:
+            return self.forward_train(feats, targets)
+        else:
+            return self.forward_eval(feats)
+
     def forward_train(self, feats, targets):
         anchors, anchor_points, num_anchors_list, stride_tensor = \
             generate_anchors_for_grid_cell(
                 feats, self.fpn_strides, self.grid_cell_scale,
                 self.grid_cell_offset)
 
-        cls_score_list, reg_distri_list, reg_lrtb_list = [], [], []
+        cls_score_list, reg_distri_list = [], []
         for i, feat in enumerate(feats):
             feat = self.stems[i](feat)
             cls_x = feat
@@ -191,28 +198,6 @@ class EffiDeHead(nn.Layer):
             cls_score_list, reg_distri_list, anchors, anchor_points,
             num_anchors_list, stride_tensor
         ], targets)
-
-    def _generate_anchors(self, feats=None, dtype='float32'):
-        # just use in eval time
-        anchor_points = []
-        stride_tensor = []
-        for i, stride in enumerate(self.fpn_strides):
-            if feats is not None:
-                _, _, h, w = feats[i].shape
-            else:
-                h = int(self.eval_size[0] / stride)
-                w = int(self.eval_size[1] / stride)
-            shift_x = paddle.arange(end=w) + self.grid_cell_offset
-            shift_y = paddle.arange(end=h) + self.grid_cell_offset
-            shift_y, shift_x = paddle.meshgrid(shift_y, shift_x)
-            anchor_point = paddle.cast(
-                paddle.stack(
-                    [shift_x, shift_y], axis=-1), dtype=dtype)
-            anchor_points.append(anchor_point.reshape([-1, 2]))
-            stride_tensor.append(paddle.full([h * w, 1], stride, dtype=dtype))
-        anchor_points = paddle.concat(anchor_points)
-        stride_tensor = paddle.concat(stride_tensor)
-        return anchor_points, stride_tensor
 
     def forward_eval(self, feats):
         anchor_points, stride_tensor = self._generate_anchors(feats)
@@ -243,14 +228,27 @@ class EffiDeHead(nn.Layer):
 
         return cls_score_list, reg_dist_list, anchor_points, stride_tensor
 
-    def forward(self, feats, targets=None):
-        assert len(feats) == len(self.fpn_strides), \
-            "The size of feats is not equal to size of fpn_strides"
-
-        if self.training:
-            return self.forward_train(feats, targets)
-        else:
-            return self.forward_eval(feats)
+    def _generate_anchors(self, feats=None, dtype='float32'):
+        # just use in eval time
+        anchor_points = []
+        stride_tensor = []
+        for i, stride in enumerate(self.fpn_strides):
+            if feats is not None:
+                _, _, h, w = feats[i].shape
+            else:
+                h = int(self.eval_size[0] / stride)
+                w = int(self.eval_size[1] / stride)
+            shift_x = paddle.arange(end=w) + self.grid_cell_offset
+            shift_y = paddle.arange(end=h) + self.grid_cell_offset
+            shift_y, shift_x = paddle.meshgrid(shift_y, shift_x)
+            anchor_point = paddle.cast(
+                paddle.stack(
+                    [shift_x, shift_y], axis=-1), dtype=dtype)
+            anchor_points.append(anchor_point.reshape([-1, 2]))
+            stride_tensor.append(paddle.full([h * w, 1], stride, dtype=dtype))
+        anchor_points = paddle.concat(anchor_points)
+        stride_tensor = paddle.concat(stride_tensor)
+        return anchor_points, stride_tensor
 
     @staticmethod
     def _varifocal_loss(pred_score, gt_score, label, alpha=0.75, gamma=2.0):
@@ -432,7 +430,7 @@ class EffiDeHead(nn.Layer):
 
 
 @register
-class EffiDeHead_distill_ns(nn.Layer):
+class EffiDeHead_distill_ns(EffiDeHead):
     # add reg_preds_lrtb
     __shared__ = [
         'num_classes', 'eval_size', 'trt', 'exclude_nms',
@@ -570,6 +568,13 @@ class EffiDeHead_distill_ns(nn.Layer):
             self.anchor_points = anchor_points
             self.stride_tensor = stride_tensor
 
+    def forward(self, feats, targets=None):
+        assert len(feats) == len(self.fpn_strides)
+        if self.training:
+            return self.forward_train(feats, targets)
+        else:
+            return self.forward_eval(feats)
+
     def forward_train(self, feats, targets):
         anchors, anchor_points, num_anchors_list, stride_tensor = \
             generate_anchors_for_grid_cell(
@@ -601,28 +606,6 @@ class EffiDeHead_distill_ns(nn.Layer):
             anchor_points, num_anchors_list, stride_tensor
         ], targets)
 
-    def _generate_anchors(self, feats=None, dtype='float32'):
-        # just use in eval time
-        anchor_points = []
-        stride_tensor = []
-        for i, stride in enumerate(self.fpn_strides):
-            if feats is not None:
-                _, _, h, w = feats[i].shape
-            else:
-                h = int(self.eval_size[0] / stride)
-                w = int(self.eval_size[1] / stride)
-            shift_x = paddle.arange(end=w) + self.grid_cell_offset
-            shift_y = paddle.arange(end=h) + self.grid_cell_offset
-            shift_y, shift_x = paddle.meshgrid(shift_y, shift_x)
-            anchor_point = paddle.cast(
-                paddle.stack(
-                    [shift_x, shift_y], axis=-1), dtype=dtype)
-            anchor_points.append(anchor_point.reshape([-1, 2]))
-            stride_tensor.append(paddle.full([h * w, 1], stride, dtype=dtype))
-        anchor_points = paddle.concat(anchor_points)
-        stride_tensor = paddle.concat(stride_tensor)
-        return anchor_points, stride_tensor
-
     def forward_eval(self, feats):
         anchor_points, stride_tensor = self._generate_anchors(feats)
         cls_score_list, reg_lrtb_list = [], []
@@ -646,91 +629,6 @@ class EffiDeHead_distill_ns(nn.Layer):
         reg_lrtb_list = paddle.concat(reg_lrtb_list, axis=-1)
 
         return cls_score_list, reg_lrtb_list, anchor_points, stride_tensor
-
-    def forward(self, feats, targets=None):
-        assert len(feats) == len(self.fpn_strides), \
-            "The size of feats is not equal to size of fpn_strides"
-
-        if self.training:
-            return self.forward_train(feats, targets)
-        else:
-            return self.forward_eval(feats)
-
-    @staticmethod
-    def _varifocal_loss(pred_score, gt_score, label, alpha=0.75, gamma=2.0):
-        weight = alpha * pred_score.pow(gamma) * (1 - label) + gt_score * label
-        loss = F.binary_cross_entropy(
-            pred_score, gt_score, weight=weight, reduction='sum')
-        return loss
-
-    def _bbox_decode(self, anchor_points, pred_dist):
-        ### diff with PPYOLOEHead
-        if self.use_dfl:
-            b, l, _ = get_static_shape(pred_dist)
-            pred_dist = F.softmax(
-                pred_dist.reshape([b, l, 4, self.reg_max + 1])).matmul(
-                    self.proj)
-        return batch_distance2bbox(anchor_points, pred_dist)
-
-    def _bbox2distance(self, points, bbox):
-        x1y1, x2y2 = paddle.split(bbox, 2, -1)
-        lt = points - x1y1
-        rb = x2y2 - points
-        return paddle.concat([lt, rb], -1).clip(0, self.reg_max - 0.01)
-
-    def _df_loss(self, pred_dist, target):
-        target_left = paddle.cast(target, 'int64')
-        target_right = target_left + 1
-        weight_left = target_right.astype('float32') - target
-        weight_right = 1 - weight_left
-        loss_left = F.cross_entropy(
-            pred_dist, target_left, reduction='none') * weight_left
-        loss_right = F.cross_entropy(
-            pred_dist, target_right, reduction='none') * weight_right
-        return (loss_left + loss_right).mean(-1, keepdim=True)
-
-    def _bbox_loss(self, pred_dist, pred_bboxes, anchor_points, assigned_labels,
-                   assigned_bboxes, assigned_scores, assigned_scores_sum):
-        # select positive samples mask
-        mask_positive = (assigned_labels != self.num_classes)
-        num_pos = mask_positive.sum()
-        # pos/neg loss
-        if num_pos > 0:
-            # iou loss
-            bbox_mask = mask_positive.unsqueeze(-1).tile([1, 1, 4])
-            pred_bboxes_pos = paddle.masked_select(pred_bboxes,
-                                                   bbox_mask).reshape([-1, 4])
-            assigned_bboxes_pos = paddle.masked_select(
-                assigned_bboxes, bbox_mask).reshape([-1, 4])
-            bbox_weight = paddle.masked_select(
-                assigned_scores.sum(-1), mask_positive).unsqueeze(-1)
-            loss_iou = self.iou_loss(pred_bboxes_pos,
-                                     assigned_bboxes_pos) * bbox_weight
-            loss_iou = loss_iou.sum() / assigned_scores_sum
-
-            # l1 loss just see the convergence, same in PPYOLOEHead
-            loss_l1 = F.l1_loss(pred_bboxes_pos, assigned_bboxes_pos)
-
-            # dfl loss ### diff with PPYOLOEHead
-            if self.use_dfl:
-                dist_mask = mask_positive.unsqueeze(-1).tile(
-                    [1, 1, (self.reg_max + 1) * 4])
-                pred_dist_pos = paddle.masked_select(
-                    pred_dist, dist_mask).reshape([-1, 4, self.reg_max + 1])
-                assigned_ltrb = self._bbox2distance(anchor_points,
-                                                    assigned_bboxes)
-                assigned_ltrb_pos = paddle.masked_select(
-                    assigned_ltrb, bbox_mask).reshape([-1, 4])
-                loss_dfl = self._df_loss(pred_dist_pos,
-                                         assigned_ltrb_pos) * bbox_weight
-                loss_dfl = loss_dfl.sum() / assigned_scores_sum
-            else:
-                loss_dfl = pred_dist.sum() * 0.
-        else:
-            loss_l1 = paddle.zeros([1])
-            loss_iou = paddle.zeros([1])
-            loss_dfl = pred_dist.sum() * 0.
-        return loss_l1, loss_iou, loss_dfl
 
     def get_loss(self, head_outs, gt_meta):
         pred_scores, pred_distri, pred_ltbrs, anchors,\
@@ -812,31 +710,9 @@ class EffiDeHead_distill_ns(nn.Layer):
             out_dict.update({'loss_l1': loss_l1})
         return out_dict
 
-    def post_process(self, head_outs, im_shape, scale_factor):
-        pred_scores, pred_dist, anchor_points, stride_tensor = head_outs
-        pred_bboxes = batch_distance2bbox(anchor_points,
-                                          pred_dist.transpose([0, 2, 1]))
-        pred_bboxes *= stride_tensor
-        if self.exclude_post_process:
-            return paddle.concat(
-                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1), None
-        else:
-            # scale bbox to origin
-            scale_y, scale_x = paddle.split(scale_factor, 2, axis=-1)
-            scale_factor = paddle.concat(
-                [scale_x, scale_y, scale_x, scale_y],
-                axis=-1).reshape([-1, 1, 4])
-            pred_bboxes /= scale_factor
-            if self.exclude_nms:
-                # `exclude_nms=True` just use in benchmark
-                return pred_bboxes.sum(), pred_scores.sum()
-            else:
-                bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
-                return bbox_pred, bbox_num
-
 
 @register
-class EffiDeHead_fuseab(nn.Layer):
+class EffiDeHead_fuseab(EffiDeHead):
     # add cls_preds_af/reg_preds_af and cls_preds_ab/reg_preds_ab
     __shared__ = [
         'num_classes', 'eval_size', 'trt', 'exclude_nms',
@@ -974,6 +850,13 @@ class EffiDeHead_fuseab(nn.Layer):
             self.anchor_points = anchor_points
             self.stride_tensor = stride_tensor
 
+    def forward(self, feats, targets=None):
+        assert len(feats) == len(self.fpn_strides)
+        if self.training:
+            return self.forward_train(feats, targets)
+        else:
+            return self.forward_eval(feats)
+
     def forward_train(self, feats, targets):
         anchors, anchor_points, num_anchors_list, stride_tensor = \
             generate_anchors_for_grid_cell(
@@ -1005,28 +888,6 @@ class EffiDeHead_fuseab(nn.Layer):
             anchor_points, num_anchors_list, stride_tensor
         ], targets)
 
-    def _generate_anchors(self, feats=None, dtype='float32'):
-        # just use in eval time
-        anchor_points = []
-        stride_tensor = []
-        for i, stride in enumerate(self.fpn_strides):
-            if feats is not None:
-                _, _, h, w = feats[i].shape
-            else:
-                h = int(self.eval_size[0] / stride)
-                w = int(self.eval_size[1] / stride)
-            shift_x = paddle.arange(end=w) + self.grid_cell_offset
-            shift_y = paddle.arange(end=h) + self.grid_cell_offset
-            shift_y, shift_x = paddle.meshgrid(shift_y, shift_x)
-            anchor_point = paddle.cast(
-                paddle.stack(
-                    [shift_x, shift_y], axis=-1), dtype=dtype)
-            anchor_points.append(anchor_point.reshape([-1, 2]))
-            stride_tensor.append(paddle.full([h * w, 1], stride, dtype=dtype))
-        anchor_points = paddle.concat(anchor_points)
-        stride_tensor = paddle.concat(stride_tensor)
-        return anchor_points, stride_tensor
-
     def forward_eval(self, feats):
         anchor_points, stride_tensor = self._generate_anchors(feats)
         cls_score_list, reg_lrtb_list = [], []
@@ -1050,91 +911,6 @@ class EffiDeHead_fuseab(nn.Layer):
         reg_lrtb_list = paddle.concat(reg_lrtb_list, axis=-1)
 
         return cls_score_list, reg_lrtb_list, anchor_points, stride_tensor
-
-    def forward(self, feats, targets=None):
-        assert len(feats) == len(self.fpn_strides), \
-            "The size of feats is not equal to size of fpn_strides"
-
-        if self.training:
-            return self.forward_train(feats, targets)
-        else:
-            return self.forward_eval(feats)
-
-    @staticmethod
-    def _varifocal_loss(pred_score, gt_score, label, alpha=0.75, gamma=2.0):
-        weight = alpha * pred_score.pow(gamma) * (1 - label) + gt_score * label
-        loss = F.binary_cross_entropy(
-            pred_score, gt_score, weight=weight, reduction='sum')
-        return loss
-
-    def _bbox_decode(self, anchor_points, pred_dist):
-        ### diff with PPYOLOEHead
-        if self.use_dfl:
-            b, l, _ = get_static_shape(pred_dist)
-            pred_dist = F.softmax(
-                pred_dist.reshape([b, l, 4, self.reg_max + 1])).matmul(
-                    self.proj)
-        return batch_distance2bbox(anchor_points, pred_dist)
-
-    def _bbox2distance(self, points, bbox):
-        x1y1, x2y2 = paddle.split(bbox, 2, -1)
-        lt = points - x1y1
-        rb = x2y2 - points
-        return paddle.concat([lt, rb], -1).clip(0, self.reg_max - 0.01)
-
-    def _df_loss(self, pred_dist, target):
-        target_left = paddle.cast(target, 'int64')
-        target_right = target_left + 1
-        weight_left = target_right.astype('float32') - target
-        weight_right = 1 - weight_left
-        loss_left = F.cross_entropy(
-            pred_dist, target_left, reduction='none') * weight_left
-        loss_right = F.cross_entropy(
-            pred_dist, target_right, reduction='none') * weight_right
-        return (loss_left + loss_right).mean(-1, keepdim=True)
-
-    def _bbox_loss(self, pred_dist, pred_bboxes, anchor_points, assigned_labels,
-                   assigned_bboxes, assigned_scores, assigned_scores_sum):
-        # select positive samples mask
-        mask_positive = (assigned_labels != self.num_classes)
-        num_pos = mask_positive.sum()
-        # pos/neg loss
-        if num_pos > 0:
-            # iou loss
-            bbox_mask = mask_positive.unsqueeze(-1).tile([1, 1, 4])
-            pred_bboxes_pos = paddle.masked_select(pred_bboxes,
-                                                   bbox_mask).reshape([-1, 4])
-            assigned_bboxes_pos = paddle.masked_select(
-                assigned_bboxes, bbox_mask).reshape([-1, 4])
-            bbox_weight = paddle.masked_select(
-                assigned_scores.sum(-1), mask_positive).unsqueeze(-1)
-            loss_iou = self.iou_loss(pred_bboxes_pos,
-                                     assigned_bboxes_pos) * bbox_weight
-            loss_iou = loss_iou.sum() / assigned_scores_sum
-
-            # l1 loss just see the convergence, same in PPYOLOEHead
-            loss_l1 = F.l1_loss(pred_bboxes_pos, assigned_bboxes_pos)
-
-            # dfl loss ### diff with PPYOLOEHead
-            if self.use_dfl:
-                dist_mask = mask_positive.unsqueeze(-1).tile(
-                    [1, 1, (self.reg_max + 1) * 4])
-                pred_dist_pos = paddle.masked_select(
-                    pred_dist, dist_mask).reshape([-1, 4, self.reg_max + 1])
-                assigned_ltrb = self._bbox2distance(anchor_points,
-                                                    assigned_bboxes)
-                assigned_ltrb_pos = paddle.masked_select(
-                    assigned_ltrb, bbox_mask).reshape([-1, 4])
-                loss_dfl = self._df_loss(pred_dist_pos,
-                                         assigned_ltrb_pos) * bbox_weight
-                loss_dfl = loss_dfl.sum() / assigned_scores_sum
-            else:
-                loss_dfl = pred_dist.sum() * 0.
-        else:
-            loss_l1 = paddle.zeros([1])
-            loss_iou = paddle.zeros([1])
-            loss_dfl = pred_dist.sum() * 0.
-        return loss_l1, loss_iou, loss_dfl
 
     def get_loss(self, head_outs, gt_meta):
         pred_scores, pred_distri, pred_ltbrs, anchors,\
@@ -1215,25 +991,3 @@ class EffiDeHead_fuseab(nn.Layer):
             # just see convergence
             out_dict.update({'loss_l1': loss_l1})
         return out_dict
-
-    def post_process(self, head_outs, im_shape, scale_factor):
-        pred_scores, pred_dist, anchor_points, stride_tensor = head_outs
-        pred_bboxes = batch_distance2bbox(anchor_points,
-                                          pred_dist.transpose([0, 2, 1]))
-        pred_bboxes *= stride_tensor
-        if self.exclude_post_process:
-            return paddle.concat(
-                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1), None
-        else:
-            # scale bbox to origin
-            scale_y, scale_x = paddle.split(scale_factor, 2, axis=-1)
-            scale_factor = paddle.concat(
-                [scale_x, scale_y, scale_x, scale_y],
-                axis=-1).reshape([-1, 1, 4])
-            pred_bboxes /= scale_factor
-            if self.exclude_nms:
-                # `exclude_nms=True` just use in benchmark
-                return pred_bboxes.sum(), pred_scores.sum()
-            else:
-                bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
-                return bbox_pred, bbox_num

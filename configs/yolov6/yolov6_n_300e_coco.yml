@@ -17,7 +17,7 @@ TrainReader:
   batch_size: 16 # default 8 gpus, total bs = 128
 
 EvalReader:
-  batch_size: 4
+  batch_size: 1
 
 
 ### model config
@@ -28,6 +28,7 @@ YOLOv6:
   backbone: EfficientRep
   neck: RepBiFPAN
   yolo_head: EffiDeHead
+  post_process: ~
 
 EffiDeHead:
   reg_max: 0
@@ -45,6 +46,7 @@ YOLOv6:
   backbone: EfficientRep
   neck: RepBiFPAN
   yolo_head: EffiDeHead_distill_ns
+  post_process: ~
 
 EffiDeHead_distill_ns:
   reg_max: 16

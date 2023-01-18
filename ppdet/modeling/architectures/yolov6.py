@@ -25,14 +25,16 @@ __all__ = ['YOLOv6']
 @register
 class YOLOv6(BaseArch):
     __category__ = 'architecture'
+    __inject__ = ['post_process']
 
     def __init__(self,
                  backbone='EfficientRep',
                  neck='RepBiFPAN',
                  yolo_head='EffiDeHead',
+                 post_process='BBoxPostProcess',
                  for_mot=False):
         """
-        YOLOv6(https://arxiv.org/abs/2209.02976)
+        YOLOv6(https://arxiv.org/abs/2209.02976, https://arxiv.org/abs/2301.05586)
 
         Args:
             backbone (nn.Layer): backbone instance
@@ -45,6 +47,7 @@ class YOLOv6(BaseArch):
         self.backbone = backbone
         self.neck = neck
         self.yolo_head = yolo_head
+        self.post_process = post_process
         self.for_mot = for_mot
 
     @classmethod
@@ -75,9 +78,14 @@ class YOLOv6(BaseArch):
             return yolo_losses
         else:
             yolo_head_outs = self.yolo_head(neck_feats)
-            bbox, bbox_num = self.yolo_head.post_process(
-                yolo_head_outs, self.inputs['im_shape'],
-                self.inputs['scale_factor'])
+            if self.post_process is not None:
+                bbox, bbox_num = self.post_process(yolo_head_outs,
+                                                   self.inputs['im_shape'],
+                                                   self.inputs['scale_factor'])
+            else:
+                bbox, bbox_num = self.yolo_head.post_process(
+                    yolo_head_outs, self.inputs['im_shape'],
+                    self.inputs['scale_factor'])
             return {'bbox': bbox, 'bbox_num': bbox_num}
 
     def get_loss(self):
