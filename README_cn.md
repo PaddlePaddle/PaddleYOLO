@@ -5,11 +5,8 @@
 **PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`、`PP-YOLO`、`PP-YOLOv2`、`PP-YOLOE`、`PP-YOLOE+`、`YOLOX`、`YOLOv5`、`YOLOv6`、`YOLOv7`、`YOLOv8`、`RTMDet`等模型，COCO数据集模型库请参照 [ModelZoo](docs/MODEL_ZOO_cn.md) 和 [configs](configs/)。
 
 <div  align="center">
-  <img src="https://user-images.githubusercontent.com/13104100/213197403-c8257486-9ac4-486f-a0d5-4e3fe27ca852.jpg" width="640"/>
-</div>
-
-<div  align="center">
-  <img src="https://user-images.githubusercontent.com/13104100/213197635-eeb55433-bb2d-44f6-b374-73c616cfab24.jpg" width="640"/>
+  <img src="https://user-images.githubusercontent.com/13104100/213197403-c8257486-9ac4-486f-a0d5-4e3fe27ca852.jpg" width="480"/>
+  <img src="https://user-images.githubusercontent.com/13104100/213197635-eeb55433-bb2d-44f6-b374-73c616cfab24.jpg" width="480"/>
 </div>
 
 **注意:**
