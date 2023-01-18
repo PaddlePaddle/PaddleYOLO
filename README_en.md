@@ -4,6 +4,11 @@
 
 **PaddleYOLO** is a YOLO Series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`YOLOv8`,`RTMDet` and so on, see COCO dataset ModelZoo in [ModelZoo](docs/MODEL_ZOO_en.md) and [configs](configs/).
 
+<div  align="center">
+  <img src="https://user-images.githubusercontent.com/13104100/213197403-c8257486-9ac4-486f-a0d5-4e3fe27ca852.jpg" width="480"/>
+  <img src="https://user-images.githubusercontent.com/13104100/213197635-eeb55433-bb2d-44f6-b374-73c616cfab24.jpg" width="480"/>
+</div>
+
 **Notes：**
  - The Licence of **PaddleYOLO** is **[GPL 3.0](LICENSE)**, the codes of [YOLOv5](configs/yolov5),[YOLOv6](configs/yolov6),[YOLOv7](configs/yolov7) and [YOLOv8](configs/yolov8) will not be merged into [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection). Except for these three YOLO models, other YOLO models are recommended to use in [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **which will be the first to release the latest progress of PP-YOLO series detection model**;
  - To use **PaddleYOLO**, **PaddlePaddle-2.3.2 or above is recommended**，please refer to the [official website](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html) to download the appropriate version. **For Windows platforms, please install the paddle develop version**;
