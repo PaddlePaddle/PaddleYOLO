@@ -9,12 +9,12 @@
 ## 模型库
 ### YOLOv6 on COCO
 
-| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略(蒸馏策略)| 模型推理耗时(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略(蒸馏策略)| TRT-FP16-Latency(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :--------------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| YOLOv6-n       |  640     |    16      |   300e(+300e) |  2.0  |  37.5 |    53.1 |  5.07  | 12.49 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_n_300e_coco.pdparams) | [配置文件](./yolov6_n_300e_coco.yml) |
-| YOLOv6-s       |  640     |    32      |   300e(+300e) |  2.7  |  44.8 |    61.7 |  20.18  | 49.36 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_s_300e_coco.pdparams) | [配置文件](./yolov6_s_300e_coco.yml) |
-| YOLOv6-m       |  640     |    32      |   300e(+300e) |  -  |  49.5 |    66.9 |  37.74  | 92.47 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_m_300e_coco.pdparams) | [配置文件](./yolov6_m_300e_coco.yml) |
-| YOLOv6-l(silu) |  640     |    32      |   300e(+300e) |  -  |  52.2 |    70.2 |  59.66  | 149.4 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_l_300e_coco.pdparams) | [配置文件](./yolov6_l_300e_coco.yml) |
+| *YOLOv6-n       |  640     |    16      |   300e(+300e) |  2.0  |  37.5 |    53.1 |  5.07  | 12.49 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_n_300e_coco.pdparams) | [配置文件](./yolov6_n_300e_coco.yml) |
+| *YOLOv6-s       |  640     |    32      |   300e(+300e) |  2.7  |  44.8 |    61.7 |  20.18  | 49.36 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_s_300e_coco.pdparams) | [配置文件](./yolov6_s_300e_coco.yml) |
+| *YOLOv6-m       |  640     |    32      |   300e(+300e) |  -  |  49.5 |    66.9 |  37.74  | 92.47 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_m_300e_coco.pdparams) | [配置文件](./yolov6_m_300e_coco.yml) |
+| *YOLOv6-l(silu) |  640     |    32      |   300e(+300e) |  -  |  52.2 |    70.2 |  59.66  | 149.4 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_l_300e_coco.pdparams) | [配置文件](./yolov6_l_300e_coco.yml) |
 
 
 **注意:**
@@ -36,7 +36,7 @@
 | yolov6-n |  640   | [(w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_n_300e_coco_w_nms.zip) &#124; [(w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_n_300e_coco_wo_nms.zip) | [(w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_n_300e_coco_w_nms.onnx) &#124; [(w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_n_300e_coco_wo_nms.onnx) |
 | yolov6-s |  640   | [(w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_s_300e_coco_w_nms.zip) &#124; [(w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_s_300e_coco_wo_nms.zip) | [(w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_s_300e_coco_w_nms.onnx) &#124; [(w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_s_300e_coco_wo_nms.onnx) |
 | yolov6-m |  640   | [(w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_m_300e_coco_w_nms.zip) &#124; [(w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_m_300e_coco_wo_nms.zip) | [(w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_m_300e_coco_w_nms.onnx) &#124; [(w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_m_300e_coco_wo_nms.onnx) |
-| yolov6-l(silu) |  640  | [(w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_l_silu_300e_coco_w_nms.zip) &#124; [(w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_l_silu_300e_coco_wo_nms.zip) | [(w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_l_silu_300e_coco_w_nms.onnx) &#124; [(w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_l_silu_300e_coco_wo_nms.onnx) |
+| yolov6-l(silu) |  640  | [(w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_l_300e_coco_w_nms.zip) &#124; [(w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_l_300e_coco_wo_nms.zip) | [(w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_l_300e_coco_w_nms.onnx) &#124; [(w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov6/yolov6_l_300e_coco_wo_nms.onnx) |
 
 
 ## 使用教程
