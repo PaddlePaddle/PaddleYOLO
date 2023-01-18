@@ -5,7 +5,6 @@
 | 网络模型        | 输入尺寸   | 图片数/GPU | 学习率策略 | TRT-FP16-Latency(ms) | mAP(0.50,11point) | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :-----------: | :-------: | :-------: | :------: | :------------: | :---------------: | :------------------: |:-----------------: | :------: | :------: |
 | YOLOv5-s        |  640     |    16     |   60e    |     3.2   |  80.3 |  7.24  | 16.54 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_s_60e_voc.pdparams) | [配置文件](./yolov5_s_60e_voc.yml) |
-| YOLOv6-s        |  640     |    32     |   40e    |     2.7   |  84.7 |  18.87 | 48.35 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov6_s_40e_voc.pdparams) | [配置文件](./yolov6_s_40e_voc.yml) |
 | YOLOv7-tiny     |  640     |    32     |   60e    |     2.6   |  80.2 |  6.23  | 6.90 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_60e_voc.pdparams) | [配置文件](./yolov7_tiny_60e_voc.yml) |
 | YOLOX-s         |  640     |    8      |   40e    |     3.0   |  82.9 |  9.0   |  26.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolox_s_40e_voc.pdparams) | [配置文件](./yolox_s_40e_voc.yml) |
 | PP-YOLOE+_s     |  640     |    8      |   30e    |     2.9   |  86.7 |  7.93  |  17.36 | [下载链接](https://paddledet.bj.bcebos.com/models/ppyoloe_plus_crn_s_30e_voc.pdparams) | [配置文件](./ppyoloe_plus_crn_s_30e_voc.yml) |
