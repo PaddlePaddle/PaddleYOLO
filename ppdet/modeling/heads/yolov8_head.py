@@ -358,19 +358,17 @@ class YOLOv8Head(nn.Layer):
         pred_scores, pred_dist, anchor_points, stride_tensor = head_outs
         pred_bboxes = batch_distance2bbox(anchor_points, pred_dist)
         pred_bboxes *= stride_tensor
+
         if self.exclude_post_process:
             return paddle.concat(
-                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1), None
+                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1)
         else:
             # scale bbox to origin
-            scale_y, scale_x = paddle.split(scale_factor, 2, axis=-1)
-            scale_factor = paddle.concat(
-                [scale_x, scale_y, scale_x, scale_y],
-                axis=-1).reshape([-1, 1, 4])
+            scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
             pred_bboxes /= scale_factor
             if self.exclude_nms:
                 # `exclude_nms=True` just use in benchmark
-                return pred_bboxes.sum(), pred_scores.sum()
+                return pred_bboxes, pred_scores
             else:
                 bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
                 return bbox_pred, bbox_num

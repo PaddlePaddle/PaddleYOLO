@@ -96,9 +96,17 @@ class YOLOX(BaseArch):
             return yolox_losses
         else:
             head_outs = self.head(neck_feats)
-            bbox, bbox_num = self.head.post_process(
+            post_outs = self.head.post_process(
                 head_outs, self.inputs['im_shape'], self.inputs['scale_factor'])
-            return {'bbox': bbox, 'bbox_num': bbox_num}
+
+            if not isinstance(post_outs, (tuple, list)):
+                # if set exclude_post_process, concat([pred_bboxes, pred_scores]) not scaled to origin
+                # export onnx as torch yolo models
+                return post_outs
+            else:
+                # if set exclude_nms, [pred_bboxes, pred_scores] scaled to origin
+                bbox, bbox_num = post_outs  # default for end-to-end eval/infer
+                return {'bbox': bbox, 'bbox_num': bbox_num}
 
     def get_loss(self):
         return self._forward()
