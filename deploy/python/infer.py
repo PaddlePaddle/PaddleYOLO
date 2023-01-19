@@ -38,14 +38,10 @@ from utils import argsparser, Timer, get_current_memory_mb, multiclass_nms, coco
 
 # Global dictionary
 SUPPORT_MODELS = {
-    'YOLO',
-    'YOLOX',
-    'YOLOv5',
-    'RTMDet',
-    'YOLOv6',
-    'YOLOv7',
-    'YOLOv8',
+    'YOLO', 'YOLOX', 'YOLOv5', 'RTMDet', 'YOLOv6', 'YOLOv7', 'YOLOv8'
 }
+
+TUNED_TRT_DYNAMIC_MODELS = {}
 
 
 def bench_log(detector, img_list, model_info, batch_size=1, name=None):
@@ -105,6 +101,7 @@ class Detector(object):
         self.pred_config = self.set_config(model_dir)
         self.predictor, self.config = load_predictor(
             model_dir,
+            self.pred_config.arch,
             run_mode=run_mode,
             batch_size=batch_size,
             min_subgraph_size=self.pred_config.min_subgraph_size,
@@ -154,9 +151,9 @@ class Detector(object):
     def postprocess(self, inputs, result):
         # postprocess output of predictor
         np_boxes_num = result['boxes_num']
-        if sum(np_boxes_num) <= 0:
-            print('[WARNNING] No object detected.')
-            result = {'boxes': np.zeros([0, 6]), 'boxes_num': [0]}
+        assert isinstance(np_boxes_num, np.ndarray), \
+            '`np_boxes_num` should be a `numpy.ndarray`'
+
         result = {k: v for k, v in result.items() if v is not None}
         return result
 
@@ -190,14 +187,18 @@ class Detector(object):
                             shape: [N, im_h, im_w]
         '''
         # model prediction
-        np_boxes, np_masks = None, None
+        np_boxes_num, np_boxes, np_masks = np.array([0]), None, None
         for i in range(repeats):
             self.predictor.run()
             output_names = self.predictor.get_output_names()
             boxes_tensor = self.predictor.get_output_handle(output_names[0])
             np_boxes = boxes_tensor.copy_to_cpu()
-            boxes_num = self.predictor.get_output_handle(output_names[1])
-            np_boxes_num = boxes_num.copy_to_cpu()
+            if len(output_names) == 1:
+                # some exported model can not get tensor 'bbox_num' 
+                np_boxes_num = np.array([len(np_boxes)])
+            else:
+                boxes_num = self.predictor.get_output_handle(output_names[1])
+                np_boxes_num = boxes_num.copy_to_cpu()
             if self.pred_config.mask:
                 masks_tensor = self.predictor.get_output_handle(output_names[2])
                 np_masks = masks_tensor.copy_to_cpu()
@@ -237,7 +238,7 @@ class Detector(object):
             import sahi
             from sahi.slicing import slice_image
         except Exception as e:
-            logger.error(
+            print(
                 'sahi not found, plaese install sahi. '
                 'for example: `pip install sahi`, see https://github.com/obss/sahi.'
             )
@@ -253,6 +254,7 @@ class Detector(object):
                 overlap_width_ratio=overlap_ratio[1])
             sub_img_num = len(slice_image_result)
             merged_bboxs = []
+            print('slice to {} sub_samples.', sub_img_num)
 
             batch_image_list = [
                 slice_image_result.images[_ind] for _ind in range(sub_img_num)
@@ -301,7 +303,7 @@ class Detector(object):
             st, ed = 0, result['boxes_num'][0]  # start_index, end_index
             for _ind in range(sub_img_num):
                 boxes_num = result['boxes_num'][_ind]
-                ed = boxes_num
+                ed = st + boxes_num
                 shift_amount = slice_image_result.starting_pixels[_ind]
                 result['boxes'][st:ed][:, 2:4] = result['boxes'][
                     st:ed][:, 2:4] + shift_amount
@@ -403,10 +405,8 @@ class Detector(object):
                         self.pred_config.labels,
                         output_dir=self.output_dir,
                         threshold=self.threshold)
-
             results.append(result)
             print('Test iter {}'.format(i))
-
         results = self.merge_batch_result(results)
         if save_results:
             Path(self.output_dir).mkdir(exist_ok=True)
@@ -608,6 +608,7 @@ class PredictConfig():
 
 
 def load_predictor(model_dir,
+                   arch,
                    run_mode='paddle',
                    batch_size=1,
                    device='CPU',
@@ -620,7 +621,8 @@ def load_predictor(model_dir,
                    cpu_threads=1,
                    enable_mkldnn=False,
                    enable_mkldnn_bfloat16=False,
-                   delete_shuffle_pass=False):
+                   delete_shuffle_pass=False,
+                   tuned_trt_shape_file="shape_range_info.pbtxt"):
     """set AnalysisConfig, generate AnalysisPredictor
     Args:
         model_dir (str): root path of __model__ and __params__
@@ -658,8 +660,13 @@ def load_predictor(model_dir,
         # optimize graph and fuse op
         config.switch_ir_optim(True)
     elif device == 'XPU':
-        config.enable_lite_engine()
+        if config.lite_engine_enabled():
+            config.enable_lite_engine()
         config.enable_xpu(10 * 1024 * 1024)
+    elif device == 'NPU':
+        if config.lite_engine_enabled():
+            config.enable_lite_engine()
+        config.enable_npu()
     else:
         config.disable_gpu()
         config.set_cpu_math_library_num_threads(cpu_threads)
@@ -682,6 +689,8 @@ def load_predictor(model_dir,
         'trt_fp16': Config.Precision.Half
     }
     if run_mode in precision_map.keys():
+        if arch in TUNED_TRT_DYNAMIC_MODELS:
+            config.collect_shape_range_info(tuned_trt_shape_file)
         config.enable_tensorrt_engine(
             workspace_size=(1 << 25) * batch_size,
             max_batch_size=batch_size,
@@ -689,16 +698,22 @@ def load_predictor(model_dir,
             precision_mode=precision_map[run_mode],
             use_static=False,
             use_calib_mode=trt_calib_mode)
+        if arch in TUNED_TRT_DYNAMIC_MODELS:
+            config.enable_tuned_tensorrt_dynamic_shape(tuned_trt_shape_file,
+                                                       True)
 
         if use_dynamic_shape:
             min_input_shape = {
-                'image': [batch_size, 3, trt_min_shape, trt_min_shape]
+                'image': [batch_size, 3, trt_min_shape, trt_min_shape],
+                'scale_factor': [batch_size, 2]
             }
             max_input_shape = {
-                'image': [batch_size, 3, trt_max_shape, trt_max_shape]
+                'image': [batch_size, 3, trt_max_shape, trt_max_shape],
+                'scale_factor': [batch_size, 2]
             }
             opt_input_shape = {
-                'image': [batch_size, 3, trt_opt_shape, trt_opt_shape]
+                'image': [batch_size, 3, trt_opt_shape, trt_opt_shape],
+                'scale_factor': [batch_size, 2]
             }
             config.set_trt_dynamic_shape_info(min_input_shape, max_input_shape,
                                               opt_input_shape)
@@ -852,8 +867,8 @@ if __name__ == '__main__':
     FLAGS = parser.parse_args()
     print_arguments(FLAGS)
     FLAGS.device = FLAGS.device.upper()
-    assert FLAGS.device in ['CPU', 'GPU', 'XPU'
-                            ], "device should be CPU, GPU or XPU"
+    assert FLAGS.device in ['CPU', 'GPU', 'XPU', 'NPU'
+                            ], "device should be CPU, GPU, XPU or NPU"
     assert not FLAGS.use_gpu, "use_gpu has been deprecated, please use --device"
 
     assert not (
