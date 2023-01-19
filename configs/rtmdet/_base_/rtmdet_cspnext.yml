@@ -13,6 +13,7 @@ RTMDet:
   backbone: CSPNeXt
   neck: CSPNeXtPAFPN
   head: RTMDetHead
+  post_process: ~
 
 CSPNeXt:
   arch: "P5"
