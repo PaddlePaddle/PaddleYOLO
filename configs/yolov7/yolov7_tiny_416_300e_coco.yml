@@ -26,4 +26,4 @@ TestReader:
     - NormalizeImage: {mean: [0., 0., 0.], std: [1., 1., 1.], norm_type: none}
     - Permute: {}
   batch_size: 1
-  fuse_normalize: True
+  fuse_normalize: False

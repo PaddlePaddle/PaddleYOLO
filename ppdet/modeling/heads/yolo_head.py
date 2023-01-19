@@ -416,19 +416,16 @@ class YOLOXHead(nn.Layer):
         pred_scores = pred_scores.transpose([0, 2, 1])
         pred_bboxes *= stride_tensor
 
-        # scale bbox to origin image
-        scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
-        pred_bboxes /= scale_factor
-
         if self.exclude_post_process:
             return paddle.concat(
-                [pred_bboxes, pred_scores.transpose([0, 2, 1])],
-                axis=-1), paddle.to_tensor(
-                    [1], dtype='int32')
+                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1)
         else:
+            # scale bbox to origin
+            scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
+            pred_bboxes /= scale_factor
             if self.exclude_nms:
                 # `exclude_nms=True` just use in benchmark
-                return pred_bboxes.sum(), pred_scores.sum()
+                return pred_bboxes, pred_scores
             else:
                 bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
                 return bbox_pred, bbox_num
