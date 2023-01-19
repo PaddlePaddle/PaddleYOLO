@@ -43,7 +43,7 @@ class YOLOv3(BaseArch):
             backbone (nn.Layer): backbone instance
             neck (nn.Layer): neck instance
             yolo_head (nn.Layer): anchor_head instance
-            bbox_post_process (object): `BBoxPostProcess` instance
+            post_process (object): `BBoxPostProcess` instance
             data_format (str): data format, NCHW or NHWC
             for_mot (bool): whether return other features for multi-object tracking
                 models, default False in pure object detection models.
