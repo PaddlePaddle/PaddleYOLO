@@ -1,4 +1,4 @@
-architecture: YOLOv5 # YOLOv7 is based on YOLOv5
+architecture: YOLOv7
 norm_type: sync_bn
 use_ema: True
 ema_decay: 0.9999
@@ -13,7 +13,7 @@ arch: 'W6'
 use_aux: True # set False if compute params or flops
 use_implicit: False # default False here, True in paper
 
-YOLOv5:
+YOLOv7:
   backbone: ELANNet
   neck: ELANFPNP6
   yolo_head: YOLOv7Head

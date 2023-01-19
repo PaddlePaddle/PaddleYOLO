@@ -1,7 +1,7 @@
 input_height: &input_height 640
 input_width: &input_width 640
 input_size: &input_size [*input_height, *input_width]
-mosaic_epoch: &mosaic_epoch 290 # last 10 epochs close mosaic
+mosaic_epoch: &mosaic_epoch 490 # last 10 epochs close mosaic, totally 500 epochs as default
 
 worker_num: 4
 TrainReader:
@@ -42,4 +42,4 @@ TestReader:
     - NormalizeImage: {mean: [0., 0., 0.], std: [1., 1., 1.], norm_type: none}
     - Permute: {}
   batch_size: 1
-  fuse_normalize: True
+  fuse_normalize: False

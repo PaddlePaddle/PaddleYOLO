@@ -1,0 +1,59 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  '_base_/optimizer_300e.yml',
+  '_base_/yolov6_efficientrep.yml',
+  '_base_/yolov6_reader.yml',
+]
+depth_mult: 0.33
+width_mult: 0.25
+log_iter: 20
+snapshot_epoch: 10
+weights: output/yolov6_n_300e_coco/model_final
+
+
+### reader config
+TrainReader:
+  batch_size: 16 # default 8 gpus, total bs = 128
+
+EvalReader:
+  batch_size: 1
+
+
+### model config
+act: 'relu'
+training_mode: "repvgg"
+
+YOLOv6:
+  backbone: EfficientRep
+  neck: RepBiFPAN
+  yolo_head: EffiDeHead
+  post_process: ~
+
+EffiDeHead:
+  reg_max: 0
+  use_dfl: False # False in n/s
+  loss_weight: {cls: 1.0, iou: 2.5}
+  iou_type: 'siou' # only in n/t version
+
+
+### distill config
+## Step 1: Training the base model, get about 37.0 mAP
+
+## Step 2: Self-distillation training, get about 37.5 mAP
+
+YOLOv6:
+  backbone: EfficientRep
+  neck: RepBiFPAN
+  yolo_head: EffiDeHead_distill_ns
+  post_process: ~
+
+EffiDeHead_distill_ns:
+  reg_max: 16
+  use_dfl: True
+
+## Please cancel the following comment and train again:
+# self_distill: True
+# pretrain_weights: output/yolov6_n_300e_coco/model_final.pdparams
+# save_dir: output_distill
+# weights: output_distill/yolov6_n_300e_coco/model_final

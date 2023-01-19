@@ -90,7 +90,7 @@ class Trainer(object):
             self.model = self.cfg.model
             self.is_loaded_weights = True
 
-        if self.cfg.architecture in ['YOLOv5', 'YOLOv7', 'YOLOv8']:
+        if self.cfg.architecture in ['YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8']:
             reset_initialized_parameter(self.model)
 
         if cfg.architecture in [

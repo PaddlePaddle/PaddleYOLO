@@ -20,12 +20,12 @@ from ppdet.core.workspace import register, create
 from .meta_arch import BaseArch
 
 __all__ = ['YOLOv5']
-# YOLOv6,YOLOv7 use the same architecture as YOLOv5
 
 
 @register
 class YOLOv5(BaseArch):
     __category__ = 'architecture'
+    __inject__ = ['post_process']
 
     def __init__(self,
                  backbone='CSPDarkNet',
