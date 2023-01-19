@@ -50,6 +50,54 @@
 
 ## 使用教程
 
+### 0. **一键运行全流程**
+
+将以下命令写在一个脚本文件里如```run.sh```，一键运行命令为：```sh run.sh```，也可命令行一句句去运行。
+
+```bash
+model_name=yolox # 可修改，如 ppyoloe
+job_name=yolox_s_300e_coco # 可修改，如 ppyoloe_plus_crn_s_80e_coco
+
+config=configs/${model_name}/${job_name}.yml
+log_dir=log_dir/${job_name}
+# weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
+weights=output/${job_name}/model_final.pdparams
+
+# 1.训练（单卡/多卡），加 --eval 表示边训边评估，加 --amp 表示混合精度训练
+# CUDA_VISIBLE_DEVICES=0 python tools/train.py -c ${config} --eval --amp
+python -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
+
+# 2.评估，加 --classwise 表示输出每一类mAP
+CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c ${config} -o weights=${weights} --classwise
+
+# 3.预测 (单张图/图片文件夹）
+CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg --draw_threshold=0.5
+# CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_dir=demo/ --draw_threshold=0.5
+
+# 4.导出模型，以下3种模式选一种
+## 普通导出，加trt表示用于trt加速，对NMS和silu激活函数提速明显
+CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} # trt=True
+
+## exclude_post_process去除后处理导出，返回和YOLOv5导出ONNX时相同格式的concat后的1个Tensor，是未缩放回原图的坐标+分类置信度
+# CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} exclude_post_process=True # trt=True
+
+## exclude_nms去除NMS导出，返回2个Tensor，是缩放回原图后的坐标和分类置信度
+# CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} exclude_nms=True # trt=True
+
+# 5.部署预测，注意不能使用 去除后处理 或 去除NMS 导出后的模型去预测
+CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
+
+# 6.部署测速，加 “--run_mode=trt_fp16” 表示在TensorRT FP16模式下测速，注意如需用到 trt_fp16 则必须为加 trt=True 导出的模型
+CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU --run_benchmark=True # --run_mode=trt_fp16
+
+# 7.onnx导出，一般结合 exclude_post_process去除后处理导出的模型
+paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmodel --params_filename model.pdiparams --opset_version 12 --save_file ${job_name}.onnx
+
+# 8.onnx trt测速
+/usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp16
+/usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp32
+```
+
 ### 1.训练
 执行以下指令使用混合精度训练YOLOX
 ```bash
@@ -175,20 +223,6 @@ python deploy/python/infer.py --model_dir=output_inference/yolox_s_300e_coco --i
 **注意:**
 - 导出模型时指定`-o exclude_nms=True`仅作为测速时用，这样导出的模型其推理部署预测的结果不是最终检出框的结果。
 - [模型库](#模型库)中的速度测试结果为**tensorRT-FP16**测速后的最快速度，为**不包含数据预处理和模型输出后处理(NMS)**的耗时。
-
-## FAQ
-
-<details>
-<summary>如何计算模型参数量</summary>
-可以将以下代码插入：[trainer.py](https://github.com/PaddlePaddle/PaddleDetection/blob/develop/ppdet/engine/trainer.py#L154) 来计算参数量。
-```python
-params = sum([
-    p.numel() for n, p in self.model.named_parameters()
-    if all([x not in n for x in ['_mean', '_variance']])
-]) # exclude BatchNorm running status
-print('Params: ', params)
-```
-</details>
 
 
 ## Citations

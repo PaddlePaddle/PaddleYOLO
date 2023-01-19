@@ -144,8 +144,7 @@ class RTMDetHead(nn.Layer):
 
         cls_score_list, reg_distri_list = [], []
         for idx, x in enumerate(feats):
-            b, _, h, w = x.shape
-            l = h * w
+            _, _, h, w = x.shape
             cls_feat = x
             reg_feat = x
             for cls_layer in self.cls_convs[idx]:
@@ -201,7 +200,7 @@ class RTMDetHead(nn.Layer):
         anchor_points, stride_tensor = self._generate_anchors(feats)
         cls_score_list, reg_dist_list = [], []
         for idx, x in enumerate(feats):
-            b, _, h, w = x.shape
+            _, _, h, w = x.shape
             l = h * w
             cls_feat = x
             reg_feat = x
@@ -217,8 +216,8 @@ class RTMDetHead(nn.Layer):
                 reg_dist = self.reg_preds[idx](reg_feat)
             # cls and reg
             cls_score = F.sigmoid(cls_logit)
-            cls_score_list.append(cls_score.reshape([b, self.num_classes, l]))
-            reg_dist_list.append(reg_dist.reshape([b, 4, l]))
+            cls_score_list.append(cls_score.reshape([-1, self.num_classes, l]))
+            reg_dist_list.append(reg_dist.reshape([-1, 4, l]))
 
         cls_score_list = paddle.concat(cls_score_list, axis=-1)
         reg_dist_list = paddle.concat(reg_dist_list, axis=-1)
@@ -275,21 +274,17 @@ class RTMDetHead(nn.Layer):
         pred_bboxes = batch_distance2bbox(anchor_points,
                                           pred_dist.transpose([0, 2, 1]))
         pred_bboxes *= stride_tensor
-        # scale bbox to origin
-        scale_y, scale_x = paddle.split(scale_factor, 2, axis=-1)
-        scale_factor = paddle.concat(
-            [scale_x, scale_y, scale_x, scale_y], axis=-1).reshape([-1, 1, 4])
-        pred_bboxes /= scale_factor
 
         if self.exclude_post_process:
             return paddle.concat(
-                [pred_bboxes, pred_scores.transpose([0, 2, 1])],
-                axis=-1), paddle.to_tensor(
-                    [1], dtype='int32')
+                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1)
         else:
+            # scale bbox to origin
+            scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
+            pred_bboxes /= scale_factor
             if self.exclude_nms:
                 # `exclude_nms=True` just use in benchmark
-                return pred_bboxes.sum(), pred_scores.sum()
+                return pred_bboxes, pred_scores
             else:
                 bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
                 return bbox_pred, bbox_num
