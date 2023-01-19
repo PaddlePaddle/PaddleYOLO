@@ -275,17 +275,6 @@
  - 具体精度和速度细节请查看[PP-YOLOE](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/ppyoloe),[YOLOX](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolox),[YOLOv5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov5),[YOLOv6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov6),[YOLOv7](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov7)，**其中YOLOv5,YOLOv6,YOLOv7评估并未采用`multi_label`形式**。
 - 模型推理耗时(ms)为TensorRT-FP16下测试的耗时，**不包含数据预处理和模型输出后处理(NMS)的耗时**。测试采用**单卡Tesla T4 GPU，batch size=1**，测试环境为**paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考各自模型主页。
 - **统计FLOPs(G)和Params(M)**，首先安装[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim), `pip install paddleslim`，然后设置[runtime.yml](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/runtime.yml)里`print_flops: True`和`print_params: True`，并且注意确保是**单尺度**下如640x640，**打印的是MACs，FLOPs=2*MACs**。
- - 各模型导出后的权重以及ONNX，分为**带(w)**和**不带(wo)**后处理NMS，都提供了下载链接，请参考各自模型主页下载。`w_nms`表示**带NMS后处理**，可以直接使用预测出最终检测框结果如```python deploy/python/infer.py --model_dir=ppyoloe_crn_l_300e_coco_w_nms/ --image_file=demo/000000014439.jpg --device=GPU```；`wo_nms`表示**不带NMS后处理**，是**测速**时使用，如需预测出检测框结果需要找到**对应head中的后处理相关代码**并修改为如下：
- ```
-        if self.exclude_nms:
-            # `exclude_nms=True` just use in benchmark for speed test
-            # return pred_bboxes.sum(), pred_scores.sum() # 原先是这行，现在注释
-            return pred_bboxes, pred_scores # 新加这行，表示保留进NMS前的原始结果
-        else:
-            bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
-            return bbox_pred, bbox_num
- ```
-并重新导出，使用时再**另接自己写的NMS后处理**。
  - 基于[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim)对YOLO系列模型进行量化训练，可以实现精度基本无损，速度普遍提升30%以上，具体请参照[模型自动化压缩工具ACT](https://github.com/PaddlePaddle/PaddleSlim/tree/develop/example/auto_compression)。
 
 
@@ -297,7 +286,6 @@
 | 网络模型        | 输入尺寸   | 图片数/GPU | 学习率策略 | TRT-FP16-Latency(ms) | mAP(0.50,11point) | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :-----------: | :-------: | :-------: | :------: | :------------: | :---------------: | :------------------: |:-----------------: | :------: | :------: |
 | YOLOv5-s        |  640     |    16     |   60e    |     3.2   |  80.3 |  7.24  | 16.54 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_s_60e_voc.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/yolov5_s_60e_voc.yml) |
-| YOLOv6-s        |  640     |    32     |   40e    |     2.7   |  84.7 |  18.87 | 48.35 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov6_s_40e_voc.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/yolov6_s_40e_voc.yml) |
 | YOLOv7-tiny     |  640     |    32     |   60e    |     2.6   |  80.2 |  6.23  | 6.90 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov7_tiny_60e_voc.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/yolov7_tiny_60e_voc.yml) |
 | YOLOX-s         |  640     |    8      |   40e    |     3.0   |  82.9 |  9.0   |  26.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolox_s_40e_voc.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/yolox_s_40e_voc.yml) |
 | PP-YOLOE+_s     |  640     |    8      |   30e    |     2.9   |  86.7 |  7.93  |  17.36 | [下载链接](https://paddledet.bj.bcebos.com/models/ppyoloe_plus_crn_s_30e_voc.pdparams) | [配置文件](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/ppyoloe_plus_crn_s_30e_voc.yml) |
@@ -324,43 +312,52 @@ PaddleDetection团队提供的下载链接为：[coco](https://bj.bcebos.com/v1/
 
 ```bash
 model_name=ppyoloe # 可修改，如 yolov7
-job_name=ppyoloe_plus_crn_l_300e_coco # 可修改，如 yolov7_tiny_300e_coco
+job_name=ppyoloe_plus_crn_s_80e_coco # 可修改，如 yolov7_tiny_300e_coco
 
 config=configs/${model_name}/${job_name}.yml
 log_dir=log_dir/${job_name}
 # weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
 weights=output/${job_name}/model_final.pdparams
 
-# 1.训练（单卡/多卡）
+# 1.训练（单卡/多卡），加 --eval 表示边训边评估，加 --amp 表示混合精度训练
 # CUDA_VISIBLE_DEVICES=0 python tools/train.py -c ${config} --eval --amp
 python -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
 
-# 2.评估
+# 2.评估，加 --classwise 表示输出每一类mAP
 CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c ${config} -o weights=${weights} --classwise
 
-# 3.直接预测
+# 3.预测 (单张图/图片文件夹）
 CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg --draw_threshold=0.5
+# CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_dir=demo/ --draw_threshold=0.5
 
-# 4.导出模型
-CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} # exclude_nms=True trt=True
+# 4.导出模型，以下3种模式选一种
+## 普通导出，加trt表示用于trt加速，对NMS和silu激活函数提速明显
+CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} # trt=True
 
-# 5.部署预测
+## exclude_post_process去除后处理导出，返回和YOLOv5导出ONNX时相同格式的concat后的1个Tensor，是未缩放回原图的坐标+分类置信度
+# CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} exclude_post_process=True # trt=True
+
+## exclude_nms去除NMS导出，返回2个Tensor，是缩放回原图后的坐标和分类置信度
+# CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} exclude_nms=True # trt=True
+
+# 5.部署预测，注意不能使用 去除后处理 或 去除NMS 导出后的模型去预测
 CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
 
-# 6.部署测速，加 “--run_mode=trt_fp16” 表示在TensorRT FP16模式下测速
+# 6.部署测速，加 “--run_mode=trt_fp16” 表示在TensorRT FP16模式下测速，注意如需用到 trt_fp16 则必须为加 trt=True 导出的模型
 CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU --run_benchmark=True # --run_mode=trt_fp16
 
-# 7.onnx导出
+# 7.onnx导出，一般结合 exclude_post_process去除后处理导出的模型
 paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmodel --params_filename model.pdiparams --opset_version 12 --save_file ${job_name}.onnx
 
-# 8.onnx测速
+# 8.onnx trt测速
 /usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp16
+/usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp32
 ```
 
 - 如果想切换模型，只要修改开头两行即可，如:
   ```
   model_name=yolov7
-  job_name=yolov7_l_300e_coco
+  job_name=yolov7_tiny_300e_coco
   ```
 - 导出**onnx**，首先安装[Paddle2ONNX](https://github.com/PaddlePaddle/Paddle2ONNX)，`pip install paddle2onnx`；
 - **统计FLOPs(G)和Params(M)**，首先安装[PaddleSlim](https://github.com/PaddlePaddle/PaddleSlim)，`pip install paddleslim`，然后设置[runtime.yml](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/runtime.yml)里`print_flops: True`和`print_params: True`，并且注意确保是**单尺度**下如640x640，**打印的是MACs，FLOPs=2*MACs**。
