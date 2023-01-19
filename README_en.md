@@ -32,14 +32,14 @@ pip install -r requirements.txt  # install
 </details>
 
 
-<details>
-<summary>Training/Evaluation/Inference/Deployment/Speed</summary>
+<details open>
+<summary>Training/Evaluation/Inference</summary>
 
 Write the following commands in a script file, such as ```run.sh```, and run as：```sh run.sh```. You can also run the command line sentence by sentence.
 
 ```bash
 model_name=ppyoloe # yolov7
-job_name=ppyoloe_plus_crn_l_80e_coco # yolov7_tiny_300e_coco
+job_name=ppyoloe_plus_crn_s_80e_coco # yolov7_tiny_300e_coco
 
 config=configs/${model_name}/${job_name}.yml
 log_dir=log_dir/${job_name}
@@ -55,9 +55,32 @@ CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c ${config} -o weights=${weights} -
 
 # 3.infer
 CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg --draw_threshold=0.5
+# CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_dir=demo/ --draw_threshold=0.5
+```
+
+</details>
+
+
+<details>
+<summary>Deployment/Speed</summary>
+
+Write the following commands in a script file, such as ```run.sh```, and run as：```sh run.sh```. You can also run the command line sentence by sentence.
+
+```bash
+model_name=ppyoloe # yolov7
+job_name=ppyoloe_plus_crn_s_80e_coco # yolov7_tiny_300e_coco
+
+config=configs/${model_name}/${job_name}.yml
+log_dir=log_dir/${job_name}
+# weights=https://bj.bcebos.com/v1/paddledet/models/${job_name}.pdparams
+weights=output/${job_name}/model_final.pdparams
 
 # 4.export
-CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} # exclude_nms=True trt=True
+CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} # trt=True
+
+# CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} exclude_post_process=True # trt=True
+
+# CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} exclude_nms=True # trt=True
 
 # 5.deploy infer
 CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
@@ -70,6 +93,7 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 
 # 8.onnx speed
 /usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp16
+/usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp32
 ```
 
 **Note：**

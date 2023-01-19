@@ -285,7 +285,6 @@
 | Model        | Input Size  | images/GPU | Epoch | TRT-FP16-Latency(ms) | mAP(0.50,11point) | Params(M) | FLOPs(G) |    download       | config |
 | :-----------: | :-------: | :-------: | :------: | :------------: | :---------------: | :------------------: |:-----------------: | :------: | :------: |
 | YOLOv5-s        |  640     |    16     |   60e    |     3.2   |  80.3 |  7.24  | 16.54 | [model](https://paddledet.bj.bcebos.com/models/yolov5_s_60e_voc.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/yolov5_s_60e_voc.yml) |
-| YOLOv6-s        |  640     |    32     |   40e    |     2.7   |  84.7 |  18.87 | 48.35 | [model](https://paddledet.bj.bcebos.com/models/yolov6_s_40e_voc.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/yolov6_s_40e_voc.yml) |
 | YOLOv7-tiny     |  640     |    32     |   60e    |     2.6   |  80.2 |  6.23  | 6.90 | [model](https://paddledet.bj.bcebos.com/models/yolov7_tiny_60e_voc.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/yolov7_tiny_60e_voc.yml) |
 | YOLOX-s         |  640     |    8      |   40e    |     3.0   |  82.9 |  9.0   |  26.8 | [model](https://paddledet.bj.bcebos.com/models/yolox_s_40e_voc.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/yolox_s_40e_voc.yml) |
 | PP-YOLOE+_s     |  640     |    8      |   30e    |     2.9   |  86.7 |  7.93  |  17.36 | [model](https://paddledet.bj.bcebos.com/models/ppyoloe_plus_crn_s_30e_voc.pdparams) | [config](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc/ppyoloe_plus_crn_s_30e_voc.yml) |
@@ -312,7 +311,7 @@ Write the following commands in a script file, such as ```run.sh```, and run asï
 
 ```bash
 model_name=ppyoloe # yolov7
-job_name=ppyoloe_plus_crn_l_80e_coco # yolov7_tiny_300e_coco
+job_name=ppyoloe_plus_crn_s_80e_coco # yolov7_tiny_300e_coco
 
 config=configs/${model_name}/${job_name}.yml
 log_dir=log_dir/${job_name}
@@ -328,9 +327,14 @@ CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c ${config} -o weights=${weights} -
 
 # 3.infer
 CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000014439_640x640.jpg --draw_threshold=0.5
+# CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_dir=demo/ --draw_threshold=0.5
 
 # 4.export
-CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} # exclude_nms=True trt=True
+CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} # trt=True
+
+# CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} exclude_post_process=True # trt=True
+
+# CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} exclude_nms=True # trt=True
 
 # 5.deploy infer
 CUDA_VISIBLE_DEVICES=0 python deploy/python/infer.py --model_dir=output_inference/${job_name} --image_file=demo/000000014439_640x640.jpg --device=GPU
@@ -343,6 +347,7 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 
 # 8.onnx speed
 /usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp16
+/usr/local/TensorRT-8.0.3.4/bin/trtexec --onnx=${job_name}.onnx --workspace=4096 --avgRuns=10 --shapes=input:1x3x640x640 --fp32
 ```
 
 **Noteï¼š**
