@@ -77,10 +77,10 @@ class RTMDet(BaseArch):
             yolo_losses = self.head(neck_feats, self.inputs)
             return yolo_losses
         else:
-            yolo_head_outs = self.yolo_head(neck_feats)
-            post_outs = self.yolo_head.post_process(yolo_head_outs,
-                                                    self.inputs['im_shape'],
-                                                    self.inputs['scale_factor'])
+            yolo_head_outs = self.head(neck_feats)
+            post_outs = self.head.post_process(yolo_head_outs,
+                                               self.inputs['im_shape'],
+                                               self.inputs['scale_factor'])
 
             if not isinstance(post_outs, (tuple, list)):
                 # if set exclude_post_process, concat([pred_bboxes, pred_scores]) not scaled to origin
