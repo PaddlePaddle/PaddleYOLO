@@ -16,7 +16,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import paddle
 from ppdet.core.workspace import register, create
 from .meta_arch import BaseArch
 
@@ -26,11 +25,13 @@ __all__ = ['RTMDet']
 @register
 class RTMDet(BaseArch):
     __category__ = 'architecture'
+    __inject__ = ['post_process']
 
     def __init__(self,
                  backbone='CSPNeXt',
                  neck='CSPNeXtPAFPN',
                  head='RTMDetHead',
+                 post_process='BBoxPostProcess',
                  for_mot=False):
         """
         RTMDet see https://arxiv.org/abs/
@@ -46,6 +47,7 @@ class RTMDet(BaseArch):
         self.backbone = backbone
         self.neck = neck
         self.head = head
+        self.post_process = post_process
         self.for_mot = for_mot
 
     @classmethod
@@ -75,10 +77,19 @@ class RTMDet(BaseArch):
             yolo_losses = self.head(neck_feats, self.inputs)
             return yolo_losses
         else:
-            head_outs = self.head(neck_feats)
-            bbox, bbox_num = self.head.post_process(
-                head_outs, self.inputs['im_shape'], self.inputs['scale_factor'])
-            return {'bbox': bbox, 'bbox_num': bbox_num}
+            yolo_head_outs = self.yolo_head(neck_feats)
+            post_outs = self.yolo_head.post_process(yolo_head_outs,
+                                                    self.inputs['im_shape'],
+                                                    self.inputs['scale_factor'])
+
+            if not isinstance(post_outs, (tuple, list)):
+                # if set exclude_post_process, concat([pred_bboxes, pred_scores]) not scaled to origin
+                # export onnx as torch yolo models
+                return post_outs
+            else:
+                # if set exclude_nms, [pred_bboxes, pred_scores] scaled to origin
+                bbox, bbox_num = post_outs  # default for end-to-end eval/infer
+                return {'bbox': bbox, 'bbox_num': bbox_num}
 
     def get_loss(self):
         return self._forward()
