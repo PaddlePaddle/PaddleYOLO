@@ -13,12 +13,19 @@
 # limitations under the License.
 
 import os
+import copy
+try:
+    from collections.abc import Sequence
+except Exception:
+    from collections import Sequence
 import numpy as np
 from ppdet.core.workspace import register, serializable
 from .dataset import DetDataset
 
 from ppdet.utils.logger import setup_logger
 logger = setup_logger(__name__)
+
+__all__ = ['COCODataSet', 'SlicedCOCODataSet']
 
 
 @register
@@ -50,7 +57,6 @@ class COCODataSet(DetDataset):
                  sample_num=-1,
                  load_crowd=False,
                  allow_empty=False,
-                 norm_bbox=False,
                  empty_ratio=1.,
                  repeat=1):
         super(COCODataSet, self).__init__(
@@ -64,7 +70,6 @@ class COCODataSet(DetDataset):
         self.load_semantic = False
         self.load_crowd = load_crowd
         self.allow_empty = allow_empty
-        self.norm_bbox = norm_bbox
         self.empty_ratio = empty_ratio
 
     def _sample_empty(self, records, num):
@@ -152,20 +157,9 @@ class COCODataSet(DetDataset):
                     y2 = y1 + box_h
                     eps = 1e-5
                     if inst['area'] > 0 and x2 - x1 > eps and y2 - y1 > eps:
-                        if not self.norm_bbox:
-                            inst['clean_bbox'] = [
-                                round(float(x), 3) for x in [x1, y1, x2, y2]
-                            ]
-                        else:
-                            norm_clean_bbox = [
-                                x1 * 1.0 / im_w, y1 * 1.0 / im_h,
-                                x2 * 1.0 / im_w, y2 * 1.0 / im_h
-                            ]
-                            inst['clean_bbox'] = [
-                                round(float(x), 6) for x in [norm_clean_bbox]
-                            ]
-                        if is_rbox_anno:
-                            inst['clean_rbox'] = [xc, yc, box_w, box_h, angle]
+                        inst['clean_bbox'] = [
+                            round(float(x), 3) for x in [x1, y1, x2, y2]
+                        ]
                         bboxes.append(inst)
                     else:
                         logger.warning(
@@ -183,8 +177,10 @@ class COCODataSet(DetDataset):
                 gt_class = np.zeros((num_bbox, 1), dtype=np.int32)
                 is_crowd = np.zeros((num_bbox, 1), dtype=np.int32)
                 gt_poly = [None] * num_bbox
+                gt_track_id = -np.ones((num_bbox, 1), dtype=np.int32)
 
                 has_segmentation = False
+                has_track_id = False
                 for i, box in enumerate(bboxes):
                     catid = box['category_id']
                     gt_class[i][0] = self.catid2clsid[catid]
@@ -194,8 +190,9 @@ class COCODataSet(DetDataset):
                     if 'segmentation' in box and box['iscrowd'] == 1:
                         gt_poly[i] = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
                     elif 'segmentation' in box and box['segmentation']:
-                        if not np.array(box['segmentation']
-                                        ).size > 0 and not self.allow_empty:
+                        if not np.array(
+                                box['segmentation'],
+                                dtype=object).size > 0 and not self.allow_empty:
                             bboxes.pop(i)
                             gt_poly.pop(i)
                             np.delete(is_crowd, i)
@@ -204,6 +201,10 @@ class COCODataSet(DetDataset):
                         else:
                             gt_poly[i] = box['segmentation']
                         has_segmentation = True
+
+                    if 'track_id' in box:
+                        gt_track_id[i][0] = box['track_id']
+                        has_track_id = True
 
                 if has_segmentation and not any(
                         gt_poly) and not self.allow_empty:
@@ -215,6 +216,8 @@ class COCODataSet(DetDataset):
                     'gt_bbox': gt_bbox,
                     'gt_poly': gt_poly,
                 }
+                if has_track_id:
+                    gt_rec.update({'gt_track_id': gt_track_id})
 
                 for k, v in gt_rec.items():
                     if k in self.data_fields:
@@ -236,7 +239,8 @@ class COCODataSet(DetDataset):
             if self.sample_num > 0 and ct >= self.sample_num:
                 break
         assert ct > 0, 'not found any coco record in %s' % (anno_path)
-        logger.debug('{} samples in file {}'.format(ct, anno_path))
+        logger.info('Load [{} samples valid, {} samples invalid] in file {}.'.
+                    format(ct, len(img_ids) - ct, anno_path))
         if self.allow_empty and len(empty_records) > 0:
             empty_records = self._sample_empty(empty_records, len(records))
             records += empty_records

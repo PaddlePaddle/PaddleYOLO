@@ -115,7 +115,10 @@ class SimOTAAssigner(object):
     def dynamic_k_matching(self, cost_matrix, pairwise_ious, num_gt):
         match_matrix = np.zeros_like(cost_matrix.numpy())
         # select candidate topk ious for dynamic-k calculation
-        topk_ious, _ = paddle.topk(pairwise_ious, self.candidate_topk, axis=0)
+        topk_ious, _ = paddle.topk(
+            pairwise_ious,
+            min(self.candidate_topk, pairwise_ious.shape[0]),
+            axis=0)
         # calculate dynamic k for each gt
         dynamic_ks = paddle.clip(topk_ious.sum(0).cast('int'), min=1)
         for gt_idx in range(num_gt):
@@ -179,13 +182,6 @@ class SimOTAAssigner(object):
         is_in_gts_or_centers_all, is_in_gts_or_centers_all_inds, is_in_boxes_and_center = self.get_in_gt_and_in_center_info(
             flatten_center_and_stride, gt_bboxes)
 
-        if len(is_in_gts_or_centers_all_inds) == 0:
-            # No valid boxes
-            label = np.ones([num_bboxes], dtype=np.int64) * self.num_classes
-            label_weight = np.ones([num_bboxes], dtype=np.float32)
-            bbox_target = np.zeros_like(flatten_center_and_stride)
-            return 0, label, label_weight, bbox_target
-
         # bboxes and scores to calculate matrix
         valid_flatten_bboxes = flatten_bboxes[is_in_gts_or_centers_all_inds]
         valid_cls_pred_scores = flatten_cls_pred_scores[
@@ -240,7 +236,7 @@ class SimOTAAssigner(object):
         )] = match_fg_mask_inmatrix
 
         assigned_gt_inds[match_fg_mask_inall.astype(
-            np.bool)] = match_gt_inds_to_fg + 1
+            np.bool_)] = match_gt_inds_to_fg + 1
 
         pos_inds, neg_inds, pos_gt_bboxes, pos_assigned_gt_inds \
             = self.get_sample(assigned_gt_inds, gt_bboxes.numpy())

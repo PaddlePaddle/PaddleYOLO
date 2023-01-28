@@ -157,6 +157,7 @@ class BatchRandomResize(BaseOperator):
 
 @register_op
 class Gt2YoloTarget(BaseOperator):
+    __shared__ = ['num_classes']
     """
     Generate YOLOv3 targets by groud truth data, this operator is only used in
     fine grained YOLOv3 loss mode

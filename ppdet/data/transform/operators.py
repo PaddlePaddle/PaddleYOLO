@@ -47,7 +47,7 @@ from .op_helper import (satisfy_sample_constraint, filter_and_process,
                         generate_sample_bbox, clip_bbox, data_anchor_sampling,
                         satisfy_sample_constraint_coverage, crop_image_sampling,
                         generate_sample_bbox_square, bbox_area_sampling,
-                        is_poly, get_border, transform_bbox)
+                        is_poly, get_border)
 
 from ppdet.utils.logger import setup_logger
 logger = setup_logger(__name__)
@@ -644,7 +644,7 @@ class RandomErasingImage(BaseOperator):
         self.higher = higher
         self.aspect_ratio = aspect_ratio
 
-    def apply(self, sample):
+    def apply(self, sample, context=None):
         gt_bbox = sample['gt_bbox']
         im = sample['image']
         if not isinstance(im, np.ndarray):
@@ -1246,6 +1246,7 @@ class RandomResize(BaseOperator):
                  target_size,
                  keep_ratio=True,
                  interp=cv2.INTER_LINEAR,
+                 random_range=False,
                  random_size=True,
                  random_interp=False):
         """
@@ -1254,6 +1255,8 @@ class RandomResize(BaseOperator):
             target_size (int, list, tuple): image target size, if random size is True, must be list or tuple
             keep_ratio (bool): whether keep_raio or not, default true
             interp (int): the interpolation method
+            random_range (bool): whether random select target size of image, the target_size must be 
+                a [[min_short_edge, long_edge], [max_short_edge, long_edge]]
             random_size (bool): whether random select target size of image
             random_interp (bool): whether random select interpolation method
         """
@@ -1269,21 +1272,33 @@ class RandomResize(BaseOperator):
         ]
         assert isinstance(target_size, (
             Integral, Sequence)), "target_size must be Integer, List or Tuple"
-        if random_size and not isinstance(target_size, Sequence):
+        if (random_range or random_size) and not isinstance(target_size,
+                                                            Sequence):
             raise TypeError(
-                "Type of target_size is invalid when random_size is True. Must be List or Tuple, now is {}".
+                "Type of target_size is invalid when random_size or random_range is True. Must be List or Tuple, now is {}".
                 format(type(target_size)))
+        if random_range and not len(target_size) == 2:
+            raise TypeError(
+                "target_size must be two list as [[min_short_edge, long_edge], [max_short_edge, long_edge]] when random_range is True."
+            )
         self.target_size = target_size
+        self.random_range = random_range
         self.random_size = random_size
         self.random_interp = random_interp
 
     def apply(self, sample, context=None):
         """ Resize the image numpy.
         """
-        if self.random_size:
-            target_size = random.choice(self.target_size)
+        if self.random_range:
+            short_edge = np.random.randint(self.target_size[0][0],
+                                           self.target_size[1][0] + 1)
+            long_edge = max(self.target_size[0][1], self.target_size[1][1] + 1)
+            target_size = [short_edge, long_edge]
         else:
-            target_size = self.target_size
+            if self.random_size:
+                target_size = random.choice(self.target_size)
+            else:
+                target_size = self.target_size
 
         if self.random_interp:
             interp = random.choice(self.interps)
@@ -2130,37 +2145,6 @@ class BboxXYXY2XYWH(BaseOperator):
 
 
 @register_op
-class YOLOv5BoxImageNorm(BaseOperator):
-    """
-    YOLOv5BoxImageNorm: Convert bbox XYXY format to XYWH, and Norm
-    - BboxXYXY2XYWH: {}
-    - NormalizeBox: {}
-    - NormalizeImage: {}
-    """
-
-    def __init__(self):
-        super(YOLOv5BoxImageNorm, self).__init__()
-
-    def apply(self, sample, context=None):
-        assert 'gt_bbox' in sample
-        bbox = sample['gt_bbox']
-        bbox[:, 2:4] = bbox[:, 2:4] - bbox[:, :2]
-        bbox[:, :2] = bbox[:, :2] + bbox[:, 2:4] / 2.
-
-        gt_bbox = bbox
-        height, width, _ = sample['image'].shape
-        gt_bbox[:, 0] = gt_bbox[:, 0] / width
-        gt_bbox[:, 1] = gt_bbox[:, 1] / height
-        gt_bbox[:, 2] = gt_bbox[:, 2] / width
-        gt_bbox[:, 3] = gt_bbox[:, 3] / height
-        sample['gt_bbox'] = gt_bbox
-
-        im = sample['image']
-        sample['image'] = im.astype(np.float32, copy=False) / 255.0
-        return sample
-
-
-@register_op
 class PadBox(BaseOperator):
     def __init__(self, num_max_boxes=50):
         """
@@ -2533,35 +2517,6 @@ class Norm2PixelBbox(BaseOperator):
         bbox[:, 0::2] = bbox[:, 0::2] * width
         bbox[:, 1::2] = bbox[:, 1::2] * height
         sample['gt_bbox'] = bbox
-        return sample
-
-
-@register_op
-class BboxPixelXYXY2NormCXCYWH(BaseOperator):
-    """
-    Convert Pixel XYXY format to Norm CXCYWH format.
-    [x0, y0, x1, y1] -> [center_x, center_y, width, height]
-    """
-
-    def __init__(self, clip=False, eps=1E-3):
-        super(BboxPixelXYXY2NormCXCYWH, self).__init__()
-        self.clip = clip
-        self.eps = eps
-
-    def apply(self, sample, context=None):
-        assert 'gt_bbox' in sample
-        bbox = sample['gt_bbox']
-        height, width = sample['image'].shape[:2]
-        if self.clip:
-            bbox[:, 0::2] = np.clip(bbox[:, 0::2], 0, width - self.eps)
-            bbox[:, 1::2] = np.clip(bbox[:, 1::2], 0, height - self.eps)
-
-        y = bbox.copy()
-        y[:, 0] = ((bbox[:, 0] + bbox[:, 2]) / 2) / width  # x center
-        y[:, 1] = ((bbox[:, 1] + bbox[:, 3]) / 2) / height  # y center
-        y[:, 2] = (bbox[:, 2] - bbox[:, 0]) / width  # width
-        y[:, 3] = (bbox[:, 3] - bbox[:, 1]) / height  # height
-        sample['gt_bbox'] = y
         return sample
 
 
@@ -3224,14 +3179,15 @@ class CenterRandColor(BaseOperator):
         img_mean *= (1 - alpha)
         img += img_mean
 
-    def __call__(self, sample, context=None):
-        img = sample['image']
-        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    def apply(self, sample, context=None):
         functions = [
             self.apply_brightness,
             self.apply_contrast,
             self.apply_saturation,
         ]
+
+        img = sample['image']
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         distortions = np.random.permutation(functions)
         for func in distortions:
             img = func(img, img_gray)
@@ -3374,16 +3330,10 @@ class Mosaic(BaseOperator):
 
         assert len(
             sample) == 5, "Mosaic needs 5 samples, 4 for mosaic and 1 for mixup."
-
         if np.random.uniform(0., 1.) > self.prob:
-            sample0 = sample[0]
-            if 'difficult' in sample0:
-                sample0.pop('difficult')
-            if 'is_crowd' in sample0:
-                sample0.pop('is_crowd')
-            return sample0
+            return sample[0]
 
-        mosaic_gt_bbox, mosaic_gt_class = [], []
+        mosaic_gt_bbox, mosaic_gt_class, mosaic_is_crowd, mosaic_difficult = [], [], [], []
         input_h, input_w = self.input_dim
         yc = int(random.uniform(0.5 * input_h, 1.5 * input_h))
         xc = int(random.uniform(0.5 * input_w, 1.5 * input_w))
@@ -3418,14 +3368,33 @@ class Mosaic(BaseOperator):
 
             mosaic_gt_bbox.append(_gt_bbox)
             mosaic_gt_class.append(sp['gt_class'])
+            if 'is_crowd' in sp:
+                mosaic_is_crowd.append(sp['is_crowd'])
+            if 'difficult' in sp:
+                mosaic_difficult.append(sp['difficult'])
 
-        # 2. clip bbox and get mosaic_labels([gt_bbox, gt_class])
+        # 2. clip bbox and get mosaic_labels([gt_bbox, gt_class, is_crowd])
         if len(mosaic_gt_bbox):
             mosaic_gt_bbox = np.concatenate(mosaic_gt_bbox, 0)
             mosaic_gt_class = np.concatenate(mosaic_gt_class, 0)
-            mosaic_labels = np.concatenate(
-                [mosaic_gt_bbox,
-                 mosaic_gt_class.astype(mosaic_gt_bbox.dtype)], 1)
+            if mosaic_is_crowd:
+                mosaic_is_crowd = np.concatenate(mosaic_is_crowd, 0)
+                mosaic_labels = np.concatenate([
+                    mosaic_gt_bbox,
+                    mosaic_gt_class.astype(mosaic_gt_bbox.dtype),
+                    mosaic_is_crowd.astype(mosaic_gt_bbox.dtype)
+                ], 1)
+            elif mosaic_difficult:
+                mosaic_difficult = np.concatenate(mosaic_difficult, 0)
+                mosaic_labels = np.concatenate([
+                    mosaic_gt_bbox,
+                    mosaic_gt_class.astype(mosaic_gt_bbox.dtype),
+                    mosaic_difficult.astype(mosaic_gt_bbox.dtype)
+                ], 1)
+            else:
+                mosaic_labels = np.concatenate([
+                    mosaic_gt_bbox, mosaic_gt_class.astype(mosaic_gt_bbox.dtype)
+                ], 1)
             if self.remove_outside_box:
                 # for MOT dataset
                 flag1 = mosaic_gt_bbox[:, 0] < 2 * input_w
@@ -3462,10 +3431,23 @@ class Mosaic(BaseOperator):
                 random.random() < self.mixup_prob):
             sample_mixup = sample[4]
             mixup_img = sample_mixup['image']
-            cp_labels = np.concatenate([
-                sample_mixup['gt_bbox'],
-                sample_mixup['gt_class'].astype(mosaic_labels.dtype)
-            ], 1)
+            if 'is_crowd' in sample_mixup:
+                cp_labels = np.concatenate([
+                    sample_mixup['gt_bbox'],
+                    sample_mixup['gt_class'].astype(mosaic_labels.dtype),
+                    sample_mixup['is_crowd'].astype(mosaic_labels.dtype)
+                ], 1)
+            elif 'difficult' in sample_mixup:
+                cp_labels = np.concatenate([
+                    sample_mixup['gt_bbox'],
+                    sample_mixup['gt_class'].astype(mosaic_labels.dtype),
+                    sample_mixup['difficult'].astype(mosaic_labels.dtype)
+                ], 1)
+            else:
+                cp_labels = np.concatenate([
+                    sample_mixup['gt_bbox'],
+                    sample_mixup['gt_class'].astype(mosaic_labels.dtype)
+                ], 1)
             mosaic_img, mosaic_labels = self.mixup_augment(
                 mosaic_img, mosaic_labels, self.input_dim, cp_labels, mixup_img)
 
@@ -3477,10 +3459,10 @@ class Mosaic(BaseOperator):
         sample0['im_shape'][1] = sample0['w']
         sample0['gt_bbox'] = mosaic_labels[:, :4].astype(np.float32)
         sample0['gt_class'] = mosaic_labels[:, 4:5].astype(np.float32)
-        if 'difficult' in sample0:
-            sample0.pop('difficult')
-        if 'is_crowd' in sample0:
-            sample0.pop('is_crowd')
+        if 'is_crowd' in sample[0]:
+            sample0['is_crowd'] = mosaic_labels[:, 5:6].astype(np.float32)
+        if 'difficult' in sample[0]:
+            sample0['difficult'] = mosaic_labels[:, 5:6].astype(np.float32)
         return sample0
 
     def mixup_augment(self, origin_img, origin_labels, input_dim, cp_labels,
@@ -3620,85 +3602,4 @@ class PadResize(BaseOperator):
             sample.pop('is_crowd')
         if 'difficult' in sample:
             sample.pop('difficult')
-        return sample
-
-
-@register_op
-class DecodeNormResize(BaseOperator):
-    def __init__(self, target_size, to_rgb=False, mosaic=True):
-        super(DecodeNormResize, self).__init__()
-        if not isinstance(target_size, (Integral, Sequence)):
-            raise TypeError(
-                "Type of target_size is invalid. Must be Integer or List or Tuple, now is {}".
-                format(type(target_size)))
-        if isinstance(target_size, Integral):
-            target_size = [target_size, target_size]
-        self.target_size = target_size
-        self.to_rgb = to_rgb
-        self.mosaic = mosaic
-
-    def bbox_norm(self, sample):
-        assert 'gt_bbox' in sample
-        bbox = sample['gt_bbox']
-        height, width = sample['image'].shape[:2]
-        y = bbox.copy()
-        y[:, 0] = ((bbox[:, 0] + bbox[:, 2]) / 2) / width  # x center
-        y[:, 1] = ((bbox[:, 1] + bbox[:, 3]) / 2) / height  # y center
-        y[:, 2] = (bbox[:, 2] - bbox[:, 0]) / width  # width
-        y[:, 3] = (bbox[:, 3] - bbox[:, 1]) / height  # height
-        sample['gt_bbox'] = y
-        return sample
-
-    def load_resized_img(self, sample, target_size):
-        if 'image' not in sample:
-            img_file = sample['im_file']
-            sample['image'] = cv2.imread(img_file)  # BGR
-            sample.pop('im_file')
-        im = sample['image']
-        sample = self.bbox_norm(sample)
-
-        if 'keep_ori_im' in sample and sample['keep_ori_im']:
-            sample['ori_image'] = im
-
-        if 'h' not in sample:
-            sample['h'] = im.shape[0]
-        elif sample['h'] != im.shape[0]:
-            logger.warning(
-                "The actual image height: {} is not equal to the "
-                "height: {} in annotation, and update sample['h'] by actual "
-                "image height.".format(im.shape[0], sample['h']))
-            sample['h'] = im.shape[0]
-        if 'w' not in sample:
-            sample['w'] = im.shape[1]
-        elif sample['w'] != im.shape[1]:
-            logger.warning(
-                "The actual image width: {} is not equal to the "
-                "width: {} in annotation, and update sample['w'] by actual "
-                "image width.".format(im.shape[1], sample['w']))
-            sample['w'] = im.shape[1]
-
-        sample['im_shape'] = np.array(
-            im.shape[:2], dtype=np.float32)  # original shape
-
-        # get resized img
-        r = min(target_size[0] / im.shape[0], target_size[1] / im.shape[1])
-        if r != 1:  # if sizes are not equal
-            resized_img = cv2.resize(
-                im, (int(im.shape[1] * r), int(im.shape[0] * r)),
-                interpolation=cv2.INTER_LINEAR if (self.mosaic or r > 1) else
-                cv2.INTER_AREA)  ########## .astype(np.uint8)
-        else:
-            resized_img = im
-
-        h, w = resized_img.shape[:2]
-        if self.to_rgb:
-            resized_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2RGB)
-
-        sample['image'] = resized_img
-        sample['scale_factor'] = np.array(
-            [h / im.shape[0], w / im.shape[1]], dtype=np.float32)
-        return sample
-
-    def apply(self, sample, context=None):
-        sample = self.load_resized_img(sample, self.target_size)
         return sample

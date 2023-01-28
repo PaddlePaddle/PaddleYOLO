@@ -405,7 +405,6 @@ class PPYOLOEHead(nn.Layer):
         pred_scores, pred_dist, anchor_points, stride_tensor = head_outs
         pred_bboxes = batch_distance2bbox(anchor_points, pred_dist)
         pred_bboxes *= stride_tensor
-
         if self.exclude_post_process:
             return paddle.concat(
                 [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1)
