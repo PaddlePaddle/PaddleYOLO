@@ -51,9 +51,7 @@ TRT_LOGGER = trt.Logger()
 trt.init_libnvinfer_plugins(TRT_LOGGER, namespace="")
 # Global dictionary
 SUPPORT_MODELS = {
-    'YOLO', 'PPYOLOE', 'RCNN', 'SSD', 'Face', 'FCOS', 'SOLOv2', 'TTFNet',
-    'S2ANet', 'JDE', 'FairMOT', 'DeepSORT', 'GFL', 'PicoDet', 'CenterNet',
-    'TOOD', 'RetinaNet', 'StrongBaseline', 'STGCN', 'YOLOX', 'HRNet'
+    'YOLO', 'PPYOLOE', 'YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'RTMDet'
 }
 
 
