@@ -16,8 +16,10 @@ from . import utils
 from . import task_aligned_assigner
 from . import atss_assigner
 from . import simota_assigner
+from . import task_aligned_assigner_cr
 
 from .utils import *
 from .task_aligned_assigner import *
 from .atss_assigner import *
 from .simota_assigner import *
+from .task_aligned_assigner_cr import *
