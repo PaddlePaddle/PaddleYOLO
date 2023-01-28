@@ -46,7 +46,6 @@ import ppdet.utils.stats as stats
 from ppdet.utils.fuse_utils import fuse_conv_bn
 from ppdet.utils import profiler
 from ppdet.modeling.initializer import reset_initialized_parameter
-from ppdet.modeling.heads import YOLOv7Head
 from ppdet.modeling.post_process import multiclass_nms
 from .callbacks import Callback, ComposeCallback, LogPrinter, Checkpointer, VisualDLWriter, WandbCallback
 from .export_utils import _dump_infer_config, _prune_input_spec, apply_to_static
@@ -296,9 +295,8 @@ class Trainer(object):
             logger.debug("Load weights {} to start training as teacher_model".
                          format(weights))
 
-        if self.mode in ['eval', 'test'] and self.cfg.architecture == 'YOLOv5':
-            if isinstance(self.model.yolo_head, YOLOv7Head):
-                self.model.yolo_head.fuse()
+        if self.mode in ['eval', 'test'] and self.cfg.architecture == 'YOLOv7':
+            self.model.yolo_head.fuse()
 
     def load_weights_sde(self, det_weights, reid_weights):
         if self.model.detector:
