@@ -23,9 +23,7 @@ from preprocess import Compose
 
 # Global dictionary
 SUPPORT_MODELS = {
-    'YOLO', 'PPYOLOE', 'RCNN', 'SSD', 'Face', 'FCOS', 'SOLOv2', 'TTFNet',
-    'S2ANet', 'JDE', 'FairMOT', 'DeepSORT', 'GFL', 'PicoDet', 'CenterNet',
-    'TOOD', 'RetinaNet', 'StrongBaseline', 'STGCN', 'YOLOX', 'HRNet'
+    'YOLO', 'PPYOLOE', 'YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'RTMDet'
 }
 
 parser = argparse.ArgumentParser(description=__doc__)
