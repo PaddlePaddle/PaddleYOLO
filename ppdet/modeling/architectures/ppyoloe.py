@@ -1,4 +1,4 @@
-# Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved. 
+# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved. 
 #   
 # Licensed under the Apache License, Version 2.0 (the "License");   
 # you may not use this file except in compliance with the License.  
@@ -19,37 +19,34 @@ from __future__ import print_function
 from ppdet.core.workspace import register, create
 from .meta_arch import BaseArch
 
-__all__ = ['YOLOv3']
-# YOLOv3,PP-YOLO,PP-YOLOv2,PP-YOLOE,PP-YOLOE+ use the same architecture as YOLOv3
-# PP-YOLOE and PP-YOLOE+ are recommended to use PPYOLOE architecture in ppyoloe.py
+__all__ = ['PPYOLOE']
+# PP-YOLOE and PP-YOLOE+ are recommended to use this architecture
+# PP-YOLOE and PP-YOLOE+ can also use the same architecture of YOLOv3 in yolo.py
 
 
 @register
-class YOLOv3(BaseArch):
+class PPYOLOE(BaseArch):
     __category__ = 'architecture'
-    __shared__ = ['data_format']
     __inject__ = ['post_process']
 
     def __init__(self,
-                 backbone='DarkNet',
-                 neck='YOLOv3FPN',
-                 yolo_head='YOLOv3Head',
+                 backbone='CSPResNet',
+                 neck='CustomCSPPAN',
+                 yolo_head='PPYOLOEHead',
                  post_process='BBoxPostProcess',
-                 data_format='NCHW',
                  for_mot=False):
         """
-        YOLOv3 network, see https://arxiv.org/abs/1804.02767
+        PPYOLOE network, see https://arxiv.org/abs/2203.16250
 
         Args:
             backbone (nn.Layer): backbone instance
             neck (nn.Layer): neck instance
             yolo_head (nn.Layer): anchor_head instance
             post_process (object): `BBoxPostProcess` instance
-            data_format (str): data format, NCHW or NHWC
             for_mot (bool): whether return other features for multi-object tracking
                 models, default False in pure object detection models.
         """
-        super(YOLOv3, self).__init__(data_format=data_format)
+        super(PPYOLOE, self).__init__()
         self.backbone = backbone
         self.neck = neck
         self.yolo_head = yolo_head
@@ -85,24 +82,15 @@ class YOLOv3(BaseArch):
         else:
             yolo_head_outs = self.yolo_head(neck_feats)
             if self.post_process is not None:
-                # anchor based YOLOs: YOLOv3,PP-YOLO,PP-YOLOv2 use mask_anchors
                 bbox, bbox_num = self.post_process(
                     yolo_head_outs, self.yolo_head.mask_anchors,
                     self.inputs['im_shape'], self.inputs['scale_factor'])
-                return {'bbox': bbox, 'bbox_num': bbox_num}
             else:
-                # anchor free YOLOs: PP-YOLOE
-                post_outs = self.yolo_head.post_process(
+                bbox, bbox_num = self.yolo_head.post_process(
                     yolo_head_outs, self.inputs['scale_factor'])
+            output = {'bbox': bbox, 'bbox_num': bbox_num}
 
-                if not isinstance(post_outs, (tuple, list)):
-                    # if set exclude_post_process, concat([pred_bboxes, pred_scores]) not scaled to origin
-                    # export onnx as torch yolo models
-                    return post_outs
-                else:
-                    # if set exclude_nms, [pred_bboxes, pred_scores] scaled to origin
-                    bbox, bbox_num = post_outs  # default for end-to-end eval/infer
-                    return {'bbox': bbox, 'bbox_num': bbox_num}
+            return output
 
     def get_loss(self):
         return self._forward()
