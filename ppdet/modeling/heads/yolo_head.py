@@ -26,7 +26,7 @@ from ..backbones.csp_darknet import BaseConv, DWConv
 from ..losses import IouLoss
 from ppdet.modeling.assigners.simota_assigner import SimOTAAssigner
 from ppdet.modeling.bbox_utils import bbox_overlaps
-from ppdet.modeling.layers import MultiClassNMS, MatrixNMS
+from ppdet.modeling.layers import MultiClassNMS
 
 __all__ = ['YOLOv3Head', 'YOLOXHead']
 
