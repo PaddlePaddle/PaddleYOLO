@@ -11,10 +11,10 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略(蒸馏策略)| TRT-FP16-Latency(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :--------------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| *YOLOv6-n       |  640     |    16      |   300e(+300e) |  2.0  |  37.5 |    53.1 |  5.07  | 12.49 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_n_300e_coco.pdparams) | [配置文件](./yolov6_n_300e_coco.yml) |
+| *YOLOv6-n       |  640     |    16      |   300e(+300e) |  1.3  |  37.5 |    53.1 |  5.07  | 12.49 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_n_300e_coco.pdparams) | [配置文件](./yolov6_n_300e_coco.yml) |
 | *YOLOv6-s       |  640     |    32      |   300e(+300e) |  2.7  |  44.8 |    61.7 |  20.18  | 49.36 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_s_300e_coco.pdparams) | [配置文件](./yolov6_s_300e_coco.yml) |
-| *YOLOv6-m       |  640     |    32      |   300e(+300e) |  -  |  49.5 |    66.9 |  37.74  | 92.47 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_m_300e_coco.pdparams) | [配置文件](./yolov6_m_300e_coco.yml) |
-| *YOLOv6-l(silu) |  640     |    32      |   300e(+300e) |  -  |  52.2 |    70.2 |  59.66  | 149.4 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_l_300e_coco.pdparams) | [配置文件](./yolov6_l_300e_coco.yml) |
+| *YOLOv6-m       |  640     |    32      |   300e(+300e) |  5.3  |  49.5 |    66.9 |  37.74  | 92.47 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_m_300e_coco.pdparams) | [配置文件](./yolov6_m_300e_coco.yml) |
+| *YOLOv6-l(silu) |  640     |    32      |   300e(+300e) |  9.5  |  52.2 |    70.2 |  59.66  | 149.4 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_l_300e_coco.pdparams) | [配置文件](./yolov6_l_300e_coco.yml) |
 
 
 **注意:**
