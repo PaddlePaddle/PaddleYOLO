@@ -72,7 +72,7 @@ class YOLOv5(BaseArch):
     def _forward(self):
         body_feats = self.backbone(self.inputs)
         neck_feats = self.neck(body_feats, self.for_mot)
-
+        
         if self.training:
             yolo_losses = self.yolo_head(neck_feats, self.inputs)
             return yolo_losses

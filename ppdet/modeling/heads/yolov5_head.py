@@ -128,7 +128,7 @@ class YOLOv5Head(nn.Layer):
             if self.data_format == 'NHWC':
                 yolo_output = paddle.transpose(yolo_output, [0, 3, 1, 2])
             yolo_outputs.append(yolo_output)
-
+     
         if self.training:
             return self.loss(yolo_outputs, targets, self.anchors)
         else:
