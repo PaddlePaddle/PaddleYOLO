@@ -11,13 +11,13 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) |   mAP  |   AP50  | Params(M) | FLOPs(G) |  下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :---------: | :-----: |:-----: | :-----: |:-----: | :-------------: | :-----: |
-| YOLOv6-n       |  416     |    16      |   400e    |     1.0    |  31.1 |    45.3 |  4.74  | 5.16 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_n_416_400e_coco.pdparams) | [配置文件](./yolov6_n_416_400e_coco.yml) |
-| YOLOv6-n       |  640     |    16      |   400e    |     1.3    |  36.1 |    51.9 |  4.74  | 12.21 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_n_400e_coco.pdparams) | [配置文件](./yolov6_n_400e_coco.yml) |
-| YOLOv6-t       |  640     |    32      |   400e    |     2.1    |  40.7 |    57.4 |  10.63  | 27.29 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_t_400e_coco.pdparams) | [配置文件](./yolov6_t_400e_coco.yml) |
-| YOLOv6-s       |  640     |    32      |   400e    |     2.6    |  43.4 |    60.5 |  18.87  | 48.35 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams) | [配置文件](./yolov6_s_400e_coco.yml) |
-| YOLOv6-m       |  640     |    32      |   300e    |     5.0    |  49.0 |    66.5 |  37.17  | 88.82 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_m_300e_coco.pdparams) | [配置文件](./yolov6_m_300e_coco.yml) |
-| YOLOv6-l       |  640     |    32(16)  |   300e    |     7.9    |  51.0 |    68.9 |  63.54  | 155.89 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_l_300e_coco.pdparams) | [配置文件](./yolov6_l_300e_coco.yml) |
-| YOLOv6-l-silu  |  640     |    32(16)  |   300e    |     9.6    |  51.7 |    69.6 |  58.59  | 142.66 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov6_l_silu_300e_coco.pdparams) | [配置文件](./yolov6_l_silu_300e_coco.yml) |
+| YOLOv6-n       |  416     |    16      |   400e    |     1.0    |  31.1 |    45.3 |  4.74  | 5.16 |[下载链接](https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_n_416_400e_coco.pdparams) | [配置文件](./yolov6_n_416_400e_coco.yml) |
+| YOLOv6-n       |  640     |    16      |   400e    |     1.3    |  36.1 |    51.9 |  4.74  | 12.21 |[下载链接](https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_n_400e_coco.pdparams) | [配置文件](./yolov6_n_400e_coco.yml) |
+| YOLOv6-t       |  640     |    32      |   400e    |     2.1    |  40.7 |    57.4 |  10.63  | 27.29 |[下载链接](https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_t_400e_coco.pdparams) | [配置文件](./yolov6_t_400e_coco.yml) |
+| YOLOv6-s       |  640     |    32      |   400e    |     2.6    |  43.4 |    60.5 |  18.87  | 48.35 |[下载链接](https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_s_400e_coco.pdparams) | [配置文件](./yolov6_s_400e_coco.yml) |
+| YOLOv6-m       |  640     |    32      |   300e    |     5.0    |  49.0 |    66.5 |  37.17  | 88.82 |[下载链接](https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_m_300e_coco.pdparams) | [配置文件](./yolov6_m_300e_coco.yml) |
+| YOLOv6-l       |  640     |    32(16)  |   300e    |     7.9    |  51.0 |    68.9 |  63.54  | 155.89 |[下载链接](https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_l_300e_coco.pdparams) | [配置文件](./yolov6_l_300e_coco.yml) |
+| YOLOv6-l-silu  |  640     |    32(16)  |   300e    |     9.6    |  51.7 |    69.6 |  58.59  | 142.66 |[下载链接](https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_l_silu_300e_coco.pdparams) | [配置文件](./yolov6_l_silu_300e_coco.yml) |
 
 
 **注意:**
@@ -92,17 +92,17 @@ python -m paddle.distributed.launch --gpus 0,1,2,3,4,5,6,7 tools/train.py -c con
 ### 2. 评估
 执行以下命令在单个GPU上评估COCO val2017数据集
 ```bash
-CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams
+CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_s_400e_coco.pdparams
 ```
 
 ### 3. 推理
 使用以下命令在单张GPU上预测图片，使用`--infer_img`推理单张图片以及使用`--infer_dir`推理文件中的所有图片。
 ```bash
 # 推理单张图片
-CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams --infer_img=demo/000000014439_640x640.jpg
+CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_s_400e_coco.pdparams --infer_img=demo/000000014439_640x640.jpg
 
 # 推理文件中的所有图片
-CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams --infer_dir=demo
+CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_s_400e_coco.pdparams --infer_dir=demo
 ```
 
 ### 4.导出模型
@@ -111,13 +111,13 @@ CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c configs/yolov6/yolov6_s_400e_coc
 当你**使用Paddle Inference但不使用TensorRT**时，运行以下的命令导出模型
 
 ```bash
-python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams
+python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_s_400e_coco.pdparams
 ```
 
 当你**使用Paddle Inference且使用TensorRT**时，需要指定`-o trt=True`来导出模型。
 
 ```bash
-python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams trt=True
+python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_s_400e_coco.pdparams trt=True
 ```
 
 如果你想将YOLOv6模型导出为**ONNX格式**，参考
@@ -126,7 +126,7 @@ python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights
 ```bash
 
 # 导出推理模型
-python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml --output_dir=output_inference -o weights=https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams
+python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml --output_dir=output_inference -o weights=https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_s_400e_coco.pdparams
 
 # 安装paddle2onnx
 pip install paddle2onnx
@@ -148,7 +148,7 @@ YOLOv6可以使用以下方式进行部署：
 运行以下命令导出模型
 
 ```bash
-python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams trt=True
+python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_s_400e_coco.pdparams trt=True
 ```
 
 **注意：**
@@ -182,7 +182,7 @@ python deploy/python/infer.py --model_dir=output_inference/yolov6_s_400e_coco --
 
 ```bash
 # 导出模型
-python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams exclude_nms=True
+python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_s_400e_coco.pdparams exclude_nms=True
 
 # 速度测试，使用run_benchmark=True
 python deploy/python/infer.py --model_dir=output_inference/yolov6_s_400e_coco --image_file=demo/000000014439_640x640.jpg --run_mode=paddle --device=gpu --run_benchmark=True
@@ -192,7 +192,7 @@ python deploy/python/infer.py --model_dir=output_inference/yolov6_s_400e_coco --
 
 ```bash
 # 导出模型，使用trt=True
-python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov6_s_400e_coco.pdparams exclude_nms=True trt=True
+python tools/export_model.py -c configs/yolov6/yolov6_s_400e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/legacy_model/yolov6_s_400e_coco.pdparams exclude_nms=True trt=True
 
 # 速度测试，使用run_benchmark=True
 python deploy/python/infer.py --model_dir=output_inference/yolov6_s_400e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu --run_benchmark=True

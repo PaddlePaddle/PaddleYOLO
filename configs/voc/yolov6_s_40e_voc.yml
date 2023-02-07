@@ -7,7 +7,7 @@ log_iter: 50
 snapshot_epoch: 5
 weights: output/yolov6_s_40e_voc/model_final
 
-pretrain_weights: https://bj.bcebos.com/v1/paddledet/models/yolov6_s_400e_coco.pdparams
+pretrain_weights: https://bj.bcebos.com/v1/paddledet/models/legacy_model/yolov6_s_400e_coco.pdparams
 depth_mult: 0.33
 width_mult: 0.50
 
