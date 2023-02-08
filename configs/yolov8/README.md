@@ -34,13 +34,21 @@
 
 ### 部署模型
 
-| 网络模型     | 输入尺寸 | 导出后的权重(w/o NMS) | ONNX(w/o NMS)  |
-| :-------- | :--------: | :---------------------: | :----------------: |
-| YOLOv8-n |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_500e_coco_wo_nms.onnx) |
-| YOLOv8-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_500e_coco_wo_nms.onnx) |
-| YOLOv8-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_500e_coco_wo_nms.onnx) |
-| YOLOv8-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_500e_coco_wo_nms.onnx) |
-| YOLOv8-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_500e_coco_wo_nms.onnx) |
+| 网络模型   | 输入尺寸 | 导出后的权重(带nms) | 导出后的权重(exclude_nms)| ONNX(exclude_post_process)  |
+| :-------- | :----: | :---------------: | :--------------------: | :-------------------------: |
+| YOLOv8-n |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_n_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_n_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_n_500e_coco.onnx) |
+| YOLOv8-s |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_s_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_s_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_s_500e_coco.onnx) |
+| YOLOv8-m |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_m_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_m_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_m_500e_coco.onnx) |
+| YOLOv8-l |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_l_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_l_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_l_500e_coco.onnx) |
+| YOLOv8-x |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_x_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_x_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_x_500e_coco.onnx) |
+
+**注意:**
+ - 带nms的导出权重为普通导出方式，加trt表示用于trt加速，对NMS和silu激活函数提速明显。运行命令为：
+  ```CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} trt=True```
+ - `exclude_nms`导出的权重表示去除NMS导出，返回2个Tensor，是缩放回原图后的坐标和分类置信度。运行命令为：
+  ```CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} exclude_nms=True trt=True```
+  - `exclude_post_process`导出表示去除后处理导出，返回和YOLOv5导出ONNX时相同格式的concat后的1个Tensor，是未缩放回原图的坐标和分类置信度。运行命令为：
+  ```CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} exclude_post_process=True trt=True ```
 
 
 ## 使用教程
