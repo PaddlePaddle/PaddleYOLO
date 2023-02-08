@@ -25,7 +25,7 @@ python tools/export_model.py -c configs/yolov3/yolov3_darknet53_270e_coco.yml --
 ### 2.1 通用检测
 在终端输入以下命令进行预测：
 ```bash
-python deploy/python/infer.py --model_dir=./output_inference/yolov3_darknet53_270e_coco --image_file=./demo/000000014439.jpg --device=GPU
+python deploy/python/infer.py --model_dir=./inference_model/yolov3_darknet53_270e_coco --image_file=./demo/000000014439.jpg --device=GPU
 ```
 
 # 参数说明
