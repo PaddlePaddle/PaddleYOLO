@@ -230,13 +230,13 @@
 <details>
 <summary> 部署模型  </summary>
 
-| 网络模型     | 输入尺寸 | 导出后的权重(w/o NMS) | ONNX(w/o NMS)  |
-| :-------- | :--------: | :---------------------: | :----------------: |
-| YOLOv8-n |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_500e_coco_wo_nms.onnx) |
-| YOLOv8-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_500e_coco_wo_nms.onnx) |
-| YOLOv8-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_500e_coco_wo_nms.onnx) |
-| YOLOv8-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_500e_coco_wo_nms.onnx) |
-| YOLOv8-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_500e_coco_wo_nms.onnx) |
+| 网络模型   | 输入尺寸 | 导出后的权重(带nms) | 导出后的权重(exclude_nms)| ONNX(exclude_post_process)  |
+| :-------- | :----: | :---------------: | :--------------------: | :-------------------------: |
+| YOLOv8-n |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_n_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_n_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_n_500e_coco.onnx) |
+| YOLOv8-s |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_s_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_s_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_s_500e_coco.onnx) |
+| YOLOv8-m |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_m_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_m_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_m_500e_coco.onnx) |
+| YOLOv8-l |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_l_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_l_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_l_500e_coco.onnx) |
+| YOLOv8-x |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_x_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_x_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_x_500e_coco.onnx) |
 
 </details>
 
