@@ -2,10 +2,9 @@
 
 ## 内容
 - [模型库](#模型库)
-- [使用说明](#使用说明)
-- [速度测试](#速度测试)
-- [引用](#引用)
+- [使用教程](#使用教程)
 - [FastDeploy多硬件快速部署](#FastDeploy多硬件快速部署)
+- [引用](#引用)
 
 
 ## 模型库
@@ -31,7 +30,7 @@
   - YOLOv8模型暂未支持完全训练，mAP为部署权重在COCO val2017上的`mAP(IoU=0.5:0.95)`结果，且评估未使用`multi_label`等trick；
   - YOLOv8模型训练使用COCO train2017作为训练集，Box AP为在COCO val2017上的`mAP(IoU=0.5:0.95)`结果；
   - YOLOv8模型训练过程中默认使用8 GPUs进行混合精度训练，默认lr为0.01为8卡总batch_size的设置，如果**GPU卡数**或者每卡**batch size**发生改动，也不需要改动学习率，但为了保证高精度最好使用**总batch size大于64**的配置去训练；
-  - TRT-FP16-Latency(ms)模型推理耗时为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用**单卡Tesla T4 GPU**，batch size=1，测试环境为**paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考[速度测试](#速度测试)。
+  - TRT-FP16-Latency(ms)模型推理耗时为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用**单卡Tesla T4 GPU**，batch size=1，测试环境为**paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**。
   - 如果你设置了`--run_benchmark=True`, 你首先需要安装以下依赖`pip install pynvml psutil GPUtil`。
 
 ### 部署模型
@@ -184,3 +183,9 @@ FastDeploy是飞桨推出的统一部署工具，支持云边端部署。目前�
 *表示：FastDeploy目前在该型号硬件上测试。通常同类型硬件上使用的是相同的软件栈，该部署能力可以延伸到同软件架栈的硬件。譬如RK3588与RK3566、RK3568相同的软件栈。
 
 「硬件列-纵轴」链接到部署预编译包安装或部署示例，「横轴」跳转到具体部署示例。
+
+
+## 引用
+```
+
+```
