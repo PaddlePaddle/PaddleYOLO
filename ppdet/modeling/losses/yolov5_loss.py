@@ -79,7 +79,7 @@ class YOLOv5Loss(nn.Layer):
         # targets['gt_bbox'] [bs, max_gt_nums, 4]
         # targets['pad_gt_mask'] [bs, max_gt_nums, 1]
         gt_nums = targets['pad_gt_mask'].sum(1).squeeze(-1).numpy()
-        nt = int(sum(gt_nums))
+        nt = gt_nums.sum().astype('int32')
         anchors = anchors.numpy()
         na = anchors.shape[1]  # not len(anchors)
         tcls, tbox, indices, anch = [], [], [], []
@@ -90,7 +90,7 @@ class YOLOv5Loss(nn.Layer):
         batch_size = outputs[0].shape[0]
         gt_labels = []
         for idx in range(batch_size):
-            gt_num = int(gt_nums[idx])
+            gt_num = gt_nums[idx].astype('int32')
             if gt_num == 0:
                 continue
             gt_bbox = targets['gt_bbox'][idx][:gt_num].numpy()
@@ -234,7 +234,7 @@ class YOLOv5Loss(nn.Layer):
         # targets['gt_bbox'] [bs, max_gt_nums, 4]
         # targets['pad_gt_mask'] [bs, max_gt_nums, 1]
         gt_nums = targets['pad_gt_mask'].sum(1).squeeze(-1)
-        nt = int(gt_nums.sum())
+        nt = gt_nums.sum().astype('int32')
         anchors = anchors
         na = anchors.shape[1]  # not len(anchors)
         tcls, tbox, indices, anch = [], [], [], []
@@ -245,7 +245,7 @@ class YOLOv5Loss(nn.Layer):
         batch_size = outputs[0].shape[0]
         gt_labels = []
         for idx in range(batch_size):
-            gt_num = int(gt_nums[idx])
+            gt_num = gt_nums[idx].astype("int32")
             if gt_num == 0:
                 continue
             gt_bbox = targets['gt_bbox'][idx][:gt_num]
