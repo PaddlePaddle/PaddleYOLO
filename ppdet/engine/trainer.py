@@ -55,6 +55,10 @@ logger = setup_logger('ppdet.engine')
 
 __all__ = ['Trainer']
 
+paddle.seed(2021)
+np.random.seed(2021)
+import random
+random.seed(2021)
 
 class Trainer(object):
     def __init__(self, cfg, mode='train'):
