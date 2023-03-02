@@ -422,6 +422,12 @@ class Trainer(object):
                     # model forward
                     outputs = model(data)
                     loss = outputs['loss']
+
+                    # avoid some all_reduce timeout due to computation progress differs between xpu cards
+                    if self._nranks > 1 and self.cfg.use_xpu:
+                        tensor_for_all_reduce = paddle.to_tensor(1.0)
+                        paddle.distributed.all_reduce(tensor_for_all_reduce)
+
                     # model backward
                     loss.backward()
                     self.optimizer.step()
