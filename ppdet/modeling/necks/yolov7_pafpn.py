@@ -54,6 +54,7 @@ class ELANFPN(nn.Layer):
             in_channels=[512, 1024, 512],  # layer num: 24 37 51 [c3,c4,c5]
             out_channels=[256, 512, 1024],  # layer num: 75 88 101
             depthwise=False,
+            for_u6=False,  # u6 branch, YOLOv7u version
             act='silu',
             trt=False):
         super(ELANFPN, self).__init__()
@@ -63,6 +64,7 @@ class ELANFPN(nn.Layer):
         num_blocks = self.num_blocks[arch]
         ch_settings = self.ch_settings[arch]
         self._out_channels = [chs[-1] * 2 for chs in ch_settings[1:]]
+        self.for_u6 = for_u6
 
         self.upsample = nn.Upsample(scale_factor=2, mode="nearest")
 
@@ -131,7 +133,7 @@ class ELANFPN(nn.Layer):
             act=act)
 
         self.repconvs = nn.LayerList()
-        Conv = RepConv if self.arch == 'L' else BaseConv
+        Conv = RepConv if (self.arch == 'L' and not self.for_u6) else BaseConv
         for out_ch in self._out_channels:
             self.repconvs.append(Conv(int(out_ch // 2), out_ch, 3, 1, act=act))
 
@@ -337,7 +339,7 @@ class ELANFPNP6(nn.Layer):
             act=act)
 
         self.repconvs = nn.LayerList()
-        Conv = RepConv if self.arch == 'L' else BaseConv
+        Conv = BaseConv
         for i, _out_ch in enumerate(self._out_channels[:4]):
             self.repconvs.append(Conv(_out_ch // 2, _out_ch, 3, 1, act=act))
 
