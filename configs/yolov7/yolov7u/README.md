@@ -4,7 +4,7 @@
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
-| YOLOv7u-L     |  640     |    32      |   300e    |       -       |  52.1 | 68.8 |  43.59  | 130.10 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7u_l_300e_coco.pdparams) | [配置文件](./yolov7u_l_300e_coco.yml) |
+| YOLOv7u-L     |  640     |    32      |   300e    |       9.0      |  52.1 | 68.8 |  43.59  | 130.10 |[下载链接](https://paddledet.bj.bcebos.com/models/yolov7u_l_300e_coco.pdparams) | [配置文件](./yolov7u_l_300e_coco.yml) |
 
 
 **注意:**
