@@ -126,9 +126,9 @@ wget https://bj.bcebos.com/v1/paddledet/data/voc.zip
 
 ### Custom dataset
 
-1.For the annotation of custom dataset, please refer to [DetAnnoTools](https://github.com/PaddlePaddle/PaddleDetection/blob/release/2.5/docs/tutorials/data/DetAnnoTools_en.md);
+1.For the annotation of custom dataset, please refer to [DetAnnoTools](https://github.com/PaddlePaddle/PaddleDetection/blob/release/2.6/docs/tutorials/data/DetAnnoTools_en.md);
 
-2.For training preparation of custom dataset，please refer to [PrepareDataSet](https://github.com/PaddlePaddle/PaddleDetection/blob/release/2.5/docs/tutorials/data/PrepareDetDataSet_en.md).
+2.For training preparation of custom dataset，please refer to [PrepareDataSet](https://github.com/PaddlePaddle/PaddleDetection/blob/release/2.6/docs/tutorials/data/PrepareDetDataSet_en.md).
 
 
 ### Training

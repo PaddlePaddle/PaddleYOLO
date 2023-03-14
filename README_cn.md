@@ -2,7 +2,7 @@
 
 ## 简介
 
-**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`、`PP-YOLO`、`PP-YOLOv2`、`PP-YOLOE`、`PP-YOLOE+`、`YOLOX`、`YOLOv5`、`YOLOv6`、`YOLOv7`、`YOLOv8`、`RTMDet`等模型，COCO数据集模型库请参照 [ModelZoo](docs/MODEL_ZOO_cn.md) 和 [configs](configs/)。
+**PaddleYOLO**是基于[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)的YOLO系列模型库，**只包含YOLO系列模型的相关代码**，支持`YOLOv3`、`PP-YOLO`、`PP-YOLOv2`、`PP-YOLOE`、`PP-YOLOE+`、`YOLOX`、`YOLOv5`、`YOLOv6`、`YOLOv7`、`YOLOv8`、`YOLOv5u`、`YOLOv7u`、`RTMDet`等模型，COCO数据集模型库请参照 [ModelZoo](docs/MODEL_ZOO_cn.md) 和 [configs](configs/)。
 
 <div  align="center">
   <img src="https://user-images.githubusercontent.com/13104100/213197403-c8257486-9ac4-486f-a0d5-4e3fe27ca852.jpg" width="480"/>
@@ -20,7 +20,7 @@
 <details open>
 <summary>安装</summary>
 
-Clone 代码库和安装 [requirements.txt](https://github.com/PaddlePaddle/PaddleYOLO/blob/release/2.5/requirements.txt)，环境需要在一个
+Clone 代码库和安装 [requirements.txt](./requirements.txt)，环境需要在一个
 [**Python>=3.7.0**](https://www.python.org/) 下的环境，且需要安装
 [**PaddlePaddle>=2.3.2**](https://www.paddlepaddle.org.cn/install/)。
 
@@ -112,7 +112,7 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 <summary> [训练自定义数据集](https://github.com/PaddlePaddle/PaddleYOLO/issues/43) </summary>
 
 - 请参照[文档](docs/MODEL_ZOO_cn.md#自定义数据集)和[issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43)；
-- PaddleDetection团队提供了**基于PP-YOLOE的各种垂类检测模型**的配置文件和权重，用户也可以作为参考去使用自定义数据集。请参考 [PP-YOLOE application](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/ppyoloe/application)、[pphuman](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/pphuman)、[ppvehicle](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/ppvehicle)、[visdrone](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/visdrone) 和 [smalldet](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/smalldet)。
+- PaddleDetection团队提供了**基于PP-YOLOE的各种垂类检测模型**的配置文件和权重，用户也可以作为参考去使用自定义数据集。请参考 [PP-YOLOE application](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.6/configs/ppyoloe/application)、[pphuman](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.6/configs/pphuman)、[ppvehicle](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.6/configs/ppvehicle)、[visdrone](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.6/configs/visdrone) 和 [smalldet](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.6/configs/smalldet)。
 - PaddleDetection团队也提供了**VOC数据集的各种YOLO模型**的配置文件和权重，用户也可以作为参考去使用自定义数据集。请参考 [voc](configs/voc)。
 - 训练自定义数据集之前请先**确保加载了对应COCO权重作为预训练**，将配置文件中的`pretrain_weights: `设置为对应COCO模型训好的权重，一般会提示head分类层卷积的通道数没对应上，属于正常现象，是由于自定义数据集一般和COCO数据集种类数不一致；
 - YOLO检测模型建议**总`batch_size`至少大于`64`**去训练，如果资源不够请**换小模型**或**减小模型的输入尺度**，为了保障较高检测精度，**尽量不要尝试单卡训和总`batch_size`小于`64`训**；
@@ -121,6 +121,8 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 
 
 ## 更新日志
+
+* 【2023/03/13】支持[YOLOv5u](configs/yolov5/yolov5u)和[YOLOv7u](configs/yolov7/yolov7u)预测和部署；
 * 【2023/01/10】支持[YOLOv8](configs/yolov8)预测和部署；
 * 【2022/09/29】支持[RTMDet](configs/rtmdet)预测和部署；
 * 【2022/09/26】发布[PaddleYOLO](https://github.com/PaddlePaddle/PaddleYOLO)模型套件，请参照[ModelZoo](docs/MODEL_ZOO_cn.md)；
@@ -129,6 +131,12 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157793354-6e7f381a-0aa6-4bb7-845c-9acf2ecc05c3.png" width="20"/> 产品动态
+
+- 🔥 **2023.3.14：PaddleYOLO发布[release/2.6版本](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.6)**
+  - 💡 模型套件：
+    - 支持`YOLOv8`,`YOLOv5u`,`YOLOv7u`等YOLO模型预测和部署；
+    - 支持`Swin-Transformer`、`ViT`、`FocalNet`骨干网络高精度版`PP-YOLOE+`等模型；
+    - 支持`YOLOv8`在[FastDeploy](https://github.com/PaddlePaddle/FastDeploy/tree/develop/examples/vision/detection/paddledetection)中多硬件快速部署；
 
 - 🔥 **2022.9.26：PaddleYOLO发布[release/2.5版本](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5)**
   - 💡 模型套件：
