@@ -349,7 +349,8 @@ class YOLOv7Loss(nn.Layer):
 
             y = cls_preds_.sqrt_()
             pairwise_cls_loss = F.binary_cross_entropy_with_logits(
-                paddle.log(y / (1 - y)), gt_cls_per_image,
+                paddle.log(y / (1 - y) + 1e-8),
+                gt_cls_per_image,
                 reduction="none").sum(-1)
             del cls_preds_
 
@@ -543,7 +544,8 @@ class YOLOv7Loss(nn.Layer):
 
             y = cls_preds_.sqrt_()
             pairwise_cls_loss = F.binary_cross_entropy_with_logits(
-                paddle.log(y / (1 - y)), gt_cls_per_image,
+                paddle.log(y / (1 - y) + 1e-8),
+                gt_cls_per_image,
                 reduction="none").sum(-1)
             del cls_preds_
 
