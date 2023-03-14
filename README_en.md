@@ -2,7 +2,7 @@
 
 ## Introduction
 
-**PaddleYOLO** is a YOLO Series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`YOLOv8`,`RTMDet` and so on, see COCO dataset ModelZoo in [ModelZoo](docs/MODEL_ZOO_en.md) and [configs](configs/).
+**PaddleYOLO** is a YOLO series toolbox based on [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **only relevant codes of YOLO series models are included**. It supports `YOLOv3`,`PP-YOLO`,`PP-YOLOv2`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6`,`YOLOv7`,`YOLOv8`,`YOLOv5u`,`YOLOv7u`,`RTMDet` and so on, see COCO dataset ModelZoo in [ModelZoo](docs/MODEL_ZOO_en.md) and [configs](configs/).
 
 <div  align="center">
   <img src="https://user-images.githubusercontent.com/13104100/213197403-c8257486-9ac4-486f-a0d5-4e3fe27ca852.jpg" width="480"/>
@@ -19,7 +19,7 @@
 <details open>
 <summary>Install</summary>
 
-Clone repo and install [requirements.txt](https://github.com/PaddlePaddle/PaddleYOLO/blob/release/2.5/requirements.txt) in a
+Clone repo and install [requirements.txt](./requirements.txt) in a
 [**Python>=3.7.0**](https://www.python.org/) environment, including
 [**PaddlePaddle>=2.3.2**](https://www.paddlepaddle.org.cn/install/).
 
@@ -112,8 +112,8 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 <summary> [Training Custom dataset](https://github.com/PaddlePaddle/PaddleYOLO/issues/43) </summary>
 
 - Please refer to [doc](docs/MODEL_ZOO_en.md#CustomDataset) and [issue](https://github.com/PaddlePaddle/PaddleYOLO/issues/43).
-- PaddleDetection team provides various **feature detection models based on PP-YOLOE** , which can also be used as a reference to modify on your custom dataset. Please refer to [PP-YOLOE application](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/ppyoloe/application), [pphuman](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/pphuman), [ppvehicle](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/ppvehicle), [visdrone](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/visdrone) and [smalldet](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/smalldet).
-- PaddleDetection also provides **various YOLO models  for VOC dataset** , which can also be used as a reference to modify on your custom dataset. Please refer to [voc](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/voc).
+- PaddleDetection team provides various **feature detection models based on PP-YOLOE** , which can also be used as a reference to modify on your custom dataset. Please refer to [PP-YOLOE application](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.6/configs/ppyoloe/application), [pphuman](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.6/configs/pphuman), [ppvehicle](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.6/configs/ppvehicle), [visdrone](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.6/configs/visdrone) and [smalldet](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.6/configs/smalldet).
+- PaddleDetection also provides **various YOLO models  for VOC dataset** , which can also be used as a reference to modify on your custom dataset. Please refer to [voc](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.6/configs/voc).
 - Please **ensure the corresponding COCO trained weights are loaded as pre-train weights** at first. Set the `pretrain_weights: ` with corresponding COCO trained weights in the config file, and it will generally prompt that the number of channels convolved by the head classification layer does not correspond, which is a normal phenomenon, because the number of types of user-defined data sets is generally inconsistent with that of COCO data sets.
 - We recommend to use YOLO detection model **with a total `batch_size` at least greater than `64` to train**. If the resources are insufficient, please **use the smaller model** or **reduce the input size of the model**. To ensure high detection accuracy, **you'd better not try to using single GPU or total `batch_size` less than `64` for training**;
 
@@ -122,6 +122,7 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 
 ## Updates
 
+* 【2023/03/13】Support [YOLOv5u](configs/yolov5/yolov5u) and [YOLOv7u](configs/yolov7/yolov7u) inference and deploy;
 * 【2023/01/10】Support [YOLOv8](configs/yolov8) inference and deploy;
 * 【2022/09/29】Support [RTMDet](configs/rtmdet) inference and deploy;
 * 【2022/09/26】Release [PaddleYOLO](https://github.com/PaddlePaddle/PaddleYOLO), see [ModelZoo](docs/MODEL_ZOO_en.md);
@@ -131,11 +132,17 @@ paddle2onnx --model_dir output_inference/${job_name} --model_filename model.pdmo
 
 ## <img src="https://user-images.githubusercontent.com/48054808/157793354-6e7f381a-0aa6-4bb7-845c-9acf2ecc05c3.png" width="20"/> Product Update
 
-- 🔥 **2022.9.26：Release PaddleYOLO[release/2.5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5)**
+- 🔥 **2023.3.14：Release PaddleYOLO [release/2.6](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.6)**
+  - 💡 Model kit：
+    - Support `YOLOv8`,`YOLOv5u`,`YOLOv7u` inference and deploy.
+    - Support `Swin-Transformer`、`ViT`、`FocalNet` backbone to get high-precision version of `PP-YOLOE+`.
+    - Support `YOLOv8` in [FastDeploy](https://github.com/PaddlePaddle/FastDeploy/tree/develop/examples/vision/detection/paddledetection).
+
+- 🔥 **2022.9.26：Release PaddleYOLO [release/2.5](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5)**
   - 💡 Model kit：
     - Release [PaddleYOLO](https://github.com/PaddlePaddle/PaddleYOLO): support `YOLOv3`,`PP-YOLOE`,`PP-YOLOE+`,`YOLOX`,`YOLOv5`,`YOLOv6` and `YOLOv7`; support using `ConvNeXt` backbone to get high-precision version of `PP-YOLOE`,`YOLOX` and `YOLOv5`; support PaddleSlim accelerated quantitative training `PP-YOLOE`,`YOLOv5`,`YOLOv6` and `YOLOv7`.
 
-- 🔥 **2022.8.26：PaddleDetection releases[release/2.5 version](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5)**
+- 🔥 **2022.8.26：PaddleDetection [release/2.5 version](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5)**
 
   - 🗳 Model features：
 

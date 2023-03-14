@@ -103,7 +103,7 @@ AI Studio 官方教程案例请参考[基于PP-YOLOE-SOD的无人机航拍图像
 - DOTA水平框和Xview数据集均是**切图后训练**，AP指标为**切图后的子图val上的指标**。
 - VisDrone-DET数据集请参照[visdrone](./visdrone)，**可使用原图训练，也可使用切图后训练**，这上面表格中的指标均是使用VisDrone-DET的val子集做验证而未使用test_dev子集。
 - PP-YOLOE模型训练过程中使用8 GPUs进行混合精度训练，如果**GPU卡数**或者**batch size**发生了改变，你需要按照公式 **lr<sub>new</sub> = lr<sub>default</sub> * (batch_size<sub>new</sub> * GPU_number<sub>new</sub>) / (batch_size<sub>default</sub> * GPU_number<sub>default</sub>)** 调整学习率。
-- 常用训练验证部署等步骤请参考[ppyoloe](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/ppyoloe#getting-start)。
+- 常用训练验证部署等步骤请参考[ppyoloe](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.6/configs/ppyoloe#getting-start)。
 - 自动切图和拼图的推理预测需添加设置`--slice_infer`，具体见下文[模型库使用说明](#模型库使用说明)中的[预测](#预测)和[部署](#部署)。
 - 自动切图和拼图过程，参照[2.3 子图拼图评估](#评估)。
 
