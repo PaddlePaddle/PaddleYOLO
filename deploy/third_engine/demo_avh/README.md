@@ -104,4 +104,4 @@ python3 ./convert_image.py path/to/image
 
 Model description
 -----------------
-In this demo, the model we used is based on [PP-PicoDet](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.5/configs/picodet). Because of the excellent performance, PP-PicoDet are very suitable for deployment on mobile or CPU. And it is released by [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection).
+In this demo, the model we used is based on [PP-PicoDet](https://github.com/PaddlePaddle/PaddleDetection/tree/release/2.6/configs/picodet). Because of the excellent performance, PP-PicoDet are very suitable for deployment on mobile or CPU. And it is released by [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection).

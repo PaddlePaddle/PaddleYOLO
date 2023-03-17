@@ -18,11 +18,15 @@ from . import mobilenet_v1
 from . import mobilenet_v3
 from . import cspresnet
 from . import csp_darknet
-from . import convnext
 from . import yolov6_efficientrep
 from . import yolov7_elannet
 from . import cspnext
 from . import yolov8_csp_darknet
+from . import convnext
+from . import focalnet
+from . import swin_transformer
+from . import vision_transformer
+from . import vit_mae
 
 from .resnet import *
 from .darknet import *
@@ -30,8 +34,12 @@ from .mobilenet_v1 import *
 from .mobilenet_v3 import *
 from .cspresnet import *
 from .csp_darknet import *
-from .convnext import *
 from .yolov6_efficientrep import *
 from .yolov7_elannet import *
 from .cspnext import *
 from .yolov8_csp_darknet import *
+from .convnext import *
+from .focalnet import *
+from .swin_transformer import *
+from .vision_transformer import *
+from .vit_mae import *

@@ -2,9 +2,10 @@
 
 ## 内容
 - [模型库](#模型库)
-- [使用说明](#使用说明)
-- [速度测试](#速度测试)
+- [使用教程](#使用教程)
+- [FastDeploy多硬件快速部署](#FastDeploy多硬件快速部署)
 - [引用](#引用)
+
 
 ## 模型库
 
@@ -29,18 +30,26 @@
   - YOLOv8模型暂未支持完全训练，mAP为部署权重在COCO val2017上的`mAP(IoU=0.5:0.95)`结果，且评估未使用`multi_label`等trick；
   - YOLOv8模型训练使用COCO train2017作为训练集，Box AP为在COCO val2017上的`mAP(IoU=0.5:0.95)`结果；
   - YOLOv8模型训练过程中默认使用8 GPUs进行混合精度训练，默认lr为0.01为8卡总batch_size的设置，如果**GPU卡数**或者每卡**batch size**发生改动，也不需要改动学习率，但为了保证高精度最好使用**总batch size大于64**的配置去训练；
-  - TRT-FP16-Latency(ms)模型推理耗时为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用**单卡Tesla T4 GPU**，batch size=1，测试环境为**paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**，具体请参考[速度测试](#速度测试)。
+  - TRT-FP16-Latency(ms)模型推理耗时为TensorRT-FP16下测试的耗时，不包含数据预处理和模型输出后处理(NMS)的耗时。测试采用**单卡Tesla T4 GPU**，batch size=1，测试环境为**paddlepaddle-2.3.2**, **CUDA 11.2**, **CUDNN 8.2**, **GCC-8.2**, **TensorRT 8.0.3.4**。
   - 如果你设置了`--run_benchmark=True`, 你首先需要安装以下依赖`pip install pynvml psutil GPUtil`。
 
 ### 部署模型
 
-| 网络模型     | 输入尺寸 | 导出后的权重(w/o NMS) | ONNX(w/o NMS)  |
-| :-------- | :--------: | :---------------------: | :----------------: |
-| YOLOv8-n |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_n_500e_coco_wo_nms.onnx) |
-| YOLOv8-s |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_s_500e_coco_wo_nms.onnx) |
-| YOLOv8-m |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_m_500e_coco_wo_nms.onnx) |
-| YOLOv8-l |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_l_500e_coco_wo_nms.onnx) |
-| YOLOv8-x |  640   | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_500e_coco_w_nms.zip) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_500e_coco_wo_nms.zip) | [( w/ nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_500e_coco_w_nms.onnx) &#124; [( w/o nms)](https://paddledet.bj.bcebos.com/deploy/yoloseries/yolov8/yolov8_x_500e_coco_wo_nms.onnx) |
+| 网络模型   | 输入尺寸 | 导出后的权重(带nms) | 导出后的权重(exclude_nms)| ONNX(exclude_post_process)  |
+| :-------- | :----: | :---------------: | :--------------------: | :-------------------------: |
+| YOLOv8-n |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_n_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_n_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_n_500e_coco.onnx) |
+| YOLOv8-s |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_s_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_s_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_s_500e_coco.onnx) |
+| YOLOv8-m |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_m_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_m_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_m_500e_coco.onnx) |
+| YOLOv8-l |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_l_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_l_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_l_500e_coco.onnx) |
+| YOLOv8-x |  640   | [(w_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_x_500e_coco_w_nms.zip) | [(wo_nms)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_x_500e_coco_wo_nms.zip) | [(onnx)](https://paddledet.bj.bcebos.com/deploy/paddleyolo/yolov8/yolov8_x_500e_coco.onnx) |
+
+**注意:**
+ - 带nms的导出权重为普通导出方式，加trt表示用于trt加速，对NMS和silu激活函数提速明显。运行命令为：
+  ```CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} trt=True```
+ - `exclude_nms`导出的权重表示去除NMS导出，返回2个Tensor，是缩放回原图后的坐标和分类置信度。运行命令为：
+  ```CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} exclude_nms=True trt=True```
+  - `exclude_post_process`导出表示去除后处理导出，返回和YOLOv5导出ONNX时相同格式的concat后的1个Tensor，是未缩放回原图的坐标和分类置信度。运行命令为：
+  ```CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} exclude_post_process=True trt=True ```
 
 
 ## 使用教程
@@ -150,74 +159,30 @@ paddle2onnx --model_dir output_inference/yolov8_s_500e_coco --model_filename mod
 **注意：** ONNX模型目前只支持batch_size=1
 
 
-### 5.推理部署
-YOLOv8可以使用以下方式进行部署：
-  - Paddle Inference [Python](../../deploy/python) & [C++](../../deploy/cpp)
-  - [Paddle-TensorRT](../../deploy/TENSOR_RT.md)
-  - [PaddleServing](https://github.com/PaddlePaddle/Serving)
-  - [PaddleSlim模型量化](../slim)
+## FastDeploy多硬件快速部署
 
-运行以下命令导出模型
+FastDeploy是飞桨推出的统一部署工具，支持云边端部署。目前在YOLO系列支持的部署能力如下所示。具体部署示例，可以前往[FastDeploy仓库](https://github.com/PaddlePaddle/FastDeploy)使用。
 
-```bash
-python tools/export_model.py -c configs/yolov8/yolov8_s_500e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams trt=True
-```
+|                                                                                                                                | [YOLOv5](https://github.com/PaddlePaddle/FastDeploy/tree/develop/examples/vision/detection/paddledetection) | [YOLOv6](https://github.com/PaddlePaddle/FastDeploy/tree/develop/examples/vision/detection/paddledetection) | [YOLOv7](https://github.com/PaddlePaddle/FastDeploy/tree/develop/examples/vision/detection/paddledetection) | [YOLOv8](https://github.com/PaddlePaddle/FastDeploy/tree/develop/examples/vision/detection/paddledetection) | [PP-YOLOE+](https://github.com/PaddlePaddle/FastDeploy/tree/develop/examples/vision/detection/paddledetection) | 部署特色                       |
+| ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| [Intel CPU](https://github.com/PaddlePaddle/FastDeploy/blob/develop/docs/cn/build_and_install/download_prebuilt_libraries.md)  | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                             | 集成PaddleSlim一键压缩压缩，实现极致性能             |
+| [NVIDIA GPU](https://github.com/PaddlePaddle/FastDeploy/blob/develop/docs/cn/build_and_install/download_prebuilt_libraries.md) | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                             | 集成PaddleSlim一键压缩工具、CUDA预处理加速，实现极致性能   |
+| [飞腾 CPU]()                                                                                                                     | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                             | X86 CPU与ARM CPU无缝切换                   |
+| [昆仑芯 R200*](https://github.com/PaddlePaddle/FastDeploy/blob/develop/docs/cn/build_and_install/kunlunxin.md)                    | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                             | 无缝部署Paddle模型                          |
+| [昇腾310*](https://github.com/PaddlePaddle/FastDeploy/blob/develop/docs/cn/build_and_install/kunlunxin.md)                       | 支持                                                                                                          | 即将支持                                                                                                        | 即将支持                                                                                                        | 即将支持                                                                                                        | 支持                                                                                                             | 无缝部署Paddle模型                          |
+| [算能SC7-FP300*](https://github.com/PaddlePaddle/FastDeploy/blob/develop/docs/cn/build_and_install/sophgo.md)                    | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                             | 充分发挥硬件工具链特性，实现模型快速部署                  |
+| [Jetson](https://github.com/PaddlePaddle/FastDeploy/blob/develop/docs/cn/build_and_install/jetson.md)                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                             | 集成PaddleSlim一键压缩工具、CUDA预处理加速，实现极致性能   |
+| [ARM CPU](https://github.com/PaddlePaddle/FastDeploy/blob/develop/docs/cn/build_and_install/download_prebuilt_libraries.md)    | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                             | 集成PaddleSlim一键压缩工具、预处理加速库FlyCV，实现极致性能 |
+| [RK3588*](https://github.com/PaddlePaddle/FastDeploy/blob/develop/docs/cn/build_and_install/rknpu2.md)                         | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                          | 支持                                                                                                             | 充分发挥硬件工具链特性，实现模型快速部署                  |
+| [RV1126*](https://github.com/PaddlePaddle/FastDeploy/blob/develop/docs/cn/build_and_install/rv1126.md)                         | 支持                                                                                                          | 暂不支持                                                                                                        | 暂不支持                                                                                                        | 暂不支持                                                                                                        | 支持                                                                                                             | 联合全量化实现模型端到端的优化                       |
+| [服务化部署](https://github.com/PaddlePaddle/FastDeploy/tree/develop/serving)                                                       | 支持                                                                                                          | 暂不支持                                                                                                        | 暂不支持                                                                                                        | 暂不支持                                                                                                        | 支持                                                                                                             | 实现企业级高并发需求                            |
+| [视频流部署](https://github.com/PaddlePaddle/FastDeploy/tree/develop/streamer)                                                      | 暂不支持                                                                                                        | 暂不支持                                                                                                        | 暂不支持                                                                                                        | 暂不支持                                                                                                        | 支持                                                                                                             | 调用硬解码核，实现数据零拷贝，充分利用硬件资源               |
 
-**注意：**
-- trt=True表示**使用Paddle Inference且使用TensorRT**进行测速，速度会更快，默认不加即为False，表示**使用Paddle Inference但不使用TensorRT**进行测速。
-- 如果是使用Paddle Inference在TensorRT FP16模式下部署，需要参考[Paddle Inference文档](https://www.paddlepaddle.org.cn/inference/master/user_guides/download_lib.html#python)，下载并安装与你的CUDA, CUDNN和TensorRT相应的wheel包。
+备注：
 
-#### 5.1.Python部署
-`deploy/python/infer.py`使用上述导出后的Paddle Inference模型用于推理和benchnark测速，如果设置了`--run_benchmark=True`, 首先需要安装以下依赖`pip install pynvml psutil GPUtil`。
+*表示：FastDeploy目前在该型号硬件上测试。通常同类型硬件上使用的是相同的软件栈，该部署能力可以延伸到同软件架栈的硬件。譬如RK3588与RK3566、RK3568相同的软件栈。
 
-```bash
-# Python部署推理单张图片
-python deploy/python/infer.py --model_dir=output_inference/yolov8_s_500e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu
-
-# 推理文件夹下的所有图片
-python deploy/python/infer.py --model_dir=output_inference/yolov8_s_500e_coco --image_dir=demo/ --device=gpu
-```
-
-#### 5.2. C++部署
-`deploy/cpp/build/main`使用上述导出后的Paddle Inference模型用于C++推理部署, 首先按照[docs](../../deploy/cpp/docs)编译安装环境。
-```bash
-# C++部署推理单张图片
-./deploy/cpp/build/main --model_dir=output_inference/yolov8_s_500e_coco/ --image_file=demo/000000014439_640x640.jpg --run_mode=paddle --device=GPU --threshold=0.5 --output_dir=cpp_infer_output/yolov8_s_500e_coco
-```
-
-
-## 速度测试
-
-为了公平起见，在[模型库](#模型库)中的速度测试结果均为不包含数据预处理和模型输出后处理(NMS)的数据(与[YOLOv4(AlexyAB)](https://github.com/AlexeyAB/darknet)测试方法一致)，需要在导出模型时指定`-o exclude_nms=True`。测速需设置`--run_benchmark=True`, 首先需要安装以下依赖`pip install pynvml psutil GPUtil`。
-
-**使用Paddle Inference但不使用TensorRT**进行测速，执行以下命令：
-
-```bash
-# 导出模型
-python tools/export_model.py -c configs/yolov8/yolov8_s_500e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams exclude_nms=True
-
-# 速度测试，使用run_benchmark=True
-python deploy/python/infer.py --model_dir=output_inference/yolov8_s_500e_coco --image_file=demo/000000014439_640x640.jpg --run_mode=paddle --device=gpu --run_benchmark=True
-```
-
-**使用Paddle Inference且使用TensorRT**进行测速，执行以下命令：
-
-```bash
-# 导出模型，使用trt=True
-python tools/export_model.py -c configs/yolov8/yolov8_s_500e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov8_s_500e_coco.pdparams exclude_nms=True trt=True
-
-# 速度测试，使用run_benchmark=True
-python deploy/python/infer.py --model_dir=output_inference/yolov8_s_500e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu --run_benchmark=True
-
-# tensorRT-FP32测速
-python deploy/python/infer.py --model_dir=output_inference/yolov8_s_500e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu --run_benchmark=True --run_mode=trt_fp32
-
-# tensorRT-FP16测速
-python deploy/python/infer.py --model_dir=output_inference/yolov8_s_500e_coco --image_file=demo/000000014439_640x640.jpg --device=gpu --run_benchmark=True --run_mode=trt_fp16
-```
-**注意:**
-- 导出模型时指定`-o exclude_nms=True`仅作为测速时用，这样导出的模型其推理部署预测的结果不是最终检出框的结果。
-- [模型库](#模型库)中的速度测试结果为tensorRT-FP16测速后的最快速度，为不包含数据预处理和模型输出后处理(NMS)的耗时。
+「硬件列-纵轴」链接到部署预编译包安装或部署示例，「横轴」跳转到具体部署示例。
 
 
 ## 引用

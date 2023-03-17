@@ -3,14 +3,14 @@ English | [简体中文](INSTALL_cn.md)
 # Installation
 
 
-This document covers how to install PaddleDetection and its dependencies
+This document covers how to install PaddleYOLO and its dependencies
 (including PaddlePaddle), together with COCO and Pascal VOC dataset.
 
-For general information about PaddleDetection, please see [README.md](https://github.com/PaddlePaddle/PaddleDetection/tree/develop).
+For general information about PaddleYOLO, please see [README.md](https://github.com/PaddlePaddle/PaddleYOLO/tree/develop).
 
 ## Requirements:
 
-- PaddlePaddle 2.2
+- PaddlePaddle 2.3.2
 - OS 64 bit
 - Python 3(3.5.1+/3.6/3.7/3.8/3.9)，64 bit
 - pip/pip3(9.0.1+), 64 bit
@@ -18,22 +18,13 @@ For general information about PaddleDetection, please see [README.md](https://gi
 - cuDNN >= 7.6
 
 
-Dependency of PaddleDetection and PaddlePaddle:
+Dependency of PaddleYOLO and PaddlePaddle:
 
-| PaddleDetection version | PaddlePaddle version  |    tips    |
+| PaddleYOLO version | PaddlePaddle version  |    tips    |
 | :----------------: | :---------------: | :-------: |
-|    develop           |       >= 2.2.2   |     Dygraph mode is set as default    |
+|    develop           |       >= 2.3.2   |     Dygraph mode is set as default    |
+|    release/2.6       |       >= 2.3.2   |     Dygraph mode is set as default    |
 |    release/2.5       |       >= 2.2.2   |     Dygraph mode is set as default    |
-|    release/2.4       |       >= 2.2.2   |     Dygraph mode is set as default    |
-|    release/2.3       |       >= 2.2.0rc |     Dygraph mode is set as default    |
-|    release/2.2       |       >= 2.1.2   |     Dygraph mode is set as default    |
-|    release/2.1       |       >= 2.1.0   |     Dygraph mode is set as default    |
-|    release/2.0       |       >= 2.0.1    |     Dygraph mode is set as default    |
-|    release/2.0-rc    |       >= 2.0.1    |     --    |
-|    release/0.5       |       >= 1.8.4    |  Cascade R-CNN and SOLOv2 depends on 2.0.0.rc |
-|    release/0.4       |       >= 1.8.4    |  PP-YOLO depends on 1.8.4 |
-|    release/0.3       |        >=1.7      |     --    |
-
 
 ## Instruction
 
@@ -42,10 +33,10 @@ Dependency of PaddleDetection and PaddlePaddle:
 ```
 
 # CUDA10.2
-python -m pip install paddlepaddle-gpu==2.2.2 -i https://mirror.baidu.com/pypi/simple
+python -m pip install paddlepaddle-gpu==2.3.2 -i https://mirror.baidu.com/pypi/simple
 
 # CPU
-python -m pip install paddlepaddle==2.2.2 -i https://mirror.baidu.com/pypi/simple
+python -m pip install paddlepaddle==2.3.2 -i https://mirror.baidu.com/pypi/simple
 ```
 
 - For more CUDA version or environment to quick install, please refer to the [PaddlePaddle Quick Installation document](https://www.paddlepaddle.org.cn/install/quick)

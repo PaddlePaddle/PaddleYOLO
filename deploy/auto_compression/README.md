@@ -113,7 +113,7 @@ python tools/export_model.py \
         trt=True \
 ```
 
-YOLOv8-s模型，包含NMS，具体可参考[YOLOv8模型文档](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.5/configs/yolov8), 然后执行：
+YOLOv8-s模型，包含NMS，具体可参考[YOLOv8模型文档](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.6/configs/yolov8), 然后执行：
 ```shell
 python tools/export_model.py \
         -c configs/yolov8/yolov8_s_500e_coco.yml \
