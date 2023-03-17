@@ -327,11 +327,13 @@ class YOLOv7Loss(nn.Layer):
             all_gi = np.concatenate(all_gi, 0)
             all_anch = np.concatenate(all_anch, 0)
 
-            pairwise_ious = box_iou(txyxy, pxyxys)  # tensor op
+            #pairwise_ious = box_iou(txyxy, pxyxys)  # tensor op
+            _,h,w = batch_images[batch_idx].shape
+            pairwise_ious = box_iou_normalization(txyxy, pxyxys,h,w)  # tensor op
             # [N, 4] [M, 4] to get [N, M] ious
 
-            pairwise_iou_loss = -paddle.log(pairwise_ious + 1e-8)
-
+            pairwise_iou_loss = -paddle.log(pairwise_ious + 1e-5)
+           
             min_topk = 10
             topk_ious, _ = paddle.topk(pairwise_ious,
                                        min(min_topk, pairwise_ious.shape[1]), 1)
@@ -349,8 +351,7 @@ class YOLOv7Loss(nn.Layer):
 
             y = cls_preds_.sqrt_()
             pairwise_cls_loss = F.binary_cross_entropy_with_logits(
-                paddle.log(y / (1 - y) + 1e-8),
-                gt_cls_per_image,
+                paddle.log(y / (1 - y)+1e-5), gt_cls_per_image,
                 reduction="none").sum(-1)
             del cls_preds_
 
@@ -544,8 +545,7 @@ class YOLOv7Loss(nn.Layer):
 
             y = cls_preds_.sqrt_()
             pairwise_cls_loss = F.binary_cross_entropy_with_logits(
-                paddle.log(y / (1 - y) + 1e-8),
-                gt_cls_per_image,
+                paddle.log(y / (1 - y) + 1e-5), gt_cls_per_image,
                 reduction="none").sum(-1)
             del cls_preds_
 
@@ -671,4 +671,28 @@ def box_iou(box1, box2):
     area2 = box_area(box2.T)
     inter = (paddle.minimum(box1[:, None, 2:], box2[:, 2:]) - paddle.maximum(
         box1[:, None, :2], box2[:, :2])).clip(0).prod(2)
+    return inter / (area1[:, None] + area2 - inter)
+
+def box_iou_normalization(box1, box2,h,w):
+    """
+    [N, 4] [M, 4] to get [N, M] ious, boxes in [x1, y1, x2, y2] format. paddle Tensor op
+     """
+
+    def box_area(box):
+        return (box[2] - box[0])/h * (box[3] - box[1])/w
+
+    area1 = box_area(box1.T)
+    area2 = box_area(box2.T)
+
+    xy_max = paddle.minimum(
+        paddle.unsqueeze(box1, 1)[:, :, 2:], box2[:, 2:])
+    xy_min = paddle.maximum(
+        paddle.unsqueeze(box1, 1)[:, :, :2], box2[:, :2])
+    width_height = xy_max - xy_min
+
+    width_height = width_height.clip(min=0)
+    width_height[:,:,0] = width_height[:,:,0]/h
+    width_height[:,:,1] = width_height[:,:,1]/w
+    inter = width_height.prod(2)
+   
     return inter / (area1[:, None] + area2 - inter)
