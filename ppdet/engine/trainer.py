@@ -153,6 +153,7 @@ class Trainer(object):
             if self.cfg.get('unstructured_prune'):
                 self.pruner = create('UnstructuredPruner')(self.model,
                                                            steps_per_epoch)
+        
         if self.use_amp and self.amp_level == 'O2':
             self.model, self.optimizer = paddle.amp.decorate(
                 models=self.model,
@@ -322,14 +323,17 @@ class Trainer(object):
         if validate:
             self.cfg['EvalDataset'] = self.cfg.EvalDataset = create(
                 "EvalDataset")()
-
+       
         model = self.model
         if self.cfg.get('to_static', False):
             model = apply_to_static(self.cfg, model)
+       
+
         sync_bn = (
             getattr(self.cfg, 'norm_type', None) == 'sync_bn' and
             (self.cfg.use_gpu or self.cfg.use_npu or self.cfg.use_mlu) and
             self._nranks > 1)
+
         if sync_bn:
             model = paddle.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
@@ -373,7 +377,7 @@ class Trainer(object):
 
         use_fused_allreduce_gradients = self.cfg.get(
             'use_fused_allreduce_gradients', False)
-
+       
         for epoch_id in range(self.start_epoch, self.cfg.epoch):
             self.status['mode'] = 'train'
             self.status['epoch_id'] = epoch_id
@@ -402,7 +406,7 @@ class Trainer(object):
                 self._compose_callback.on_step_begin(self.status)
                 data['epoch_id'] = epoch_id
                 data['num_gpus'] = self._nranks
-
+                
                 if self.use_amp:
                     with paddle.amp.auto_cast(
                             enable=self.cfg.use_gpu or self.cfg.use_npu or
@@ -437,7 +441,7 @@ class Trainer(object):
                     self.pruner.step()
                 self.optimizer.clear_grad()
                 self.status['learning_rate'] = curr_lr
-
+               
                 if self._nranks < 2 or self._local_rank == 0:
                     self.status['training_staus'].update(outputs)
 

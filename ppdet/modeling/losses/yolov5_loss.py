@@ -79,7 +79,7 @@ class YOLOv5Loss(nn.Layer):
         # targets['gt_bbox'] [bs, max_gt_nums, 4]
         # targets['pad_gt_mask'] [bs, max_gt_nums, 1]
         gt_nums = targets['pad_gt_mask'].sum(1).squeeze(-1).numpy()
-        nt = int(sum(gt_nums))
+        nt = gt_nums.sum().astype('int32')
         anchors = anchors.numpy()
         na = anchors.shape[1]  # not len(anchors)
         tcls, tbox, indices, anch = [], [], [], []
@@ -90,7 +90,7 @@ class YOLOv5Loss(nn.Layer):
         batch_size = outputs[0].shape[0]
         gt_labels = []
         for idx in range(batch_size):
-            gt_num = int(gt_nums[idx])
+            gt_num = gt_nums[idx].astype('int32')
             if gt_num == 0:
                 continue
             gt_bbox = targets['gt_bbox'][idx][:gt_num].numpy()
@@ -177,8 +177,13 @@ class YOLOv5Loss(nn.Layer):
 
             # Classification
             if self.num_classes > 1:  # cls loss (only if multiple classes)
+                # t = paddle.full_like(ps[:, 5:], self.cls_neg_label)
+                # t[range(n), t_cls] = self.cls_pos_label
+                # loss_cls = self.BCEcls(ps[:, 5:], t)
+
                 t = paddle.full_like(ps[:, 5:], self.cls_neg_label)
-                t[range(n), t_cls] = self.cls_pos_label
+                for i in range(n):
+                    t[i, t_cls[i]] = self.cls_pos_label
                 loss_cls = self.BCEcls(ps[:, 5:], t)
 
         obji = self.BCEobj(pi[:, :, :, :, 4], tobj)  # [bs, 3, h, w]
@@ -192,8 +197,9 @@ class YOLOv5Loss(nn.Layer):
 
     def forward(self, inputs, targets, anchors):
         yolo_losses = dict()
-        tcls, tbox, indices, anch = self.build_targets(inputs, targets, anchors)
-
+        #tcls, tbox, indices, anch = self.build_targets(inputs, targets, anchors)
+        tcls, tbox, indices, anch = self.build_targets_paddle(inputs, targets, anchors)
+        
         for i, (p_det, balance) in enumerate(zip(inputs, self.balance)):
             t_cls = tcls[i]
             t_box = tbox[i]
@@ -201,9 +207,9 @@ class YOLOv5Loss(nn.Layer):
             t_indices = indices[i]
 
             bs, ch, h, w = p_det.shape
-            pi = p_det.reshape((bs, self.na, -1, h, w)).transpose(
+            pi = p_det.reshape((bs, self.na, int(ch/self.na), h, w)).transpose(
                 (0, 1, 3, 4, 2))
-
+            
             yolo_loss = self.yolov5_loss(pi, t_cls, t_box, t_indices, t_anchor,
                                          balance)
 
@@ -216,8 +222,89 @@ class YOLOv5Loss(nn.Layer):
         loss = 0
         for k, v in yolo_losses.items():
             loss += v
-
+  
         batch_size = inputs[0].shape[0]
         num_gpus = targets.get('num_gpus', 8)
         yolo_losses['loss'] = loss * batch_size * num_gpus
         return yolo_losses
+
+
+    def build_targets_paddle(self, outputs, targets, anchors):
+        # targets['gt_class'] [bs, max_gt_nums, 1]
+        # targets['gt_bbox'] [bs, max_gt_nums, 4]
+        # targets['pad_gt_mask'] [bs, max_gt_nums, 1]
+        gt_nums = targets['pad_gt_mask'].sum(1).squeeze(-1)
+        nt = gt_nums.sum().astype('int32')
+        anchors = anchors
+        na = anchors.shape[1]  # not len(anchors)
+        tcls, tbox, indices, anch = [], [], [], []
+
+        gain = paddle.ones([7], dtype=np.float32)  # normalized to gridspace gain
+        ai = paddle.tile(paddle.arange(na,dtype=np.float32).reshape([na, 1]), [1, nt])
+
+        batch_size = outputs[0].shape[0]
+        gt_labels = []
+        for idx in range(batch_size):
+            gt_num = gt_nums[idx].astype("int32")
+            if gt_num == 0:
+                continue
+            gt_bbox = targets['gt_bbox'][idx][:gt_num]
+            gt_class = targets['gt_class'][idx][:gt_num] * 1.0
+            img_idx = paddle.repeat_interleave(paddle.to_tensor(idx),gt_num,axis=0)[None,:].astype(paddle.float32).T
+            gt_labels.append(paddle.concat((img_idx, gt_class, gt_bbox),axis=-1))
+        if (len(gt_labels)):
+            gt_labels = paddle.concat(gt_labels)
+        else:
+            gt_labels = paddle.zeros([0, 6])
+
+        targets_labels = paddle.concat((paddle.tile(
+            paddle.unsqueeze(gt_labels, 0), [na, 1, 1]), ai[:, :, None]), 2)
+        g = self.bias  # 0.5
+
+        for i in range(len(anchors)):
+            anchor = anchors[i] / self.downsample_ratios[i]
+            gain[2:6] = paddle.to_tensor(
+                outputs[i].shape, dtype=paddle.float32)[[3, 2, 3, 2]]  # xyxy gain
+
+            # Match targets_labels to
+            t = targets_labels * gain
+            if nt:
+                # Matches
+                r = t[:, :, 4:6] / anchor[:, None]
+                j = paddle.maximum(r, 1 / r).max(2) < self.anchor_t
+                t = paddle.flatten(t,0,1)
+                j = paddle.flatten(j.astype(paddle.int32),0,1).astype(paddle.bool)
+                t = t[j]  # filter
+            
+
+                # Offsets
+                gxy = t[:, 2:4]  # grid xy
+                gxi = gain[[2, 3]] - gxy  # inverse
+                j, k = ((gxy % 1 < g) & (gxy > 1)).T.astype(paddle.int64)
+                l, m = ((gxi % 1 < g) & (gxi > 1)).T.astype(paddle.int64)
+                j = paddle.flatten(paddle.stack((paddle.ones_like(j), j, k, l, m)),0,1).astype(paddle.bool)
+                t = paddle.flatten(paddle.tile(t, [5, 1, 1]),0,1)
+                t = t[j]
+                offsets = paddle.zeros_like(gxy)[None,:] + paddle.to_tensor(self.off)[:,None]
+                offsets = paddle.flatten(offsets,0,1)[j]
+            else:
+                t = targets_labels[0]
+                offsets = 0
+
+            # Define
+            b, c = t[:, :2].astype(paddle.int64).T  # image, class
+            gxy = t[:, 2:4]  # grid xy
+            gwh = t[:, 4:6]  # grid wh
+            gij = (gxy - offsets).astype(paddle.int64)
+            gi, gj = gij.T  # grid xy indices
+          
+            # Append
+            a = t[:, 6].astype(paddle.int64)  # anchor indices
+            gj, gi = gj.clip(0, gain[3] - 1), gi.clip(0, gain[2] - 1)
+            indices.append(
+                (b, a, gj.astype(paddle.int64), gi.astype(paddle.int64)))
+            tbox.append(
+                    paddle.concat((gxy - gij, gwh), 1).astype(paddle.float32))
+            anch.append(anchor[a])
+            tcls.append(c)
+        return tcls, tbox, indices, anch
