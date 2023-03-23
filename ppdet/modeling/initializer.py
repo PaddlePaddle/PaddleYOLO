@@ -21,6 +21,7 @@ import numpy as np
 
 import paddle
 import paddle.nn as nn
+from paddle.incubate.operators.resnet_unit import ResNetUnit
 
 __all__ = [
     'uniform_',
@@ -34,6 +35,7 @@ __all__ = [
     'kaiming_normal_',
     'linear_init_',
     'conv_init_',
+    'resnet_unit_init_',
     'reset_initialized_parameter',
 ]
 
@@ -276,6 +278,12 @@ def conv_init_(module):
     if module.bias is not None:
         uniform_(module.bias, -bound, bound)
 
+def resnet_unit_init_(module):
+    bound = 1 / np.sqrt(np.prod(module.filter_x.shape[1:]))
+    uniform_(module.filter_x, -bound, bound)
+    if module.bias:
+        print("resnet_unit conv bias is not nullptr !!")
+
 
 def bias_init_with_prob(prior_prob=0.01):
     """initialize conv/fc bias value according to a given probability value."""
@@ -316,3 +324,16 @@ def reset_initialized_parameter(model, include_self=True):
             _no_grad_fill_(m.weight, 1.)
             if hasattr(m, 'bias') and getattr(m, 'bias') is not None:
                 _no_grad_fill_(m.bias, 0)
+
+        elif isinstance(m, ResNetUnit):
+            ## reset conv
+            k = float(m._groups) / (m.filter_x.shape[1] * m._kernel_size[0] *
+                                    m._kernel_size[1])
+            k = math.sqrt(k)
+            _no_grad_uniform_(m.filter_x, -k, k)
+            if hasattr(m, 'bias') and getattr(m, 'bias') is not None:
+                print("-------- ResNetUnit has bias !! --------")
+            ## reset bn
+            _no_grad_fill_(m.scale_x, 1.)
+            if hasattr(m, 'bias_x') and getattr(m, 'bias_x') is not None:
+                _no_grad_fill_(m.bias_x, 0)

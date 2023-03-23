@@ -49,6 +49,7 @@ from ppdet.modeling.initializer import reset_initialized_parameter
 from ppdet.modeling.post_process import multiclass_nms
 from .callbacks import Callback, ComposeCallback, LogPrinter, Checkpointer, VisualDLWriter, WandbCallback
 from .export_utils import _dump_infer_config, _prune_input_spec, apply_to_static
+from paddle.incubate.operators.resnet_unit import ResNetUnit
 
 from ppdet.utils.logger import setup_logger
 logger = setup_logger('ppdet.engine')
@@ -101,6 +102,9 @@ class Trainer(object):
                 if isinstance(m, nn.BatchNorm2D):
                     m._epsilon = 1e-3  # for amp(fp16)
                     m._momentum = 0.97  # 0.03 in pytorch
+                elif isinstance(m, ResNetUnit):
+                    m._eps = 1e-3
+                    m._momentum = 0.97
 
         #normalize params for deploy
         if 'slim' in cfg and cfg['slim_type'] == 'OFA':
@@ -153,6 +157,7 @@ class Trainer(object):
             if self.cfg.get('unstructured_prune'):
                 self.pruner = create('UnstructuredPruner')(self.model,
                                                            steps_per_epoch)
+
         if self.use_amp and self.amp_level == 'O2':
             self.model, self.optimizer = paddle.amp.decorate(
                 models=self.model,
@@ -672,7 +677,7 @@ class Trainer(object):
         clsid2catid, catid2name = get_categories(
             self.cfg.metric, anno_file=anno_file)
 
-        # Run Infer 
+        # Run Infer
         self.status['mode'] = 'test'
         self.model.eval()
         if self.cfg.get('print_flops', False):
@@ -815,7 +820,7 @@ class Trainer(object):
         clsid2catid, catid2name = get_categories(
             self.cfg.metric, anno_file=anno_file)
 
-        # Run Infer 
+        # Run Infer
         self.status['mode'] = 'test'
         self.model.eval()
         if self.cfg.get('print_flops', False):
