@@ -263,7 +263,7 @@ for batch_size in ${batch_size_list[*]}; do
                         --run_mode ${run_mode} \
                         --fp_item ${precision} \
                         --keyword ips: \
-                        --skip_steps 2 \
+                        --skip_steps 4 \
                         --device_num ${device_num} \
                         --speed_unit images/s \
                         --convergence_key loss: "
@@ -299,7 +299,7 @@ for batch_size in ${batch_size_list[*]}; do
                         --run_mode ${run_mode} \
                         --fp_item ${precision} \
                         --keyword ips: \
-                        --skip_steps 2 \
+                        --skip_steps 4 \
                         --device_num ${device_num} \
                         --speed_unit images/s \
                         --convergence_key loss: "
