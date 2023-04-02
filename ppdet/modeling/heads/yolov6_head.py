@@ -56,7 +56,7 @@ class EffiDeHead(nn.Layer):
             loss_weight={
                 'cls': 1.0,
                 'iou': 2.5,
-                'dfl': 0.5,  # used in m/l version 
+                'dfl': 0.5,  # used in m/l version
                 'cwd': 10.0,  # used when self_distill=True, in m/l version
             },
             nms='MultiClassNMS',
@@ -454,7 +454,7 @@ class EffiDeHead_distill_ns(EffiDeHead):
             loss_weight={
                 'cls': 1.0,
                 'iou': 2.5,
-                'dfl': 0.5,  # used in m/l version 
+                'dfl': 0.5,  # used in m/l version
                 'cwd': 10.0,  # used when self_distill=True, in m/l version
             },
             nms='MultiClassNMS',
@@ -618,7 +618,7 @@ class EffiDeHead_distill_ns(EffiDeHead):
             reg_feat = self.reg_convs[i](reg_x)
             reg_output = self.reg_preds[i](reg_feat)
             reg_output_lrtb = self.reg_preds_lrtb[i](reg_feat)
-            # cls and reg_lrtb 
+            # cls and reg_lrtb
             cls_output = F.sigmoid(cls_output)
             cls_score_list.append(cls_output.reshape([-1, self.num_classes, l]))
             reg_lrtb_list.append(reg_output_lrtb.reshape([-1, 4, l]))
@@ -736,7 +736,7 @@ class EffiDeHead_fuseab(EffiDeHead):
             loss_weight={
                 'cls': 1.0,
                 'iou': 2.5,
-                'dfl': 0.5,  # used in m/l version 
+                'dfl': 0.5,  # used in m/l version
                 'cwd': 10.0,  # used when self_distill=True, in m/l version
             },
             nms='MultiClassNMS',
@@ -900,7 +900,7 @@ class EffiDeHead_fuseab(EffiDeHead):
             reg_feat = self.reg_convs[i](reg_x)
             # reg_output = self.reg_preds[i](reg_feat)
             reg_output_lrtb = self.reg_preds_lrtb[i](reg_feat)
-            # cls and reg_lrtb 
+            # cls and reg_lrtb
             cls_output = F.sigmoid(cls_output)
             cls_score_list.append(cls_output.reshape([-1, self.num_classes, l]))
             reg_lrtb_list.append(reg_output_lrtb.reshape([-1, 4, l]))

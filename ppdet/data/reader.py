@@ -144,7 +144,7 @@ class BaseDataLoader(object):
         self._sample_transforms = Compose(
             sample_transforms, num_classes=num_classes)
 
-        # batch transfrom 
+        # batch transfrom
         self._batch_transforms = BatchCompose(batch_transforms, num_classes,
                                               collate_batch)
         self.batch_size = batch_size

@@ -182,7 +182,7 @@ class CWDDistillModel(nn.Layer):
         super(CWDDistillModel, self).__init__()
 
         self.is_inherit = False
-        # build student model before load slim config                                                                                                      
+        # build student model before load slim config
         self.student_model = create(cfg.architecture)
         self.arch = cfg.architecture
         if self.arch not in ['GFL', 'RetinaNet']:

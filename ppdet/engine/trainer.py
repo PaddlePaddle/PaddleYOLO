@@ -672,7 +672,7 @@ class Trainer(object):
         clsid2catid, catid2name = get_categories(
             self.cfg.metric, anno_file=anno_file)
 
-        # Run Infer 
+        # Run Infer
         self.status['mode'] = 'test'
         self.model.eval()
         if self.cfg.get('print_flops', False):
@@ -815,7 +815,7 @@ class Trainer(object):
         clsid2catid, catid2name = get_categories(
             self.cfg.metric, anno_file=anno_file)
 
-        # Run Infer 
+        # Run Infer
         self.status['mode'] = 'test'
         self.model.eval()
         if self.cfg.get('print_flops', False):

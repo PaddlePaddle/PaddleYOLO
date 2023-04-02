@@ -1,15 +1,15 @@
-# Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved. 
-#   
-# Licensed under the Apache License, Version 2.0 (the "License");   
-# you may not use this file except in compliance with the License.  
-# You may obtain a copy of the License at   
-#   
-#     http://www.apache.org/licenses/LICENSE-2.0    
-# 
-# Unless required by applicable law or agreed to in writing, software   
-# distributed under the License is distributed on an "AS IS" BASIS, 
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  
-# See the License for the specific language governing permissions and   
+# Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
 # limitations under the License.
 
 import paddle
@@ -29,7 +29,7 @@ class ELANFPN(nn.Layer):
     """
     __shared__ = ['arch', 'depth_mult', 'width_mult', 'act', 'trt']
 
-    # [in_ch, mid_ch1, mid_ch2, out_ch] of each ELANLayer (2 FPN + 2 PAN): 
+    # [in_ch, mid_ch1, mid_ch2, out_ch] of each ELANLayer (2 FPN + 2 PAN):
     ch_settings = {
         'tiny': [[256, 64, 64, 128], [128, 32, 32, 64], [64, 64, 64, 128],
                  [128, 128, 128, 256]],
@@ -193,7 +193,7 @@ class ELANFPNP6(nn.Layer):
     """
     __shared__ = ['arch', 'depth_mult', 'width_mult', 'act', 'use_aux', 'trt']
 
-    # in_ch, mid_ch1, mid_ch2, out_ch of each ELANLayer (3 FPN + 3 PAN): 
+    # in_ch, mid_ch1, mid_ch2, out_ch of each ELANLayer (3 FPN + 3 PAN):
     ch_settings = {
         'W6':
         [[512, 384, 192, 384], [384, 256, 128, 256], [256, 128, 64, 128],
