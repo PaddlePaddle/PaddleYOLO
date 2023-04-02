@@ -1,0 +1,13 @@
+_BASE_: [
+  'yolov5u_cspdarknet.yml',
+]
+
+CSPDarkNet:
+  arch: "P6"
+  return_idx: [2, 3, 4, 5]
+
+YOLOCSPPAN:
+  depthwise: false
+
+YOLOv8Head:
+  fpn_strides: [8, 16, 32, 64]

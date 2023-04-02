@@ -19,7 +19,7 @@ from __future__ import print_function
 from ppdet.core.workspace import register, create
 from .meta_arch import BaseArch
 
-__all__ = ['YOLOv7']
+__all__ = ['YOLOv7', 'YOLOv7u']
 
 
 @register
@@ -96,3 +96,10 @@ class YOLOv7(BaseArch):
 
     def get_pred(self):
         return self._forward()
+
+
+@register
+class YOLOv7u(YOLOv7):
+    """YOLOv7u is YOLOv7 + YOLOv8Head
+    """
+    pass

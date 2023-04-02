@@ -121,14 +121,13 @@ class YOLOv5Head(nn.Layer):
                 self.mask_anchors[-1].extend(anchors[mask])
 
     def forward(self, feats, targets=None):
-        assert len(feats) == len(self.anchors)
         yolo_outputs = []
         for i, feat in enumerate(feats):
             yolo_output = self.yolo_outputs[i](feat)
             if self.data_format == 'NHWC':
                 yolo_output = paddle.transpose(yolo_output, [0, 3, 1, 2])
             yolo_outputs.append(yolo_output)
-     
+
         if self.training:
             return self.loss(yolo_outputs, targets, self.anchors)
         else:

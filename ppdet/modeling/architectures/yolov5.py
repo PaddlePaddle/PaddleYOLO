@@ -19,7 +19,7 @@ from __future__ import print_function
 from ppdet.core.workspace import register, create
 from .meta_arch import BaseArch
 
-__all__ = ['YOLOv5']
+__all__ = ['YOLOv5', 'YOLOv5u']
 
 
 @register
@@ -34,7 +34,7 @@ class YOLOv5(BaseArch):
                  post_process='BBoxPostProcess',
                  for_mot=False):
         """
-        YOLOv5, YOLOv6(https://arxiv.org/abs/2209.02976) and YOLOv7(https://arxiv.org/abs/2207.02696)
+        YOLOv5 architecture
 
         Args:
             backbone (nn.Layer): backbone instance
@@ -72,7 +72,7 @@ class YOLOv5(BaseArch):
     def _forward(self):
         body_feats = self.backbone(self.inputs)
         neck_feats = self.neck(body_feats, self.for_mot)
-        
+
         if self.training:
             yolo_losses = self.yolo_head(neck_feats, self.inputs)
             return yolo_losses
@@ -96,3 +96,10 @@ class YOLOv5(BaseArch):
 
     def get_pred(self):
         return self._forward()
+
+
+@register
+class YOLOv5u(YOLOv5):
+    """YOLOv5u is YOLOv5 + YOLOv8Head
+    """
+    pass

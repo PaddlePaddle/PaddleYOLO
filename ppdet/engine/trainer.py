@@ -55,6 +55,16 @@ logger = setup_logger('ppdet.engine')
 
 __all__ = ['Trainer']
 
+RESET_INIT_MODELS = [
+    'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'YOLOv5u', 'YOLOv7u'
+]
+RESET_BN_MODELS = [
+    'YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'YOLOv5u', 'YOLOv7u'
+]
+UNSUPPORTED_TRAINING_MODELS = [
+    'RTMDet', 'YOLOv6', 'YOLOv8', 'YOLOv5u', 'YOLOv7u'
+]
+
 
 class Trainer(object):
     def __init__(self, cfg, mode='train'):
@@ -69,8 +79,7 @@ class Trainer(object):
         self.custom_white_list = self.cfg.get('custom_white_list', None)
         self.custom_black_list = self.cfg.get('custom_black_list', None)
 
-        if self.cfg.architecture in ['RTMDet', 'YOLOv6', 'YOLOv8'
-                                     ] and self.mode == 'train':
+        if self.cfg.architecture in UNSUPPORTED_TRAINING_MODELS and self.mode == 'train':
             raise NotImplementedError('{} training not supported yet.'.format(
                 self.cfg.architecture))
 
@@ -91,12 +100,10 @@ class Trainer(object):
             self.model = self.cfg.model
             self.is_loaded_weights = True
 
-        if self.cfg.architecture in ['YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8']:
+        if self.cfg.architecture in RESET_INIT_MODELS:
             reset_initialized_parameter(self.model)
 
-        if cfg.architecture in [
-                'YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8'
-        ]:
+        if cfg.architecture in RESET_BN_MODELS:
             for k, m in self.model.named_sublayers():
                 if isinstance(m, nn.BatchNorm2D):
                     m._epsilon = 1e-3  # for amp(fp16)
