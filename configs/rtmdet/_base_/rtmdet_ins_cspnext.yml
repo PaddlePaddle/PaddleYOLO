@@ -5,6 +5,7 @@ ema_decay: 0.9998
 ema_decay_type: "exponential"
 act: silu
 find_unused_parameters: True
+with_mask: True
 
 depth_mult: 1.0
 width_mult: 1.0
@@ -12,7 +13,7 @@ width_mult: 1.0
 RTMDet:
   backbone: CSPNeXt
   neck: CSPNeXtPAFPN
-  head: RTMDetHead
+  head: RTMDetHeadSeg
   post_process: ~
 
 CSPNeXt:
@@ -22,13 +23,14 @@ CSPNeXt:
 # use default config
 # CSPNeXtPAFPN:
 
-RTMDetHead:
+RTMDetHeadSeg:
   exp_on_reg: False
   fpn_strides: [8, 16, 32]
   grid_cell_offset: 0
   nms:
     name: MultiClassNMS
-    nms_top_k: 3000
-    keep_top_k: 300
-    score_threshold: 0.001
-    nms_threshold: 0.65
+    nms_top_k: 1000
+    keep_top_k: 100
+    score_threshold: 0.05
+    nms_threshold: 0.6
+    return_index: True
