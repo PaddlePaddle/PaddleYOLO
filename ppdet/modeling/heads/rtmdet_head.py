@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import math
+from IPython import embed
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
@@ -27,7 +28,7 @@ from ppdet.modeling.layers import MultiClassNMS
 from paddle import ParamAttr
 from paddle.nn.initializer import Normal
 
-__all__ = ['RTMDetHead', 'RTMDetHeadSeg']
+__all__ = ['RTMDetHead', 'RTMDetInsHead']
 
 
 @register
@@ -333,7 +334,7 @@ class MaskFeatModule(nn.Layer):
 
 
 @register
-class RTMDetHeadSeg(nn.Layer):
+class RTMDetInsHead(nn.Layer):
     __shared__ = [
         'num_classes', 'width_mult', 'eval_size', 'act', 'trt', 'exclude_nms',
         'exclude_post_process', 'with_mask'
@@ -371,7 +372,7 @@ class RTMDetHeadSeg(nn.Layer):
             trt=False,
             exclude_nms=False,
             exclude_post_process=False):
-        super(RTMDetHeadSeg, self).__init__()
+        super(RTMDetInsHead, self).__init__()
         assert len(in_channels) > 0, "len(in_channels) should > 0"
         self._dtype = paddle.framework.get_default_dtype()
         self.in_channels = in_channels
@@ -514,7 +515,7 @@ class RTMDetHeadSeg(nn.Layer):
             _, _, h, w = x.shape
             cls_feat = x
             reg_feat = x
-            her_feat = x
+            ker_feat = x
             for cls_layer in self.cls_convs[idx]:
                 cls_feat = cls_layer(cls_feat)
             cls_logit = self.cls_preds[idx](cls_feat)
