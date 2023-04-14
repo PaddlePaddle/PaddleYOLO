@@ -10,7 +10,7 @@
 </div>
 
 **Notes：**
- - The Licence of **PaddleYOLO** is **[GPL 3.0](LICENSE)**, the codes of [YOLOv5](configs/yolov5),[YOLOv6](configs/yolov6),[YOLOv7](configs/yolov7) and [YOLOv8](configs/yolov8) will not be merged into [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection). Except for these three YOLO models, other YOLO models are recommended to use in [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **which will be the first to release the latest progress of PP-YOLO series detection model**;
+ - The Licence of **PaddleYOLO** is **[GPL 3.0](LICENSE)**, the codes of [YOLOv5](configs/yolov5),[YOLOv6](configs/yolov6),[YOLOv7](configs/yolov7) and [YOLOv8](configs/yolov8) will not be merged into [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection). Except for these YOLO models, other YOLO models are recommended to use in [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection), **which will be the first to release the latest progress of PP-YOLO series detection model**;
  - To use **PaddleYOLO**, **PaddlePaddle-2.3.2 or above is recommended**，please refer to the [official website](https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/install/pip/linux-pip.html) to download the appropriate version. **For Windows platforms, please install the paddle develop version**;
  - **PaddleYOLO's [Roadmap](https://github.com/PaddlePaddle/PaddleYOLO/issues/44)** issue collects feature requests from user, welcome to put forward any opinions and suggestions.
 
