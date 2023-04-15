@@ -127,7 +127,7 @@ class YOLOv8Head(nn.Layer):
             self.proj.reshape([1, self.reg_channels, 1, 1]))
         self.dfl_conv.weight.stop_gradient = True
 
-        # self._init_bias()
+        self._init_bias()
 
     @classmethod
     def from_config(cls, cfg, input_shape):
@@ -135,9 +135,11 @@ class YOLOv8Head(nn.Layer):
 
     def _init_bias(self):
         for a, b, s in zip(self.conv_reg, self.conv_cls, self.fpn_strides):
-            a[-1].bias.set_value(1.0)  # box
-            b[-1].bias[:self.num_classes] = math.log(5 / self.num_classes /
-                                                     (640 / s)**2)
+            constant_(a[-1].bias, 1.0)
+            constant_(a[-1].weight)
+            constant_(b[-1].weight)
+            constant_(b[-1].bias[:self.num_classes], math.log(5 / self.num_classes /
+                                                              (640 / s) ** 2))
 
     def forward(self, feats, targets=None):
         if self.training:
