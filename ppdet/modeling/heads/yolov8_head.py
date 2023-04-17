@@ -19,7 +19,7 @@ import paddle.nn.functional as F
 from paddle import ParamAttr
 from paddle.regularizer import L2Decay
 from ppdet.core.workspace import register
-
+from ..initializer import constant_
 from ..bbox_utils import batch_distance2bbox
 from ..bbox_utils import bbox_iou
 from ..assigners.utils import generate_anchors_for_grid_cell
