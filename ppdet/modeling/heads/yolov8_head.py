@@ -96,7 +96,7 @@ class YOLOv8Head(nn.Layer):
         self.conv_cls = nn.LayerList()
         for in_c in self.in_channels:
             self.conv_reg.append(
-                nn.Sequential(* [
+                nn.Sequential(*[
                     BaseConv(
                         in_c, c2, 3, 1, act=act),
                     BaseConv(
@@ -108,7 +108,7 @@ class YOLOv8Head(nn.Layer):
                         bias_attr=ParamAttr(regularizer=L2Decay(0.0))),
                 ]))
             self.conv_cls.append(
-                nn.Sequential(* [
+                nn.Sequential(*[
                     BaseConv(
                         in_c, c3, 3, 1, act=act),
                     BaseConv(
@@ -127,7 +127,7 @@ class YOLOv8Head(nn.Layer):
             self.proj.reshape([1, self.reg_channels, 1, 1]))
         self.dfl_conv.weight.stop_gradient = True
 
-        self._init_bias()
+        #self._init_bias()
 
     @classmethod
     def from_config(cls, cfg, input_shape):
@@ -135,7 +135,6 @@ class YOLOv8Head(nn.Layer):
 
     def _init_bias(self):
         for a, b, s in zip(self.conv_reg, self.conv_cls, self.fpn_strides):
-
             constant_(a[-1].bias, 1.0)
             constant_(a[-1].weight)
             constant_(b[-1].weight)
@@ -182,7 +181,7 @@ class YOLOv8Head(nn.Layer):
 
             reg_dist = reg_dist.reshape(
                 [-1, 4, self.reg_channels, l]).transpose(
-                    [0, 2, 3, 1])  # Note diff
+                [0, 2, 3, 1])  # Note diff
             if self.use_shared_conv:
                 reg_dist = self.dfl_conv(F.softmax(reg_dist, axis=1)).squeeze(1)
                 # [bs, l, 4]
@@ -201,7 +200,62 @@ class YOLOv8Head(nn.Layer):
             reg_dist_list = self.dfl_conv(reg_dist_list).squeeze(1)
 
         return cls_score_list, reg_dist_list, anchor_points, stride_tensor
+    def get_loss(self, head_outs, gt_meta):
+        pred_scores, pred_distri, anchors,\
+        anchor_points, num_anchors_list, stride_tensor = head_outs
 
+        anchor_points_s = anchor_points / stride_tensor
+        pred_bboxes = self._bbox_decode(anchor_points_s, pred_distri)
+
+        gt_labels = gt_meta['gt_class']
+        gt_bboxes = gt_meta['gt_bbox']
+        pad_gt_mask = gt_meta['pad_gt_mask']
+        # label assignment
+        assigned_labels, assigned_bboxes, assigned_scores = \
+            self.assigner(
+                pred_scores.detach(),
+                pred_bboxes.detach() * stride_tensor,
+                anchor_points,
+                num_anchors_list,
+                gt_labels,
+                gt_bboxes,
+                pad_gt_mask,
+                bg_index=self.num_classes)
+        # rescale bbox
+        assigned_bboxes /= stride_tensor
+        # cls loss
+        if self.use_varifocal_loss:
+            one_hot_label = F.one_hot(assigned_labels,
+                                      self.num_classes + 1)[..., :-1]
+            loss_cls = self._varifocal_loss(pred_scores, assigned_scores,
+                                            one_hot_label)
+        else:
+            loss_cls = self.bce(pred_scores, assigned_scores)
+
+        assigned_scores_sum = assigned_scores.sum()
+        if paddle.distributed.get_world_size() > 1:
+            paddle.distributed.all_reduce(assigned_scores_sum)
+            assigned_scores_sum /= paddle.distributed.get_world_size()
+        assigned_scores_sum = paddle.clip(assigned_scores_sum, min=1.)
+        loss_cls /= assigned_scores_sum
+
+        loss_l1, loss_iou, loss_dfl = \
+            self._bbox_loss(pred_distri, pred_bboxes, anchor_points_s,
+                            assigned_labels, assigned_bboxes, assigned_scores,
+                            assigned_scores_sum)
+        loss = self.loss_weight['class'] * loss_cls + \
+               self.loss_weight['iou'] * loss_iou + \
+               self.loss_weight['dfl'] * loss_dfl
+        out_dict = {
+            'loss': loss,
+            'loss_cls': loss_cls,
+            'loss_iou': loss_iou,
+            'loss_dfl': loss_dfl,
+        }
+        if self.print_l1_loss:
+            # just see convergence
+            out_dict.update({'loss_l1': loss_l1})
+        return out_dict
     def _generate_anchors(self, feats=None, dtype='float32'):
         # just use in eval time
         anchor_points = []
@@ -232,9 +286,9 @@ class YOLOv8Head(nn.Layer):
         return loss
 
     def _bbox_decode(self, anchor_points, pred_dist):
-        _, l, _ = get_static_shape(pred_dist)
-        pred_dist = F.softmax(pred_dist.reshape([-1, l, 4, self.reg_channels]))
-        pred_dist = self.dfl_conv(pred_dist.transpose([0, 3, 1, 2])).squeeze(1)
+        b, l, _ = get_static_shape(pred_dist)
+        pred_dist = F.softmax(pred_dist.reshape([b, l, 4, self.reg_channels]))
+        pred_dist =pred_dist.matmul(self.proj)
         return batch_distance2bbox(anchor_points, pred_dist)
 
     def _bbox2distance(self, points, bbox):
@@ -300,62 +354,7 @@ class YOLOv8Head(nn.Layer):
             loss_dfl = pred_dist.sum() * 0.
         return loss_l1, loss_iou, loss_dfl
 
-    def get_loss(self, head_outs, gt_meta):
-        pred_scores, pred_distri, anchors,\
-        anchor_points, num_anchors_list, stride_tensor = head_outs
 
-        anchor_points_s = anchor_points / stride_tensor
-        pred_bboxes = self._bbox_decode(anchor_points_s, pred_distri)
-
-        gt_labels = gt_meta['gt_class']
-        gt_bboxes = gt_meta['gt_bbox']
-        pad_gt_mask = gt_meta['pad_gt_mask']
-        # label assignment
-        assigned_labels, assigned_bboxes, assigned_scores = \
-            self.assigner(
-            pred_scores.detach(),
-            pred_bboxes.detach() * stride_tensor,
-            anchor_points,
-            num_anchors_list,
-            gt_labels,
-            gt_bboxes,
-            pad_gt_mask,
-            bg_index=self.num_classes)
-        # rescale bbox
-        assigned_bboxes /= stride_tensor
-        # cls loss
-        if self.use_varifocal_loss:
-            one_hot_label = F.one_hot(assigned_labels,
-                                      self.num_classes + 1)[..., :-1]
-            loss_cls = self._varifocal_loss(pred_scores, assigned_scores,
-                                            one_hot_label)
-        else:
-            loss_cls = self.bce(pred_scores, assigned_scores)
-
-        assigned_scores_sum = assigned_scores.sum()
-        if paddle.distributed.get_world_size() > 1:
-            paddle.distributed.all_reduce(assigned_scores_sum)
-            assigned_scores_sum /= paddle.distributed.get_world_size()
-        assigned_scores_sum = paddle.clip(assigned_scores_sum, min=1.)
-        # loss_cls /= assigned_scores_sum
-
-        loss_l1, loss_iou, loss_dfl = \
-            self._bbox_loss(pred_distri, pred_bboxes, anchor_points_s,
-                            assigned_labels, assigned_bboxes, assigned_scores,
-                            assigned_scores_sum)
-        loss = self.loss_weight['class'] * loss_cls + \
-               self.loss_weight['iou'] * loss_iou + \
-               self.loss_weight['dfl'] * loss_dfl
-        out_dict = {
-            'loss': loss,
-            'loss_cls': loss_cls,
-            'loss_iou': loss_iou,
-            'loss_dfl': loss_dfl,
-        }
-        if self.print_l1_loss:
-            # just see convergence
-            out_dict.update({'loss_l1': loss_l1})
-        return out_dict
 
     def post_process(self, head_outs, im_shape, scale_factor):
         pred_scores, pred_dist, anchor_points, stride_tensor = head_outs
