@@ -109,12 +109,15 @@ class BaseConv(nn.Layer):
             return y
         else:
             x = self.bn(self.conv(x))
+            y = self.act(x)
+            """
             if self.training:
                 y = self.act(x)
             else:
                 if isinstance(self.act, nn.Silu):
                     self.act = SiLU()
                 y = self.act(x)
+            """
             return y
 
 
