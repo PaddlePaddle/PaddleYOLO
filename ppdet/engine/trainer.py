@@ -341,7 +341,7 @@ class Trainer(object):
         # enabel auto mixed precision mode
         if self.use_amp:
             scaler = paddle.amp.GradScaler(
-                enable=self.cfg.use_gpu or self.cfg.use_npu or self.cfg.use_mlu,
+                enable=self.cfg.use_gpu or self.cfg.use_npu or self.cfg.use_mlu or self.cfg.use_xpu,
                 init_loss_scaling=self.cfg.get('init_loss_scaling', 1024))
         else:
             scaler = paddle.amp.GradScaler(enable=False)
@@ -409,8 +409,9 @@ class Trainer(object):
                 data['num_gpus'] = self._nranks
 
                 if self.use_amp:
+                    self.custom_white_list = ['resnet_unit']
                     with paddle.amp.auto_cast(
-                            enable=self.cfg.use_gpu or self.cfg.use_npu or
+                            enable=self.cfg.use_gpu or self.cfg.use_npu or self.cfg.use_xpu or
                             self.cfg.use_mlu,
                             custom_white_list=self.custom_white_list,
                             custom_black_list=self.custom_black_list,

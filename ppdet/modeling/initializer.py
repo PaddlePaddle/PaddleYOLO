@@ -331,8 +331,8 @@ def reset_initialized_parameter(model, include_self=True):
                                     m._kernel_size[1])
             k = math.sqrt(k)
             _no_grad_uniform_(m.filter_x, -k, k)
-            if hasattr(m, 'bias') and getattr(m, 'bias') is not None:
-                print("-------- ResNetUnit has bias !! --------")
+            if m.bias:
+                print("-------- ResNetUnit has bias, not support !! --------")
             ## reset bn
             _no_grad_fill_(m.scale_x, 1.)
             if hasattr(m, 'bias_x') and getattr(m, 'bias_x') is not None:
