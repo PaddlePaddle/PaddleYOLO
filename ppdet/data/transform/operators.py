@@ -108,6 +108,20 @@ class BaseOperator(object):
 
 
 @register_op
+class RGBReverse(BaseOperator):
+    """RGB to BGR, or BGR to RGB, sensitive to MOTRandomAffine
+    """
+
+    def __init__(self):
+        super(RGBReverse, self).__init__()
+
+    def apply(self, sample, context=None):
+        im = sample['image']
+        sample['image'] = np.ascontiguousarray(im[:, :, ::-1])
+        return sample
+
+
+@register_op
 class RandomHSV(BaseOperator):
     """
     HSV color-space augmentation
@@ -138,7 +152,8 @@ class RandomHSV(BaseOperator):
 class MosaicPerspective(BaseOperator):
     """
     Mosaic Data Augmentation and Perspective
-    The code is based on https://github.com/WongKinYiu/yolov7
+    The code is based on https://github.com/ultralytics/yolov5
+        and https://github.com/WongKinYiu/yolov7
 
     1. get mosaic coords, _mosaic_preprocess, get mosaic_labels
     2. random_perspective augment
@@ -174,6 +189,15 @@ class MosaicPerspective(BaseOperator):
         self.shear = shear
         self.perspective = perspective
 
+    def xywhn2xyxy(self, x, w=640, h=640, padw=0, padh=0):
+        # Convert nx4 boxes from [x, y, w, h] normalized to [x1, y1, x2, y2] where xy1=top-left, xy2=bottom-right
+        y = np.copy(x)
+        y[:, 0] = w * (x[:, 0] - x[:, 2] / 2) + padw  # top left x
+        y[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh  # top left y
+        y[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw  # bottom right x
+        y[:, 3] = h * (x[:, 1] + x[:, 3] / 2) + padh  # bottom right y
+        return y
+
     def _mosaic4_preprocess(self, sample):
         s = self.target_size[0]
         # select mosaic center (x, y)
@@ -181,18 +205,7 @@ class MosaicPerspective(BaseOperator):
                   for x in self.mosaic_border)
         gt_bboxes = [x['gt_bbox'] for x in sample]
         for i in range(len(sample)):
-            ori_im = sample[i]['image']
-            h0, w0 = ori_im.shape[:2]
-            # get resized img
-            scale = min(1. * s / h0, 1. * s / w0)
-            if scale != 1:  # if sizes are not equal
-                im = cv2.resize(
-                    ori_im, (int(w0 * scale), int(h0 * scale)),
-                    interpolation=cv2.INTER_LINEAR
-                    if scale > 1 else cv2.INTER_AREA).astype(np.uint8)
-            else:
-                im = ori_im
-
+            im = sample[i]['image']
             h, w, c = im.shape
             # x1a, y1a, x2a, y2a: large image
             # x1b, y1b, x2b, y2b: small image
@@ -219,10 +232,7 @@ class MosaicPerspective(BaseOperator):
             image[y1a:y2a, x1a:x2a] = im[y1b:y2b, x1b:x2b]
             padw = x1a - x1b
             padh = y1a - y1b
-            gt_bboxes[i][:, 0] = scale * gt_bboxes[i][:, 0] + padw
-            gt_bboxes[i][:, 1] = scale * gt_bboxes[i][:, 1] + padh
-            gt_bboxes[i][:, 2] = scale * gt_bboxes[i][:, 2] + padw
-            gt_bboxes[i][:, 3] = scale * gt_bboxes[i][:, 3] + padh
+            gt_bboxes[i] = self.xywhn2xyxy(gt_bboxes[i], w, h, padw, padh)
 
         gt_bboxes = np.concatenate(gt_bboxes, axis=0)
         gt_bboxes = np.clip(gt_bboxes, 0, s * 2)
@@ -383,6 +393,8 @@ class MosaicPerspective(BaseOperator):
             sample0['image'], sample0['gt_bbox'] = self.letterbox_resize(
                 sample0['image'], sample0['gt_bbox'], self.target_size)
             return sample0
+
+        random.shuffle(sample)
 
         # 1._mosaic_preprocess
         mosaic_img, mosaic_gt_classes, mosaic_gt_bboxes = self._mosaic4_preprocess(
@@ -3602,4 +3614,437 @@ class PadResize(BaseOperator):
             sample.pop('is_crowd')
         if 'difficult' in sample:
             sample.pop('difficult')
+        return sample
+
+
+@register_op
+class DecodeNormResize(BaseOperator):
+    def __init__(self, target_size, to_rgb=False, mosaic=True):
+        super(DecodeNormResize, self).__init__()
+        if not isinstance(target_size, (Integral, Sequence)):
+            raise TypeError(
+                "Type of target_size is invalid. Must be Integer or List or Tuple, now is {}".
+                format(type(target_size)))
+        if isinstance(target_size, Integral):
+            target_size = [target_size, target_size]
+        self.target_size = target_size
+        self.to_rgb = to_rgb
+        self.mosaic = mosaic
+
+    def bbox_norm(self, sample):
+        assert 'gt_bbox' in sample
+        bbox = sample['gt_bbox']
+        height, width = sample['image'].shape[:2]
+        y = bbox.copy()
+        y[:, 0] = ((bbox[:, 0] + bbox[:, 2]) / 2) / width  # x center
+        y[:, 1] = ((bbox[:, 1] + bbox[:, 3]) / 2) / height  # y center
+        y[:, 2] = (bbox[:, 2] - bbox[:, 0]) / width  # width
+        y[:, 3] = (bbox[:, 3] - bbox[:, 1]) / height  # height
+        sample['gt_bbox'] = y
+        return sample
+
+    def load_resized_img(self, sample, target_size):
+        if 'image' not in sample:
+            img_file = sample['im_file']
+            sample['image'] = cv2.imread(img_file)  # BGR
+            sample.pop('im_file')
+        im = sample['image']
+        sample = self.bbox_norm(sample)
+
+        if 'keep_ori_im' in sample and sample['keep_ori_im']:
+            sample['ori_image'] = im
+
+        if 'h' not in sample:
+            sample['h'] = im.shape[0]
+        elif sample['h'] != im.shape[0]:
+            logger.warning(
+                "The actual image height: {} is not equal to the "
+                "height: {} in annotation, and update sample['h'] by actual "
+                "image height.".format(im.shape[0], sample['h']))
+            sample['h'] = im.shape[0]
+        if 'w' not in sample:
+            sample['w'] = im.shape[1]
+        elif sample['w'] != im.shape[1]:
+            logger.warning(
+                "The actual image width: {} is not equal to the "
+                "width: {} in annotation, and update sample['w'] by actual "
+                "image width.".format(im.shape[1], sample['w']))
+            sample['w'] = im.shape[1]
+
+        sample['im_shape'] = np.array(
+            im.shape[:2], dtype=np.float32)  # original shape
+
+        # get resized img
+        r = min(target_size[0] / im.shape[0], target_size[1] / im.shape[1])
+        if r != 1:  # if sizes are not equal
+            resized_img = cv2.resize(
+                im, (int(im.shape[1] * r), int(im.shape[0] * r)),
+                interpolation=cv2.INTER_LINEAR if (self.mosaic or r > 1) else
+                cv2.INTER_AREA)  ########## .astype(np.uint8)
+        else:
+            resized_img = im
+
+        h, w = resized_img.shape[:2]
+        if self.to_rgb:
+            resized_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2RGB)
+
+        sample['image'] = resized_img
+        sample['scale_factor'] = np.array(
+            [h / im.shape[0], w / im.shape[1]], dtype=np.float32)
+        return sample
+
+    def apply(self, sample, context=None):
+        sample = self.load_resized_img(sample, self.target_size)
+        return sample
+
+
+@register_op
+class DecodeNormResizeCache(BaseOperator):
+    def __init__(self, cache_root, target_size, to_rgb=False, mosaic=True):
+        super(DecodeNormResizeCache, self).__init__()
+        if not isinstance(target_size, (Integral, Sequence)):
+            raise TypeError(
+                "Type of target_size is invalid. Must be Integer or List or Tuple, now is {}".
+                format(type(target_size)))
+        if isinstance(target_size, Integral):
+            target_size = [target_size, target_size]
+        self.target_size = target_size
+        self.to_rgb = to_rgb
+        self.mosaic = mosaic
+
+        self.use_cache = False if cache_root is None else True
+        self.cache_root = cache_root
+        if cache_root is not None:
+            _make_dirs(cache_root)
+
+    def bbox_norm(self, sample):
+        assert 'gt_bbox' in sample
+        bbox = sample['gt_bbox']
+        height, width = sample['image'].shape[:2]
+        y = bbox.copy()
+        y[:, 0] = ((bbox[:, 0] + bbox[:, 2]) / 2) / width  # x center
+        y[:, 1] = ((bbox[:, 1] + bbox[:, 3]) / 2) / height  # y center
+        y[:, 2] = (bbox[:, 2] - bbox[:, 0]) / width  # width
+        y[:, 3] = (bbox[:, 3] - bbox[:, 1]) / height  # height
+        sample['gt_bbox'] = y
+        return sample
+
+    def load_resized_img(self, sample, target_size):
+        if self.use_cache and os.path.exists(
+                self.cache_path(self.cache_root, sample['im_file'])):
+            path = self.cache_path(self.cache_root, sample['im_file'])
+            im = self.load(path)
+            # im = cv2.cvtColor(im, cv2.COLOR_RGB2BGR)
+            sample['image'] = im
+        else:
+            if 'image' not in sample:
+                img_file = sample['im_file']
+                sample['image'] = cv2.imread(img_file)  # BGR
+                sample.pop('im_file')
+            im = sample['image']
+
+        sample = self.bbox_norm(sample)
+
+        if 'keep_ori_im' in sample and sample['keep_ori_im']:
+            sample['ori_image'] = im
+
+        if 'h' not in sample:
+            sample['h'] = im.shape[0]
+        elif sample['h'] != im.shape[0]:
+            logger.warning(
+                "The actual image height: {} is not equal to the "
+                "height: {} in annotation, and update sample['h'] by actual "
+                "image height.".format(im.shape[0], sample['h']))
+            sample['h'] = im.shape[0]
+        if 'w' not in sample:
+            sample['w'] = im.shape[1]
+        elif sample['w'] != im.shape[1]:
+            logger.warning(
+                "The actual image width: {} is not equal to the "
+                "width: {} in annotation, and update sample['w'] by actual "
+                "image width.".format(im.shape[1], sample['w']))
+            sample['w'] = im.shape[1]
+
+        sample['im_shape'] = np.array(
+            im.shape[:2], dtype=np.float32)  # original shape
+
+        # get resized img
+        r = min(target_size[0] / im.shape[0], target_size[1] / im.shape[1])
+        if r != 1:  # if sizes are not equal
+            resized_img = cv2.resize(
+                im, (int(im.shape[1] * r), int(im.shape[0] * r)),
+                interpolation=cv2.INTER_LINEAR if (self.mosaic or r > 1) else
+                cv2.INTER_AREA)  ########## .astype(np.uint8)
+        else:
+            resized_img = im
+
+        h, w = resized_img.shape[:2]
+        if self.to_rgb:
+            resized_img = cv2.cvtColor(resized_img, cv2.COLOR_BGR2RGB)
+
+        sample['image'] = resized_img
+        sample['scale_factor'] = np.array(
+            [h / im.shape[0], w / im.shape[1]], dtype=np.float32)
+        return sample
+
+    def apply(self, sample, context=None):
+        sample = self.load_resized_img(sample, self.target_size)
+        return sample
+
+    @staticmethod
+    def cache_path(dir_oot, im_file):
+        return os.path.join(dir_oot, os.path.basename(im_file) + '.pkl')
+
+    @staticmethod
+    def load(path):
+        with open(path, 'rb') as f:
+            im = pickle.load(f)
+        return im
+
+    @staticmethod
+    def dump(obj, path):
+        MUTEX.acquire()
+        try:
+            with open(path, 'wb') as f:
+                pickle.dump(obj, f)
+
+        except Exception as e:
+            logger.warning('dump {} occurs exception {}'.format(path, str(e)))
+
+        finally:
+            MUTEX.release()
+
+
+@register_op
+class YOLOv5KeepRatioResize(BaseOperator):
+    # only used for yolov5 rect eval to get higher mAP
+    # only apply to image
+
+    def __init__(self,
+                 target_size,
+                 keep_ratio=True,
+                 batch_shapes=True,
+                 size_divisor=32,
+                 extra_pad_ratio=0.5):
+        super(YOLOv5KeepRatioResize, self).__init__()
+        assert keep_ratio == True
+        self.keep_ratio = keep_ratio
+        self.batch_shapes = batch_shapes
+        if not isinstance(target_size, (Integral, Sequence)):
+            raise TypeError(
+                "Type of target_size is invalid. Must be Integer or List or Tuple, now is {}".
+                format(type(target_size)))
+        if isinstance(target_size, Integral):
+            target_size = [target_size, target_size]
+        self.target_size = target_size
+
+        self.size_divisor = size_divisor
+        self.extra_pad_ratio = extra_pad_ratio
+
+    def _get_rescale_ratio(self, old_size, scale):
+        w, h = old_size
+        if isinstance(scale, (float, int)):
+            if scale <= 0:
+                raise ValueError(f'Invalid scale {scale}, must be positive.')
+            scale_factor = scale
+        elif isinstance(scale, (tuple, list)):
+            max_long_edge = max(scale)
+            max_short_edge = min(scale)
+            scale_factor = min(max_long_edge / max(h, w),
+                               max_short_edge / min(h, w))
+        else:
+            raise TypeError('Scale must be a number or tuple of int, '
+                            f'but got {type(scale)}')
+        return scale_factor
+
+    def apply_image(self, image):
+        original_h, original_w = image.shape[:2]
+        ratio = self._get_rescale_ratio(
+            (original_h, original_w), self.target_size)
+        if ratio != 1:
+            # resize image according to the shape
+            # NOTE: We are currently testing on COCO that modifying
+            # this code will not affect the results.
+            # If you find that it has an effect on your results,
+            # please feel free to contact us.
+            image = cv2.resize(
+                image, (int(original_w * ratio), int(original_h * ratio)),
+                interpolation=cv2.INTER_AREA if ratio < 1 else cv2.INTER_LINEAR)
+
+        resized_h, resized_w = image.shape[:2]
+        scale_ratio_h = resized_h / original_h
+        scale_ratio_w = resized_w / original_w
+        return image, (resized_h, resized_w), (scale_ratio_h, scale_ratio_w)
+
+    def apply(self, sample, context=None):
+        """ Resize the image numpy.
+        """
+        im = sample['image']
+        if not isinstance(im, np.ndarray):
+            raise TypeError("{}: image type is not numpy.".format(self))
+        if len(im.shape) != 3:
+            raise ImageError('{}: image is not 3-dimensional.'.format(self))
+
+        im, (resize_h, resize_w), (
+            scale_ratio_h, scale_ratio_w) = self.apply_image(sample['image'])
+        # (427, 640) (480, 640)
+        sample['image'] = im.astype(np.float32)
+        sample['im_shape'] = np.asarray([resize_h, resize_w], dtype=np.float32)
+        sample['scale_factor'] = np.asarray(
+            [scale_ratio_h, scale_ratio_w], dtype=np.float32)
+
+        shapes = [[1, 1]]
+        aspect_ratio = resize_h / resize_w
+        shapes = [aspect_ratio, 1
+                  ] if aspect_ratio < 1 else [1, 1 / aspect_ratio]
+        batch_shapes = np.ceil(
+            np.array(shapes) * 640 / self.size_divisor +
+            self.extra_pad_ratio).astype(np.int64) * self.size_divisor
+        sample['batch_shape'] = batch_shapes
+        return sample
+
+
+@register_op
+class LetterResize(BaseOperator):
+    # only used for yolov5 rect eval to get higher mAP
+    # only apply to image
+
+    def __init__(self,
+                 scale=[640, 640],
+                 pad_val=144,
+                 use_mini_pad=False,
+                 stretch_only=False,
+                 allow_scale_up=False,
+                 half_pad_param=False):
+        super(LetterResize, self).__init__()
+        self.scale = scale
+        self.pad_val = pad_val
+        if isinstance(pad_val, (int, float)):
+            pad_val = dict(img=pad_val, seg=255)
+        assert isinstance(
+            pad_val, dict), f'pad_val must be dict, but got {type(pad_val)}'
+
+        self.use_mini_pad = use_mini_pad
+        self.stretch_only = stretch_only
+        self.allow_scale_up = allow_scale_up
+        self.half_pad_param = half_pad_param
+
+    def _resize_img(self, results):
+        image = results['image']
+        # Use batch_shape if a batch_shape policy is configured
+        if 'batch_shape' in results:
+            scale = tuple(results['batch_shape'])  # hw
+        else:
+            scale = self.scale[::-1]  # wh -> hw
+
+        image_shape = image.shape[:2]  # height, width
+
+        # Scale ratio (new / old)
+        ratio = min(scale[0] / image_shape[0], scale[1] / image_shape[1])
+        # (448, 672) / (427, 640) = 1.0491803278688525
+        # (512, 672) / (480, 640) = 1.05
+
+        # only scale down, do not scale up (for better test mAP)
+        if not self.allow_scale_up:
+            ratio = min(ratio, 1.0)
+
+        ratio = [ratio, ratio]  # float -> (float, float) for (height, width)
+
+        # compute the best size of the image
+        no_pad_shape = (int(round(image_shape[0] * ratio[0])),
+                        int(round(image_shape[1] * ratio[1])))
+        # [427, 640]  [480, 640]
+        # padding height & width
+        padding_h, padding_w = [
+            scale[0] - no_pad_shape[0], scale[1] - no_pad_shape[1]
+        ]  # [21, 32] 32, 32
+        if self.use_mini_pad:
+            # minimum rectangle padding
+            padding_w, padding_h = np.mod(padding_w, 32), np.mod(padding_h, 32)
+        elif self.stretch_only:
+            # stretch to the specified size directly
+            padding_h, padding_w = 0.0, 0.0
+            no_pad_shape = (scale[0], scale[1])
+            ratio = [scale[0] / image_shape[0],
+                     scale[1] / image_shape[1]]  # height, width ratios
+
+        if image_shape != no_pad_shape:
+            # compare with no resize and padding size
+            image = cv2.resize(
+                image, (no_pad_shape[1], no_pad_shape[0]),
+                interpolation='bilinear')
+
+        scale_factor = (no_pad_shape[1] / image_shape[1],
+                        no_pad_shape[0] / image_shape[0])
+
+        if 'scale_factor' in results:
+            results['scale_factor_origin'] = results['scale_factor']
+        results['scale_factor'] = scale_factor
+
+        # padding
+        top_padding, left_padding = int(round(padding_h // 2 - 0.1)), int(
+            round(padding_w // 2 - 0.1))
+        bottom_padding = padding_h - top_padding
+        right_padding = padding_w - left_padding
+
+        padding_list = [
+            top_padding, bottom_padding, left_padding, right_padding
+        ]  # [10, 11, 16, 16]  [16, 16, 16, 16]
+        if top_padding != 0 or bottom_padding != 0 or \
+                left_padding != 0 or right_padding != 0:
+            if isinstance(self.pad_val, int) and image.ndim == 3:
+                self.pad_val = tuple(
+                    self.pad_val for _ in range(image.shape[2]))
+            # image = cv2.impad(
+            #     img=image,
+            #     padding=(padding_list[2], padding_list[0], padding_list[3],
+            #              padding_list[1]),
+            #     pad_val=pad_val,
+            #     padding_mode='constant')
+            top, bottom, left, right = padding_list
+            image = cv2.copyMakeBorder(
+                image,
+                top,
+                bottom,
+                left,
+                right,
+                cv2.BORDER_CONSTANT,
+                value=self.pad_val)
+            # (448, 672, 3) 
+
+        results['image'] = image.astype(np.float32)
+        results['im0_shape'] = np.asarray(image_shape, dtype=np.float32)
+        results['im_shape'] = np.asarray([image.shape[:2]], dtype=np.float32)
+
+        if 'pad_param' in results:
+            results['pad_param_origin'] = results['pad_param'] * \
+                                          np.repeat(ratio, 2)
+
+        if self.half_pad_param:
+            results['pad_param'] = np.array(
+                [padding_h / 2, padding_h / 2, padding_w / 2, padding_w / 2],
+                dtype=np.float32)
+        else:
+            # We found in object detection, using padding list with
+            # int type can get higher mAP.
+            results['pad_param'] = np.array(padding_list, dtype=np.float32)
+
+        return results
+
+    def apply(self, sample, context=None):
+        sample = self._resize_img(sample)
+        # if 'gt_bbox' in sample and len(sample['gt_bbox']) > 0:
+        #     sample = self._resize_bboxes(sample)
+        if 'scale_factor_origin' in sample:
+            scale_factor_origin = sample.pop('scale_factor_origin')
+            scale_ratio_h, scale_ratio_w = (
+                sample['scale_factor'][0] * scale_factor_origin[0],
+                sample['scale_factor'][1] * scale_factor_origin[1])
+            sample['scale_factor'] = np.asarray(
+                [scale_ratio_h, scale_ratio_w], dtype=np.float32)
+
+        if 'pad_param_origin' in sample:
+            pad_param_origin = sample.pop('pad_param_origin')
+            sample['pad_param'] += pad_param_origin
+
         return sample
