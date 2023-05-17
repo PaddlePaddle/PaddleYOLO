@@ -24,7 +24,6 @@ from ..bbox_utils import batch_distance2bbox
 from ..bbox_utils import bbox_iou
 from ..assigners.utils import generate_anchors_for_grid_cell
 from ppdet.modeling.backbones.csp_darknet import BaseConv
-from ppdet.modeling.ops import get_static_shape
 from ppdet.modeling.layers import MultiClassNMS
 
 __all__ = ['YOLOv8Head']
@@ -120,7 +119,7 @@ class YOLOv8Head(nn.Layer):
                         bias_attr=ParamAttr(regularizer=L2Decay(0.0))),
                 ]))
         self.proj = paddle.arange(self.reg_max).astype('float32')
-        # self._init_bias()
+        #self._init_bias() ?
 
     @classmethod
     def from_config(cls, cfg, input_shape):
@@ -151,8 +150,7 @@ class YOLOv8Head(nn.Layer):
             bbox_dist_preds = self.conv_reg[i](feat)
             cls_logit = self.conv_cls[i](feat)
             bbox_dist_preds = bbox_dist_preds.reshape([-1, 4, self.reg_max, l]).transpose([0, 3, 1, 2])
-            # [8, 6400, 4, 16]
-            bbox_preds = F.softmax(bbox_dist_preds, axis=3).matmul(self.proj.reshape([-1, 1])).squeeze(-1) # [8, 6400, 4]
+            bbox_preds = F.softmax(bbox_dist_preds, axis=3).matmul(self.proj.reshape([-1, 1])).squeeze(-1)
 
             cls_logits_list.append(cls_logit)
             bbox_preds_list.append(bbox_preds.transpose([0, 2, 1]).reshape([-1, 4, h, w]))
@@ -175,8 +173,7 @@ class YOLOv8Head(nn.Layer):
 
             bbox_dist_preds = bbox_dist_preds.reshape(
                 [-1, 4, self.reg_max, l]).transpose([0, 3, 1, 2])
-            # [8, 6400, 4, 16]
-            bbox_preds = F.softmax(bbox_dist_preds, axis=3).matmul(self.proj.reshape([-1, 1])).squeeze(-1) # [8, 6400, 4]
+            bbox_preds = F.softmax(bbox_dist_preds, axis=3).matmul(self.proj.reshape([-1, 1])).squeeze(-1)
             cls_logits_list.append(cls_logit)
             bbox_preds_list.append(bbox_preds.transpose([0, 2, 1]).reshape([-1, 4, h, w]))
 
@@ -203,19 +200,6 @@ class YOLOv8Head(nn.Layer):
         anchor_points = paddle.concat(anchor_points)
         stride_tensor = paddle.concat(stride_tensor)
         return anchor_points, stride_tensor
-
-    @staticmethod
-    def _varifocal_loss(pred_score, gt_score, label, alpha=0.75, gamma=2.0):
-        weight = alpha * pred_score.pow(gamma) * (1 - label) + gt_score * label
-        loss = F.binary_cross_entropy(
-            pred_score, gt_score, weight=weight, reduction='sum')
-        return loss
-
-    # def _bbox_decode(self, anchor_points, pred_dist):
-    #     _, l, _ = get_static_shape(pred_dist)
-    #     pred_dist = F.softmax(pred_dist.reshape([-1, l, 4, self.reg_channels]))
-    #     pred_dist = self.dfl_conv(pred_dist.transpose([0, 3, 1, 2])).squeeze(1)
-    #     return batch_distance2bbox(anchor_points, pred_dist)
 
     def _bbox2distance(self, points, bbox, reg_max=15, eps=0.01):
         x1y1, x2y2 = paddle.split(bbox, 2, -1)
@@ -255,27 +239,23 @@ class YOLOv8Head(nn.Layer):
             for bbox_pred_org in bbox_dist_preds
         ]
 
-        flatten_dist_preds = paddle.concat(flatten_pred_dists, 1) # [8, 8400, 64]
-        pred_scores = paddle.concat(flatten_cls_preds, 1) # [8, 8400, 80]
-        pred_distri = paddle.concat(flatten_pred_bboxes, 1) # [8, 8400, 4]
+        flatten_dist_preds = paddle.concat(flatten_pred_dists, 1)
+        pred_scores = paddle.concat(flatten_cls_preds, 1)
+        pred_distri = paddle.concat(flatten_pred_bboxes, 1)
 
 
         anchor_points_s = anchor_points / stride_tensor
-        # pred_bboxes = self._bbox_decode(anchor_points_s, pred_distri)
-        pred_bboxes = batch_distance2bbox(anchor_points_s, pred_distri) # xyxy # 9345410.  [8, 8400, 4]
-        pred_bboxes = pred_bboxes * stride_tensor # must *stride
+        pred_bboxes = batch_distance2bbox(anchor_points_s, pred_distri) # xyxy
+        pred_bboxes = pred_bboxes * stride_tensor
 
-        gt_labels = gt_meta['gt_class'] # [16, 51, 1]
-        gt_bboxes = gt_meta['gt_bbox'] # xyxy max=640 # [16, 51, 4]
+        gt_labels = gt_meta['gt_class']
+        gt_bboxes = gt_meta['gt_bbox'] # xyxy
         pad_gt_mask = gt_meta['pad_gt_mask']
-        # pad_gt_mask = paddle.cast((gt_bboxes.sum(-1, keepdim=True) > 0), 'float32')
 
-        # label assignment
-        #          [8, 8400, 4]  80842408.  8781976.      assigned_scores 131.79727173
         assigned_labels, assigned_bboxes, assigned_scores = \
             self.assigner(
             F.sigmoid(pred_scores.detach()),
-            pred_bboxes.detach(), # * stride_tensor,
+            pred_bboxes.detach(),
             anchor_points,
             num_anchors_list,
             gt_labels,
@@ -283,18 +263,11 @@ class YOLOv8Head(nn.Layer):
             pad_gt_mask,
             bg_index=self.num_classes)
         # rescale bbox
-        # print('assigned_scores ', assigned_scores.max(), assigned_scores.sum())
         assigned_bboxes /= stride_tensor
-        pred_bboxes /= stride_tensor ###
+        pred_bboxes /= stride_tensor
 
         # cls loss
-        if 0: #self.use_varifocal_loss:
-            one_hot_label = F.one_hot(assigned_labels,
-                                      self.num_classes + 1)[..., :-1]
-            loss_cls = self._varifocal_loss(pred_scores, assigned_scores,
-                                            one_hot_label)
-        else:
-            loss_cls = self.bce(pred_scores, assigned_scores).sum() # [16, 8400, 80]
+        loss_cls = self.bce(pred_scores, assigned_scores).sum()
 
         assigned_scores_sum = assigned_scores.sum()
         if paddle.distributed.get_world_size() > 1:
@@ -324,7 +297,7 @@ class YOLOv8Head(nn.Layer):
                 eps=1e-7)
             loss_iou = ((1.0 - iou) * bbox_weight).sum() / assigned_scores_sum
 
-            if 1: #self.print_l1_loss:
+            if self.print_l1_loss:
                 loss_l1 = F.l1_loss(pred_bboxes_pos, assigned_bboxes_pos)
             else:
                 loss_l1 = paddle.zeros([1])
@@ -354,7 +327,7 @@ class YOLOv8Head(nn.Layer):
         loss_iou *= self.loss_weight['iou']
         loss_dfl *= self.loss_weight['dfl']
         loss_total = loss_cls + loss_iou + loss_dfl
-        # bs = head_outs[0].shape[0]
+
         num_gpus = gt_meta.get('num_gpus', 8)
         total_bs = bs * num_gpus
 
@@ -373,15 +346,15 @@ class YOLOv8Head(nn.Layer):
         pred_scores_list, pred_dist_list, anchor_points, stride_tensor = head_outs
         bs = pred_scores_list[0].shape[0]
         pred_scores = [
-            cls_score.transpose([0, 2, 3, 1]).reshape([bs, -1, self.num_classes])
+            cls_score.transpose([0, 2, 3, 1]).reshape([-1, int(cls_score.shape[2] * cls_score.shape[3]), self.num_classes])
             for cls_score in pred_scores_list
         ]
         pred_dists = [
-            bbox_pred.transpose([0, 2, 3, 1]).reshape([bs, -1, 4])
+            bbox_pred.transpose([0, 2, 3, 1]).reshape([-1, int(bbox_pred.shape[2] * bbox_pred.shape[3]), 4])
             for bbox_pred in pred_dist_list
         ]
-        pred_scores = F.sigmoid(paddle.concat(pred_scores, 1)) # [8, 8400, 80]
-        pred_bboxes = paddle.concat(pred_dists, 1) # [8, 8400, 4]
+        pred_scores = F.sigmoid(paddle.concat(pred_scores, 1))
+        pred_bboxes = paddle.concat(pred_dists, 1)
 
         pred_bboxes = batch_distance2bbox(anchor_points, pred_bboxes)
         pred_bboxes *= stride_tensor
@@ -400,3 +373,4 @@ class YOLOv8Head(nn.Layer):
             else:
                 bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
                 return bbox_pred, bbox_num
+
