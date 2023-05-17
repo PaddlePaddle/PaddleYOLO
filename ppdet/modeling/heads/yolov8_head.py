@@ -165,6 +165,7 @@ class YOLOv8Head(nn.Layer):
         anchor_points, stride_tensor = self._generate_anchors(feats)
 
         cls_logits_list, bbox_preds_list = [], []
+        feats_shapes = []
         for i, feat in enumerate(feats):
             _, _, h, w = feat.shape
             l = h * w
@@ -176,8 +177,20 @@ class YOLOv8Head(nn.Layer):
             bbox_preds = F.softmax(bbox_dist_preds, axis=3).matmul(self.proj.reshape([-1, 1])).squeeze(-1)
             cls_logits_list.append(cls_logit)
             bbox_preds_list.append(bbox_preds.transpose([0, 2, 1]).reshape([-1, 4, h, w]))
+            feats_shapes.append(l)
 
-        return cls_logits_list, bbox_preds_list, anchor_points, stride_tensor
+        pred_scores = [
+            cls_score.transpose([0, 2, 3, 1]).reshape([-1, size, self.num_classes])
+            for size, cls_score in zip(feats_shapes, cls_logits_list)
+        ]
+        pred_dists = [
+            bbox_pred.transpose([0, 2, 3, 1]).reshape([-1, size, 4])
+            for size, bbox_pred in zip(feats_shapes, bbox_preds_list)
+        ]
+        pred_scores = F.sigmoid(paddle.concat(pred_scores, 1))
+        pred_bboxes = paddle.concat(pred_dists, 1)
+
+        return pred_scores, pred_bboxes, anchor_points, stride_tensor
 
     def _generate_anchors(self, feats=None, dtype='float32'):
         # just use in eval time
@@ -343,18 +356,7 @@ class YOLOv8Head(nn.Layer):
         return out_dict
 
     def post_process(self, head_outs, im_shape, scale_factor):
-        pred_scores_list, pred_dist_list, anchor_points, stride_tensor = head_outs
-        bs = pred_scores_list[0].shape[0]
-        pred_scores = [
-            cls_score.transpose([0, 2, 3, 1]).reshape([-1, int(cls_score.shape[2] * cls_score.shape[3]), self.num_classes])
-            for cls_score in pred_scores_list
-        ]
-        pred_dists = [
-            bbox_pred.transpose([0, 2, 3, 1]).reshape([-1, int(bbox_pred.shape[2] * bbox_pred.shape[3]), 4])
-            for bbox_pred in pred_dist_list
-        ]
-        pred_scores = F.sigmoid(paddle.concat(pred_scores, 1))
-        pred_bboxes = paddle.concat(pred_dists, 1)
+        pred_scores, pred_bboxes, anchor_points, stride_tensor = head_outs
 
         pred_bboxes = batch_distance2bbox(anchor_points, pred_bboxes)
         pred_bboxes *= stride_tensor
