@@ -34,7 +34,7 @@ __all__ = ['YOLOv8Head']
 class YOLOv8Head(nn.Layer):
     __shared__ = [
         'num_classes', 'eval_size', 'trt', 'exclude_nms',
-        'exclude_post_process', 'use_shared_conv'
+        'exclude_post_process'
     ]
     __inject__ = ['assigner', 'nms']
 
@@ -59,7 +59,6 @@ class YOLOv8Head(nn.Layer):
                  trt=False,
                  exclude_nms=False,
                  exclude_post_process=False,
-                 use_shared_conv=True,
                  print_l1_loss=True):
         super(YOLOv8Head, self).__init__()
         assert len(in_channels) > 0, "len(in_channels) should > 0"
@@ -84,7 +83,6 @@ class YOLOv8Head(nn.Layer):
         self.exclude_nms = exclude_nms
         self.exclude_post_process = exclude_post_process
         self.print_l1_loss = print_l1_loss
-        self.use_shared_conv = use_shared_conv
 
         # cls loss
         self.bce = nn.BCEWithLogitsLoss(reduction='none')
@@ -365,7 +363,7 @@ class YOLOv8Head(nn.Layer):
 
         if self.exclude_post_process:
             return paddle.concat(
-                [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1)
+                [pred_bboxes, pred_scores], axis=-1), None
         else:
             pred_scores = pred_scores.transpose([0, 2, 1])
             # scale bbox to origin
