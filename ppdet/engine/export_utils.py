@@ -36,6 +36,7 @@ TRT_MIN_SUBGRAPH = {
     'YOLOv6': 10,
     'YOLOv7': 10,
     'YOLOv8': 10,
+    'DETR': 3,
 }
 
 TO_STATIC_SPEC = {
