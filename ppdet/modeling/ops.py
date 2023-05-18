@@ -414,6 +414,30 @@ def sigmoid_cross_entropy_with_logits(input,
     return output
 
 
+def smooth_l1(input, label, inside_weight=None, outside_weight=None,
+              sigma=None):
+    input_new = paddle.multiply(input, inside_weight)
+    label_new = paddle.multiply(label, inside_weight)
+    delta = 1 / (sigma * sigma)
+    out = F.smooth_l1_loss(input_new, label_new, reduction='none', delta=delta)
+    out = paddle.multiply(out, outside_weight)
+    out = out / delta
+    out = paddle.reshape(out, shape=[out.shape[0], -1])
+    out = paddle.sum(out, axis=1)
+    return out
+
+
+def channel_shuffle(x, groups):
+    batch_size, num_channels, height, width = x.shape[0:4]
+    assert num_channels % groups == 0, 'num_channels should be divisible by groups'
+    channels_per_group = num_channels // groups
+    x = paddle.reshape(
+        x=x, shape=[batch_size, groups, channels_per_group, height, width])
+    x = paddle.transpose(x=x, perm=[0, 2, 1, 3, 4])
+    x = paddle.reshape(x=x, shape=[batch_size, num_channels, height, width])
+    return x
+
+
 def get_static_shape(tensor):
     shape = paddle.shape(tensor)
     shape.stop_gradient = True

@@ -20,6 +20,7 @@ from . import focal_loss
 from . import smooth_l1_loss
 from . import yolov5_loss
 from . import yolov7_loss
+from . import detr_loss
 
 from .yolo_loss import *
 from .iou_aware_loss import *
@@ -29,3 +30,4 @@ from .focal_loss import *
 from .smooth_l1_loss import *
 from .yolov5_loss import *
 from .yolov7_loss import *
+from . import detr_loss

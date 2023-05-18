@@ -313,13 +313,8 @@ class YOLOXHead(nn.Layer):
     def get_loss(self, head_outs, targets):
         pred_cls, pred_bboxes, pred_obj,\
         anchor_points, stride_tensor, num_anchors_list = head_outs
-        gt_nums = targets['pad_gt_mask'].sum(1).squeeze(-1)
-        gt_labels, gt_bboxes = [], []
-        bs = gt_nums.shape[0]
-        for i in range(bs):
-            gt_num = max(int(gt_nums[i]), 1)  # allow empty samples
-            gt_labels.append(targets['gt_class'][i][:gt_num])
-            gt_bboxes.append(targets['gt_bbox'][i][:gt_num])
+        gt_labels = targets['gt_class']
+        gt_bboxes = targets['gt_bbox']
         pred_scores = (pred_cls * pred_obj).sqrt()
         # label assignment
         center_and_strides = paddle.concat(

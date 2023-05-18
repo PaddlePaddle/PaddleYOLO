@@ -45,38 +45,23 @@ class IouLoss(object):
                  giou=False,
                  diou=False,
                  ciou=False,
-                 loss_square=True,
-                 x1y1x2y2=True,
-                 eps=1e-9,
-                 return_iou=False):
+                 loss_square=True):
         self.loss_weight = loss_weight
         self.giou = giou
         self.diou = diou
         self.ciou = ciou
         self.loss_square = loss_square
-        self.x1y1x2y2 = x1y1x2y2
-        self.eps = eps
-        self.return_iou = return_iou
 
     def __call__(self, pbox, gbox):
         iou = bbox_iou(
-            pbox,
-            gbox,
-            x1y1x2y2=self.x1y1x2y2,
-            giou=self.giou,
-            diou=self.diou,
-            ciou=self.ciou,
-            eps=self.eps)
+            pbox, gbox, giou=self.giou, diou=self.diou, ciou=self.ciou)
         if self.loss_square:
             loss_iou = 1 - iou * iou
         else:
             loss_iou = 1 - iou
 
         loss_iou = loss_iou * self.loss_weight
-        if self.return_iou:
-            return loss_iou, iou
-        else:
-            return loss_iou
+        return loss_iou
 
 
 @register
@@ -237,31 +222,20 @@ class SIoULoss(GIoULoss):
         reduction (str): Options are "none", "mean" and "sum". default as none
     """
 
-    def __init__(self,
-                 loss_weight=1.,
-                 eps=1e-10,
-                 theta=4.,
-                 reduction='none',
-                 splited=True):
+    def __init__(self, loss_weight=1., eps=1e-10, theta=4., reduction='none'):
         super(SIoULoss, self).__init__(loss_weight=loss_weight, eps=eps)
         self.loss_weight = loss_weight
         self.eps = eps
         self.theta = theta
         self.reduction = reduction
-        self.splited = splited
 
     def __call__(self, pbox, gbox):
-        if self.splited:
-            x1, y1, x2, y2 = paddle.split(pbox, num_or_sections=4, axis=-1)
-            x1g, y1g, x2g, y2g = paddle.split(gbox, num_or_sections=4, axis=-1)
+        x1, y1, x2, y2 = paddle.split(pbox, num_or_sections=4, axis=-1)
+        x1g, y1g, x2g, y2g = paddle.split(gbox, num_or_sections=4, axis=-1)
 
-            box1 = [x1, y1, x2, y2]
-            box2 = [x1g, y1g, x2g, y2g]
-            iou = bbox_iou(box1, box2)
-        else:
-            x1, y1, x2, y2 = pbox
-            x1g, y1g, x2g, y2g = gbox
-            iou = bbox_iou(pbox, gbox)
+        box1 = [x1, y1, x2, y2]
+        box2 = [x1g, y1g, x2g, y2g]
+        iou = bbox_iou(box1, box2)
 
         cx = (x1 + x2) / 2
         cy = (y1 + y2) / 2

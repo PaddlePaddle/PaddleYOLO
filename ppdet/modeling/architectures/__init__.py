@@ -16,18 +16,22 @@ from . import meta_arch
 from . import yolo
 from . import ppyoloe
 from . import yolox
+from . import yolof
 from . import yolov5
 from . import yolov6
 from . import yolov7
 from . import yolov8
 from . import rtmdet
+from . import detr
 
 from .meta_arch import *
 from .yolo import *
 from .ppyoloe import *
 from .yolox import *
+from .yolof import *
 from .yolov5 import *
 from .yolov6 import *
 from .yolov7 import *
 from .yolov8 import *
 from .rtmdet import *
+from .detr import *

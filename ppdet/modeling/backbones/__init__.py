@@ -27,6 +27,7 @@ from . import focalnet
 from . import swin_transformer
 from . import vision_transformer
 from . import vit_mae
+from . import hgnet_v2
 
 from .resnet import *
 from .darknet import *
@@ -43,3 +44,4 @@ from .focalnet import *
 from .swin_transformer import *
 from .vision_transformer import *
 from .vit_mae import *
+from .hgnet_v2 import *
