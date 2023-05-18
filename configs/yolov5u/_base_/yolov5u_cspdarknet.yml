@@ -1,4 +1,4 @@
-architecture: YOLOv5u
+architecture: YOLOv5
 norm_type: sync_bn
 use_ema: True
 ema_decay: 0.9999
@@ -9,7 +9,7 @@ find_unused_parameters: True
 depth_mult: 1.0
 width_mult: 1.0
 
-YOLOv5u:
+YOLOv5:
   backbone: CSPDarkNet
   neck: YOLOCSPPAN
   yolo_head: YOLOv8Head

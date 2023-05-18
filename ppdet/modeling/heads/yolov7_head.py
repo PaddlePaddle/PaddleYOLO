@@ -616,7 +616,7 @@ class YOLOv7uHead(nn.Layer):
         }
         if self.print_l1_loss:
             # just see convergence
-            out_dict.update({'loss_l1': loss_l1})
+            out_dict.update({'loss_l1': loss_l1 * total_bs})
         return out_dict
 
     def post_process(self, head_outs, im_shape, scale_factor):
