@@ -24,3 +24,7 @@ from .env import *
 __all__ = trainer.__all__ \
         + callbacks.__all__ \
         + env.__all__
+
+from . import trainer_ssod
+from .trainer_ssod import *
+__all__ = __all__ + trainer_ssod.__all__

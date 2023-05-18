@@ -19,7 +19,7 @@ from __future__ import print_function
 import os
 import sys
 
-# add python path of PadleDetection to sys.path
+# add python path of PaddleDetection to sys.path
 parent_path = os.path.abspath(os.path.join(__file__, *(['..'] * 2)))
 sys.path.insert(0, parent_path)
 
@@ -64,10 +64,7 @@ def run(FLAGS, cfg):
     trainer = Trainer(cfg, mode='test')
 
     # load weights
-    if cfg.architecture in ['DeepSORT', 'ByteTrack']:
-        trainer.load_weights_sde(cfg.det_weights, cfg.reid_weights)
-    else:
-        trainer.load_weights(cfg.weights)
+    trainer.load_weights(cfg.weights)
 
     # export model
     trainer.export(FLAGS.output_dir)

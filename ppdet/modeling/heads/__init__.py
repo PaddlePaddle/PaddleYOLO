@@ -14,6 +14,8 @@
 
 from . import yolo_head
 from . import ppyoloe_head
+from . import yolof_head
+from . import detr_head
 from . import yolov5_head
 from . import yolov6_head
 from . import yolov7_head
@@ -22,6 +24,8 @@ from . import yolov8_head
 
 from .yolo_head import *
 from .ppyoloe_head import *
+from .yolof_head import *
+from .detr_head import *
 from .yolov5_head import *
 from .yolov6_head import *
 from .yolov7_head import *

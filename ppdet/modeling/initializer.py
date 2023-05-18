@@ -118,6 +118,12 @@ def zeros_(tensor):
     return _no_grad_fill_(tensor, 0)
 
 
+def vector_(tensor, vector):
+    with paddle.no_grad():
+        tensor.set_value(paddle.to_tensor(vector, dtype=tensor.dtype))
+    return tensor
+
+
 def _calculate_fan_in_and_fan_out(tensor, reverse=False):
     """
     Calculate (fan_in, _fan_out) for tensor
@@ -267,7 +273,8 @@ def kaiming_normal_(tensor,
 def linear_init_(module):
     bound = 1 / math.sqrt(module.weight.shape[0])
     uniform_(module.weight, -bound, bound)
-    uniform_(module.bias, -bound, bound)
+    if hasattr(module, "bias") and module.bias is not None:
+        uniform_(module.bias, -bound, bound)
 
 
 def conv_init_(module):

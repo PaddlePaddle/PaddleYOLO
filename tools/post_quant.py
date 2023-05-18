@@ -19,7 +19,7 @@ from __future__ import print_function
 import os
 import sys
 
-# add python path of PadleDetection to sys.path
+# add python path of PaddleDetection to sys.path
 parent_path = os.path.abspath(os.path.join(__file__, *(['..'] * 2)))
 sys.path.insert(0, parent_path)
 
@@ -60,13 +60,7 @@ def run(FLAGS, cfg):
     trainer = Trainer(cfg, mode='eval')
 
     # load weights
-    if cfg.architecture in ['DeepSORT']:
-        if cfg.det_weights != 'None':
-            trainer.load_weights_sde(cfg.det_weights, cfg.reid_weights)
-        else:
-            trainer.load_weights_sde(None, cfg.reid_weights)
-    else:
-        trainer.load_weights(cfg.weights)
+    trainer.load_weights(cfg.weights)
 
     # post quant model
     trainer.post_quant(FLAGS.output_dir)
