@@ -18,6 +18,7 @@ import paddle.nn as nn
 import paddle.nn.functional as F
 from paddle import ParamAttr
 from paddle.regularizer import L2Decay
+from ..initializer import constant_
 from ppdet.core.workspace import register
 
 from ..bbox_utils import batch_distance2bbox
@@ -119,17 +120,18 @@ class YOLOv8Head(nn.Layer):
                         bias_attr=ParamAttr(regularizer=L2Decay(0.0))),
                 ]))
         self.proj = paddle.arange(self.reg_max).astype('float32')
-        #self._init_bias() ?
+        self._initialize_biases()
 
     @classmethod
     def from_config(cls, cfg, input_shape):
         return {'in_channels': [i.channels for i in input_shape], }
 
-    def _init_bias(self):
+    def _initialize_biases(self):
         for a, b, s in zip(self.conv_reg, self.conv_cls, self.fpn_strides):
-            a[-1].bias.set_value(1.0)  # box
-            b[-1].bias[:self.num_classes] = math.log(5 / self.num_classes /
-                                                     (640 / s)**2)
+            constant_(a[-1].weight)
+            constant_(a[-1].bias, 1.0)
+            constant_(b[-1].weight)
+            constant_(b[-1].bias, math.log(5 / self.num_classes / (640 / s)**2))
 
     def forward(self, feats, targets=None):
         if self.training:
