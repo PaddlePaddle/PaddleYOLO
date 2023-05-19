@@ -181,9 +181,9 @@ class YOLOv5Loss(nn.Layer):
                 # t[range(n), t_cls] = self.cls_pos_label
                 # loss_cls = self.BCEcls(ps[:, 5:], t)
 
-                #t = paddle.full_like(ps[:, 5:], self.cls_neg_label)
-                # cls_pos_lable = paddle.to_tensor(self.cls_pos_label)
-                # t = paddle.put_along_axis(t,t_cls.unsqueeze(-1),values=self.cls_pos_label,axis=1)
+                # t = paddle.full_like(ps[:, 5:], self.cls_neg_label)
+                # cls_pos_label = paddle.to_tensor(self.cls_pos_label)
+                # t = paddle.put_along_axis(t,t_cls.unsqueeze(-1),values=cls_pos_label,axis=1)
 
                 t = paddle.full_like(ps[:, 5:], self.cls_neg_label)
                 if not self.to_static:
