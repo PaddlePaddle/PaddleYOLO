@@ -73,24 +73,24 @@ class YOLOv5Loss(nn.Layer):
             ],
             dtype=np.float32) * bias  # offsets
         self.anchor_t = anchor_t
+        self.to_static = False
 
     def build_targets(self, outputs, targets, anchors):
         # targets['gt_class'] [bs, max_gt_nums, 1]
         # targets['gt_bbox'] [bs, max_gt_nums, 4]
         # targets['pad_gt_mask'] [bs, max_gt_nums, 1]
         gt_nums = targets['pad_gt_mask'].sum(1).squeeze(-1).numpy()
-        nt = gt_nums.sum().astype('int32')
+        nt = int(sum(gt_nums))
         anchors = anchors.numpy()
         na = anchors.shape[1]  # not len(anchors)
         tcls, tbox, indices, anch = [], [], [], []
-
         gain = np.ones(7, dtype=np.float32)  # normalized to gridspace gain
         ai = np.tile(np.arange(na, dtype=np.float32).reshape(na, 1), [1, nt])
 
         batch_size = outputs[0].shape[0]
         gt_labels = []
         for idx in range(batch_size):
-            gt_num = gt_nums[idx].astype('int32')
+            gt_num = int(gt_nums[idx])
             if gt_num == 0:
                 continue
             gt_bbox = targets['gt_bbox'][idx][:gt_num].numpy()
@@ -181,9 +181,20 @@ class YOLOv5Loss(nn.Layer):
                 # t[range(n), t_cls] = self.cls_pos_label
                 # loss_cls = self.BCEcls(ps[:, 5:], t)
 
+                # t = paddle.full_like(ps[:, 5:], self.cls_neg_label)
+                # cls_pos_label = paddle.to_tensor(self.cls_pos_label)
+                # t = paddle.put_along_axis(t,t_cls.unsqueeze(-1),values=cls_pos_label,axis=1)
+
                 t = paddle.full_like(ps[:, 5:], self.cls_neg_label)
-                for i in range(n):
-                    t[i, t_cls[i]] = self.cls_pos_label
+                if not self.to_static:
+                    t = paddle.put_along_axis(
+                        t,
+                        t_cls.unsqueeze(-1),
+                        values=self.cls_pos_label,
+                        axis=1)
+                else:
+                    for i in range(n):
+                        t[i, t_cls[i]] = self.cls_pos_label
                 loss_cls = self.BCEcls(ps[:, 5:], t)
 
         obji = self.BCEobj(pi[:, :, :, :, 4], tobj)  # [bs, 3, h, w]
@@ -197,9 +208,12 @@ class YOLOv5Loss(nn.Layer):
 
     def forward(self, inputs, targets, anchors):
         yolo_losses = dict()
-        #tcls, tbox, indices, anch = self.build_targets(inputs, targets, anchors)
-        tcls, tbox, indices, anch = self.build_targets_paddle(inputs, targets,
-                                                              anchors)
+        if not self.to_static:
+            tcls, tbox, indices, anch = self.build_targets(inputs, targets,
+                                                           anchors)
+        else:
+            tcls, tbox, indices, anch = self.build_targets_paddle(
+                inputs, targets, anchors)
 
         for i, (p_det, balance) in enumerate(zip(inputs, self.balance)):
             t_cls = tcls[i]
