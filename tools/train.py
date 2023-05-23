@@ -125,7 +125,16 @@ def run(FLAGS, cfg):
         set_random_seed(0)
 
     # build trainer
-    trainer = Trainer(cfg, mode='train')
+    ssod_method = cfg.get('ssod_method', None)
+    if ssod_method is not None:
+        if ssod_method == 'DenseTeacher':
+            trainer = Trainer_DenseTeacher(cfg, mode='train')
+        else:
+            raise ValueError(
+                "Semi-Supervised Object Detection only support DenseTeacher now."
+            )
+    else:
+        trainer = Trainer(cfg, mode='train')
 
     # load weights
     if FLAGS.resume is not None:

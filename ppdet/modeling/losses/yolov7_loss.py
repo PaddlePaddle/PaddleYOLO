@@ -102,24 +102,41 @@ class YOLOv7Loss(nn.Layer):
                 inputs.append(pi)
 
         # 2.generate targets_labels [nt, 6] from gt_targets(dict)
-        # gt_targets['gt_class'] [bs, max_gt_nums, 1]
-        # gt_targets['gt_bbox'] [bs, max_gt_nums, 4]
-        # gt_targets['pad_gt_mask'] [bs, max_gt_nums, 1]
         anchors = anchors.numpy()
-        gt_nums = gt_targets['pad_gt_mask'].sum(1).squeeze(-1).numpy()
-        batch_size = head_outs[0].shape[0]
-        targets_labels = []  # [nt, 6]
-        for idx in range(batch_size):
-            gt_num = int(gt_nums[idx])
-            if gt_num == 0:
-                continue
-            gt_bbox = gt_targets['gt_bbox'][idx][:gt_num].reshape(
-                [-1, 4]).numpy()
-            gt_class = gt_targets['gt_class'][idx][:gt_num].reshape(
-                [-1, 1]).numpy() * 1.0
-            img_idx = np.repeat(np.array([[idx]]), gt_num, axis=0)
-            targets_labels.append(
-                np.concatenate((img_idx, gt_class, gt_bbox), -1))
+        if 0:
+            # collate_batch True
+            # gt_targets['gt_class'] [bs, max_gt_nums, 1]
+            # gt_targets['gt_bbox'] [bs, max_gt_nums, 4]
+            # gt_targets['pad_gt_mask'] [bs, max_gt_nums, 1]
+            gt_nums = gt_targets['pad_gt_mask'].sum(1).squeeze(-1).numpy()
+            batch_size = head_outs[0].shape[0]
+            targets_labels = []  # [nt, 6]
+            for idx in range(batch_size):
+                gt_num = int(gt_nums[idx])
+                if gt_num == 0:
+                    continue
+                gt_bbox = gt_targets['gt_bbox'][idx][:gt_num].reshape(
+                    [-1, 4]).numpy()
+                gt_class = gt_targets['gt_class'][idx][:gt_num].reshape(
+                    [-1, 1]).numpy() * 1.0
+                img_idx = np.repeat(np.array([[idx]]), gt_num, axis=0)
+                targets_labels.append(
+                    np.concatenate((img_idx, gt_class, gt_bbox), -1))
+        else:
+            gt_nums = [len(bbox) for bbox in gt_targets['gt_bbox']]
+            batch_size = head_outs[0].shape[0]
+            targets_labels = []  # [nt, 6]
+            for idx in range(batch_size):
+                gt_num = int(gt_nums[idx])
+                if gt_num == 0:
+                    continue
+                gt_bbox = gt_targets['gt_bbox'][idx][:gt_num].reshape([-1, 4])
+                gt_class = gt_targets['gt_class'][idx][:gt_num].reshape(
+                    [-1, 1]) * 1.0
+                img_idx = np.repeat(np.array([[idx]]), gt_num, axis=0)
+                targets_labels.append(
+                    np.concatenate((img_idx, gt_class, gt_bbox), -1))
+
         if (len(targets_labels)):
             targets_labels = np.concatenate(targets_labels)
         else:
@@ -245,15 +262,18 @@ class YOLOv7Loss(nn.Layer):
                 obji_aux = self.BCEobj(pi_aux[:, :, :, :, 4], tobj_aux)
                 lobj += 0.25 * obji_aux * self.balance[i]  # obj_aux loss
 
-        yolo_losses = dict()
-        yolo_losses['loss_box'] = lbox * self.loss_weights['box']
-        yolo_losses['loss_cls'] = lcls * self.loss_weights['cls']
-        yolo_losses['loss_obj'] = lobj * self.loss_weights['obj']
-        loss_all = yolo_losses['loss_box'] + yolo_losses[
-            'loss_obj'] + yolo_losses['loss_cls']
         batch_size = head_outs[0].shape[0]
         num_gpus = gt_targets.get('num_gpus', 8)
-        yolo_losses['loss'] = loss_all * batch_size * num_gpus
+        yolo_losses = dict()
+        yolo_losses['loss_box'] = lbox * self.loss_weights[
+            'box'] * batch_size * num_gpus
+        yolo_losses['loss_cls'] = lcls * self.loss_weights[
+            'cls'] * batch_size * num_gpus
+        yolo_losses['loss_obj'] = lobj * self.loss_weights[
+            'obj'] * batch_size * num_gpus
+        loss_all = yolo_losses['loss_box'] + yolo_losses[
+            'loss_obj'] + yolo_losses['loss_cls']
+        yolo_losses['loss'] = loss_all
         return yolo_losses
 
     def build_targets(self, p, targets, anchors, batch_images):
@@ -328,12 +348,13 @@ class YOLOv7Loss(nn.Layer):
             all_anch = np.concatenate(all_anch, 0)
 
             #pairwise_ious = box_iou(txyxy, pxyxys)  # tensor op
-            _,h,w = batch_images[batch_idx].shape
-            pairwise_ious = box_iou_normalization(txyxy, pxyxys,h,w)  # tensor op
+            _, h, w = batch_images[batch_idx].shape
+            pairwise_ious = box_iou_normalization(txyxy, pxyxys, h,
+                                                  w)  # tensor op
             # [N, 4] [M, 4] to get [N, M] ious
 
             pairwise_iou_loss = -paddle.log(pairwise_ious + 1e-5)
-           
+
             min_topk = 10
             topk_ious, _ = paddle.topk(pairwise_ious,
                                        min(min_topk, pairwise_ious.shape[1]), 1)
@@ -351,7 +372,8 @@ class YOLOv7Loss(nn.Layer):
 
             y = cls_preds_.sqrt_()
             pairwise_cls_loss = F.binary_cross_entropy_with_logits(
-                paddle.log(y / (1 - y)+1e-5), gt_cls_per_image,
+                paddle.log(y / (1 - y) + 1e-5),
+                gt_cls_per_image,
                 reduction="none").sum(-1)
             del cls_preds_
 
@@ -545,7 +567,8 @@ class YOLOv7Loss(nn.Layer):
 
             y = cls_preds_.sqrt_()
             pairwise_cls_loss = F.binary_cross_entropy_with_logits(
-                paddle.log(y / (1 - y) + 1e-5), gt_cls_per_image,
+                paddle.log(y / (1 - y) + 1e-5),
+                gt_cls_per_image,
                 reduction="none").sum(-1)
             del cls_preds_
 
@@ -673,26 +696,25 @@ def box_iou(box1, box2):
         box1[:, None, :2], box2[:, :2])).clip(0).prod(2)
     return inter / (area1[:, None] + area2 - inter)
 
-def box_iou_normalization(box1, box2,h,w):
+
+def box_iou_normalization(box1, box2, h, w):
     """
     [N, 4] [M, 4] to get [N, M] ious, boxes in [x1, y1, x2, y2] format. paddle Tensor op
      """
 
     def box_area(box):
-        return (box[2] - box[0])/h * (box[3] - box[1])/w
+        return (box[2] - box[0]) / h * (box[3] - box[1]) / w
 
     area1 = box_area(box1.T)
     area2 = box_area(box2.T)
 
-    xy_max = paddle.minimum(
-        paddle.unsqueeze(box1, 1)[:, :, 2:], box2[:, 2:])
-    xy_min = paddle.maximum(
-        paddle.unsqueeze(box1, 1)[:, :, :2], box2[:, :2])
+    xy_max = paddle.minimum(paddle.unsqueeze(box1, 1)[:, :, 2:], box2[:, 2:])
+    xy_min = paddle.maximum(paddle.unsqueeze(box1, 1)[:, :, :2], box2[:, :2])
     width_height = xy_max - xy_min
 
     width_height = width_height.clip(min=0)
-    width_height[:,:,0] = width_height[:,:,0]/h
-    width_height[:,:,1] = width_height[:,:,1]/w
+    width_height[:, :, 0] = width_height[:, :, 0] / h
+    width_height[:, :, 1] = width_height[:, :, 1] / w
     inter = width_height.prod(2)
-   
+
     return inter / (area1[:, None] + area2 - inter)

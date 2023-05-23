@@ -55,20 +55,10 @@ logger = setup_logger('ppdet.engine')
 
 __all__ = ['Trainer']
 
-RESET_INIT_MODELS = [
-    'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'YOLOv5u', 'YOLOv7u'
-]
-RESET_BN_MODELS = [
-    'YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'YOLOv5u', 'YOLOv7u'
-]
-UNSUPPORTED_TRAINING_MODELS = [
-    'RTMDet', 'YOLOv6', 'YOLOv8', 'YOLOv5u', 'YOLOv7u'
-]
-
 
 class Trainer(object):
     def __init__(self, cfg, mode='train'):
-        self.cfg = cfg
+        self.cfg = cfg.copy()
         assert mode.lower() in ['train', 'eval', 'test'], \
                 "mode should be 'train', 'eval' or 'test'"
         self.mode = mode.lower()
@@ -79,9 +69,12 @@ class Trainer(object):
         self.custom_white_list = self.cfg.get('custom_white_list', None)
         self.custom_black_list = self.cfg.get('custom_black_list', None)
 
-        if self.cfg.architecture in UNSUPPORTED_TRAINING_MODELS and self.mode == 'train':
+        if self.cfg.architecture in ['RTMDet', 'YOLOv6'
+                                     ] and self.mode == 'train':
             raise NotImplementedError('{} training not supported yet.'.format(
                 self.cfg.architecture))
+        if 'slim' in cfg and cfg['slim_type'] == 'PTQ':
+            self.cfg['TestDataset'] = create('TestDataset')()
 
         # build data loader
         capital_mode = self.mode.capitalize()
@@ -100,10 +93,13 @@ class Trainer(object):
             self.model = self.cfg.model
             self.is_loaded_weights = True
 
-        if self.cfg.architecture in RESET_INIT_MODELS:
+        if self.cfg.architecture in ['YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8']:
             reset_initialized_parameter(self.model)
+            self.model.yolo_head._initialize_biases()  # Note: must added
 
-        if cfg.architecture in RESET_BN_MODELS:
+        if cfg.architecture in [
+                'YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8'
+        ]:
             for k, m in self.model.named_sublayers():
                 if isinstance(m, nn.BatchNorm2D):
                     m._epsilon = 1e-3  # for amp(fp16)
@@ -131,7 +127,7 @@ class Trainer(object):
             reader_name = '{}Reader'.format(self.mode.capitalize())
             # If metric is VOC, need to be set collate_batch=False.
             if cfg.metric == 'VOC':
-                cfg[reader_name]['collate_batch'] = False
+                self.cfg[reader_name]['collate_batch'] = False
             self.loader = create(reader_name)(self.dataset, cfg.worker_num,
                                               self._eval_batch_sampler)
         # TestDataset build after user set images, skip loader creation here
@@ -141,7 +137,7 @@ class Trainer(object):
         if print_params:
             params = sum([
                 p.numel() for n, p in self.model.named_parameters()
-                if all([x not in n for x in ['_mean', '_variance']])
+                if all([x not in n for x in ['_mean', '_variance', 'aux_']])
             ])  # exclude BatchNorm running status
             logger.info('Model Params : {} M.'.format((params / 1e6).numpy()[
                 0]))
@@ -160,7 +156,6 @@ class Trainer(object):
             if self.cfg.get('unstructured_prune'):
                 self.pruner = create('UnstructuredPruner')(self.model,
                                                            steps_per_epoch)
-
         if self.use_amp and self.amp_level == 'O2':
             self.model, self.optimizer = paddle.amp.decorate(
                 models=self.model,
@@ -172,15 +167,14 @@ class Trainer(object):
             ema_decay_type = self.cfg.get('ema_decay_type', 'threshold')
             cycle_epoch = self.cfg.get('cycle_epoch', -1)
             ema_black_list = self.cfg.get('ema_black_list', None)
+            ema_filter_no_grad = self.cfg.get('ema_filter_no_grad', False)
             self.ema = ModelEMA(
                 self.model,
                 decay=ema_decay,
                 ema_decay_type=ema_decay_type,
                 cycle_epoch=cycle_epoch,
-                ema_black_list=ema_black_list)
-        self.self_distill = self.cfg.get('self_distill', False)
-        if self.self_distill:
-            self.teacher_model = self.model
+                ema_black_list=ema_black_list,
+                ema_filter_no_grad=ema_filter_no_grad)
 
         self._nranks = dist.get_world_size()
         self._local_rank = dist.get_rank()
@@ -298,11 +292,6 @@ class Trainer(object):
         self.start_epoch = 0
         load_pretrain_weight(self.model, weights)
         logger.debug("Load weights {} to start training".format(weights))
-
-        if self.self_distill:
-            load_pretrain_weight(self.teacher_model, weights)
-            logger.debug("Load weights {} to start training as teacher_model".
-                         format(weights))
 
         if self.mode in ['eval', 'test'] and self.cfg.architecture == 'YOLOv7':
             self.model.yolo_head.fuse()
