@@ -76,27 +76,57 @@ class YOLOv5Loss(nn.Layer):
         self.to_static = False
 
     def build_targets(self, outputs, targets, anchors):
-        # targets['gt_class'] [bs, max_gt_nums, 1]
-        # targets['gt_bbox'] [bs, max_gt_nums, 4]
-        # targets['pad_gt_mask'] [bs, max_gt_nums, 1]
-        gt_nums = targets['pad_gt_mask'].sum(1).squeeze(-1).numpy()
-        nt = int(sum(gt_nums))
-        anchors = anchors.numpy()
-        na = anchors.shape[1]  # not len(anchors)
-        tcls, tbox, indices, anch = [], [], [], []
-        gain = np.ones(7, dtype=np.float32)  # normalized to gridspace gain
-        ai = np.tile(np.arange(na, dtype=np.float32).reshape(na, 1), [1, nt])
+        if 0:
+            # collate_batch True
+            # targets['gt_class'] [bs, max_gt_nums, 1]
+            # targets['gt_bbox'] [bs, max_gt_nums, 4]
+            # targets['pad_gt_mask'] [bs, max_gt_nums, 1]
+            gt_nums = targets['pad_gt_mask'].sum(1).squeeze(-1).numpy()
+            nt = int(sum(gt_nums))
+            anchors = anchors.numpy()
+            na = anchors.shape[1]  # not len(anchors)
+            tcls, tbox, indices, anch = [], [], [], []
 
-        batch_size = outputs[0].shape[0]
-        gt_labels = []
-        for idx in range(batch_size):
-            gt_num = int(gt_nums[idx])
-            if gt_num == 0:
-                continue
-            gt_bbox = targets['gt_bbox'][idx][:gt_num].numpy()
-            gt_class = targets['gt_class'][idx][:gt_num].numpy() * 1.0
-            img_idx = np.repeat(np.array([[idx]]), gt_num, axis=0)
-            gt_labels.append(np.concatenate((img_idx, gt_class, gt_bbox), -1))
+            gain = np.ones(7, dtype=np.float32)  # normalized to gridspace gain
+            ai = np.tile(
+                np.arange(
+                    na, dtype=np.float32).reshape(na, 1), [1, nt])
+
+            batch_size = outputs[0].shape[0]
+            gt_labels = []
+            for idx in range(batch_size):
+                gt_num = int(gt_nums[idx])
+                if gt_num == 0:
+                    continue
+                gt_bbox = targets['gt_bbox'][idx][:gt_num].numpy()
+                gt_class = targets['gt_class'][idx][:gt_num].numpy() * 1.0
+                img_idx = np.repeat(np.array([[idx]]), gt_num, axis=0)
+                gt_labels.append(
+                    np.concatenate((img_idx, gt_class, gt_bbox), -1))
+        else:
+            gt_nums = [len(bbox) for bbox in targets['gt_bbox']]
+            nt = int(sum(gt_nums))
+            anchors = anchors.numpy()
+            na = anchors.shape[1]  # not len(anchors)
+            tcls, tbox, indices, anch = [], [], [], []
+
+            gain = np.ones(7, dtype=np.float32)  # normalized to gridspace gain
+            ai = np.tile(
+                np.arange(
+                    na, dtype=np.float32).reshape(na, 1), [1, nt])
+
+            batch_size = outputs[0].shape[0]
+            gt_labels = []
+            for idx in range(batch_size):
+                gt_num = gt_nums[idx]
+                if gt_num == 0:
+                    continue
+                gt_bbox = targets['gt_bbox'][idx][:gt_num]
+                gt_class = targets['gt_class'][idx][:gt_num] * 1.0
+                img_idx = np.repeat(np.array([[idx]]), gt_num, axis=0)
+                gt_labels.append(
+                    np.concatenate((img_idx, gt_class, gt_bbox), -1))
+
         if (len(gt_labels)):
             gt_labels = np.concatenate(gt_labels)
         else:
@@ -181,10 +211,6 @@ class YOLOv5Loss(nn.Layer):
                 # t[range(n), t_cls] = self.cls_pos_label
                 # loss_cls = self.BCEcls(ps[:, 5:], t)
 
-                # t = paddle.full_like(ps[:, 5:], self.cls_neg_label)
-                # cls_pos_label = paddle.to_tensor(self.cls_pos_label)
-                # t = paddle.put_along_axis(t,t_cls.unsqueeze(-1),values=cls_pos_label,axis=1)
-
                 t = paddle.full_like(ps[:, 5:], self.cls_neg_label)
                 if not self.to_static:
                     t = paddle.put_along_axis(
@@ -195,6 +221,7 @@ class YOLOv5Loss(nn.Layer):
                 else:
                     for i in range(n):
                         t[i, t_cls[i]] = self.cls_pos_label
+
                 loss_cls = self.BCEcls(ps[:, 5:], t)
 
         obji = self.BCEobj(pi[:, :, :, :, 4], tobj)  # [bs, 3, h, w]
@@ -235,43 +262,44 @@ class YOLOv5Loss(nn.Layer):
                 else:
                     yolo_losses[k] = v
 
-        loss = 0
-        for k, v in yolo_losses.items():
-            loss += v
-
         batch_size = inputs[0].shape[0]
         num_gpus = targets.get('num_gpus', 8)
-        yolo_losses['loss'] = loss * batch_size * num_gpus
+        loss = 0
+        for k, v in yolo_losses.items():
+            yolo_losses[k] = v * batch_size * num_gpus
+            loss += yolo_losses[k]
+        yolo_losses['loss'] = loss
         return yolo_losses
 
     def build_targets_paddle(self, outputs, targets, anchors):
         # targets['gt_class'] [bs, max_gt_nums, 1]
         # targets['gt_bbox'] [bs, max_gt_nums, 4]
         # targets['pad_gt_mask'] [bs, max_gt_nums, 1]
-        gt_nums = targets['pad_gt_mask'].sum(1).squeeze(-1)
-        nt = gt_nums.sum().astype('int32')
+        gt_nums = [len(bbox) for bbox in targets['gt_bbox']]
+        nt = int(sum(gt_nums))
         anchors = anchors
         na = anchors.shape[1]  # not len(anchors)
         tcls, tbox, indices, anch = [], [], [], []
 
         gain = paddle.ones(
-            [7], dtype=np.float32)  # normalized to gridspace gain
+            [7], dtype=paddle.float32)  # normalized to gridspace gain
         ai = paddle.tile(
             paddle.arange(
-                na, dtype=np.float32).reshape([na, 1]), [1, nt])
+                na, dtype=paddle.float32).reshape([na, 1]), [1, nt])
 
         batch_size = outputs[0].shape[0]
         gt_labels = []
-        for idx in range(batch_size):
-            gt_num = gt_nums[idx:idx + 1].astype("int32")
+        for i, (
+                gt_num, gt_bboxs, gt_classes
+        ) in enumerate(zip(gt_nums, targets['gt_bbox'], targets['gt_class'])):
             if gt_num == 0:
                 continue
-
-            gt_bbox = targets['gt_bbox'][idx][:gt_num]
-            gt_class = targets['gt_class'][idx][:gt_num] * 1.0
+            gt_bbox = gt_bboxs[:gt_num].astype('float32')
+            gt_class = (gt_classes[:gt_num] * 1.0).astype('float32')
             img_idx = paddle.repeat_interleave(
-                paddle.to_tensor([idx]), gt_num,
-                axis=0)[None, :].astype(paddle.float32).T
+                paddle.to_tensor([i]), gt_num,
+                axis=0)[None, :].astype('float32').T
+
             gt_labels.append(
                 paddle.concat(
                     (img_idx, gt_class, gt_bbox), axis=-1))
@@ -279,7 +307,7 @@ class YOLOv5Loss(nn.Layer):
         if (len(gt_labels)):
             gt_labels = paddle.concat(gt_labels)
         else:
-            gt_labels = paddle.zeros([0, 6])
+            gt_labels = paddle.zeros([0, 6], dtype=paddle.float32)
 
         targets_labels = paddle.concat((paddle.tile(
             paddle.unsqueeze(gt_labels, 0), [na, 1, 1]), ai[:, :, None]), 2)
