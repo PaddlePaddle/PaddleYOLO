@@ -18,10 +18,11 @@ This code is based on https://github.com/meituan/YOLOv6
 import paddle
 import paddle.nn as nn
 from ppdet.core.workspace import register, serializable
-from ..backbones.yolov6_efficientrep import SimConv, Transpose, RepLayer, BepC3Layer, make_divisible, get_block
+from ..backbones.yolov6_efficientrep import SimConv, Transpose, RepLayer, BepC3Layer, make_divisible, get_block, make_divisible_lite
+from ..backbones.yolov6_efficientrep import ConvBNHS, DPBlock, CSPBlock
 from ..shape_spec import ShapeSpec
 
-__all__ = ['RepPAN', 'RepBiFPAN', 'CSPRepPAN', 'CSPRepBiFPAN']
+__all__ = ['RepPAN', 'RepBiFPAN', 'CSPRepPAN', 'CSPRepBiFPAN', 'Lite_EffiNeck']
 
 
 class BiFusion(nn.Layer):
@@ -57,7 +58,6 @@ class RepPAN(nn.Layer):
                  depth_mult=1.0,
                  width_mult=1.0,
                  in_channels=[256, 512, 1024],
-                 out_channels=[128, 256, 512],
                  num_repeats=[12, 12, 12, 12],
                  training_mode='repvgg'):
         super(RepPAN, self).__init__()
@@ -143,7 +143,6 @@ class RepBiFPAN(nn.Layer):
                  depth_mult=0.33,
                  width_mult=0.50,
                  in_channels=[128, 256, 512, 1024],
-                 out_channels=[128, 256, 512],
                  training_mode='repvgg'):
         super(RepBiFPAN, self).__init__()
         backbone_ch_list = [64, 128, 256, 512, 1024]
@@ -226,7 +225,6 @@ class CSPRepPAN(nn.Layer):
                  depth_mult=1.0,
                  width_mult=1.0,
                  in_channels=[256, 512, 1024],
-                 out_channels=[128, 256, 512],
                  num_repeats=[12, 12, 12, 12],
                  training_mode='repvgg',
                  csp_e=0.5,
@@ -339,7 +337,6 @@ class CSPRepBiFPAN(nn.Layer):
                  depth_mult=1.0,
                  width_mult=1.0,
                  in_channels=[128, 256, 512, 1024],
-                 out_channels=[128, 256, 512],
                  training_mode='repvgg',
                  csp_e=0.5,
                  act='relu'):
@@ -416,6 +413,113 @@ class CSPRepBiFPAN(nn.Layer):
         pan_out0 = self.Rep_n4(p_concat_layer2)
 
         return [pan_out2, pan_out1, pan_out0]
+
+    @classmethod
+    def from_config(cls, cfg, input_shape):
+        return {'in_channels': [i.channels for i in input_shape], }
+
+    @property
+    def out_shape(self):
+        return [ShapeSpec(channels=c) for c in self._out_channels]
+
+
+@register
+@serializable
+class Lite_EffiNeck(nn.Layer):
+    """Lite_EffiNeck of YOLOv6-lite """
+
+    def __init__(self, in_channels=[64, 128, 256], unified_channels=96):
+        super().__init__()
+        self.in_channels = in_channels
+        self._out_channels = [unified_channels] * 4
+
+        self.reduce_layer0 = ConvBNHS(
+            in_channels=in_channels[2],
+            out_channels=unified_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0)
+        self.reduce_layer1 = ConvBNHS(
+            in_channels=in_channels[1],
+            out_channels=unified_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0)
+        self.reduce_layer2 = ConvBNHS(
+            in_channels=in_channels[0],
+            out_channels=unified_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0)
+        self.upsample0 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.upsample1 = nn.Upsample(scale_factor=2, mode='nearest')
+
+        self.Csp_p4 = CSPBlock(
+            in_channels=unified_channels * 2,
+            out_channels=unified_channels,
+            kernel_size=5)
+        self.Csp_p3 = CSPBlock(
+            in_channels=unified_channels * 2,
+            out_channels=unified_channels,
+            kernel_size=5)
+        self.Csp_n3 = CSPBlock(
+            in_channels=unified_channels * 2,
+            out_channels=unified_channels,
+            kernel_size=5)
+        self.Csp_n4 = CSPBlock(
+            in_channels=unified_channels * 2,
+            out_channels=unified_channels,
+            kernel_size=5)
+        self.downsample2 = DPBlock(
+            in_channel=unified_channels,
+            out_channel=unified_channels,
+            kernel_size=5,
+            stride=2)
+        self.downsample1 = DPBlock(
+            in_channel=unified_channels,
+            out_channel=unified_channels,
+            kernel_size=5,
+            stride=2)
+        self.p6_conv_1 = DPBlock(
+            in_channel=unified_channels,
+            out_channel=unified_channels,
+            kernel_size=5,
+            stride=2)
+        self.p6_conv_2 = DPBlock(
+            in_channel=unified_channels,
+            out_channel=unified_channels,
+            kernel_size=5,
+            stride=2)
+
+    def forward(self, feats, for_mot=False):
+        (c3, c4, c5) = feats
+        # [1, 48, 80, 80] [1, 96, 40, 40] [1, 176, 20, 20]
+
+        fpn_out0 = self.reduce_layer0(c5)  #c5 # [1, 96, 20, 20]
+        x1 = self.reduce_layer1(c4)  #c4 # [1, 96, 40, 40]
+        x2 = self.reduce_layer2(c3)  #c3 # [1, 96, 80, 80]
+
+        upsample_feat0 = self.upsample0(fpn_out0)
+        f_concat_layer0 = paddle.concat([upsample_feat0, x1], 1)
+        f_out1 = self.Csp_p4(f_concat_layer0)
+
+        upsample_feat1 = self.upsample1(f_out1)
+        f_concat_layer1 = paddle.concat([upsample_feat1, x2], 1)
+        pan_out3 = self.Csp_p3(f_concat_layer1)  #p3
+
+        down_feat1 = self.downsample2(pan_out3)
+        p_concat_layer1 = paddle.concat([down_feat1, f_out1], 1)
+        pan_out2 = self.Csp_n3(p_concat_layer1)  #p4
+
+        down_feat0 = self.downsample1(pan_out2)
+        p_concat_layer2 = paddle.concat([down_feat0, fpn_out0], 1)
+        pan_out1 = self.Csp_n4(p_concat_layer2)  #p5
+
+        top_features = self.p6_conv_1(fpn_out0)
+        pan_out0 = top_features + self.p6_conv_2(pan_out1)  #p6
+
+        outputs = [pan_out3, pan_out2, pan_out1, pan_out0]
+        return outputs
 
     @classmethod
     def from_config(cls, cfg, input_shape):
