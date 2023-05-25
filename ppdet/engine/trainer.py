@@ -70,7 +70,8 @@ class Trainer(object):
         self.custom_white_list = self.cfg.get('custom_white_list', None)
         self.custom_black_list = self.cfg.get('custom_black_list', None)
 
-        if self.cfg.architecture in ['RTMDet', 'YOLOv6'] and self.mode == 'train':
+        if self.cfg.architecture in ['RTMDet', 'YOLOv6'
+                                     ] and self.mode == 'train':
             raise NotImplementedError('{} training not supported yet.'.format(
                 self.cfg.architecture))
         if 'slim' in cfg and cfg['slim_type'] == 'PTQ':
@@ -316,6 +317,8 @@ class Trainer(object):
         model = self.model
         if self.cfg.get('to_static', False):
             model = apply_to_static(self.cfg, model)
+            if self.cfg.architecture == 'YOLOv5':
+                model.yolo_head.loss.to_static = True
         sync_bn = (getattr(self.cfg, 'norm_type', None) == 'sync_bn' and
                    (self.cfg.use_gpu or self.cfg.use_mlu) and self._nranks > 1)
         if sync_bn:
