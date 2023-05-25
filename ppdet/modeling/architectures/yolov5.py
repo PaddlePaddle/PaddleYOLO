@@ -19,7 +19,7 @@ from __future__ import print_function
 from ppdet.core.workspace import register, create
 from .meta_arch import BaseArch
 
-__all__ = ['YOLOv5', 'YOLOv5u']
+__all__ = ['YOLOv5']
 
 
 @register
@@ -34,7 +34,7 @@ class YOLOv5(BaseArch):
                  post_process='BBoxPostProcess',
                  for_mot=False):
         """
-        YOLOv5 architecture
+        YOLOv5, YOLOv6(https://arxiv.org/abs/2209.02976) and YOLOv7(https://arxiv.org/abs/2207.02696)
 
         Args:
             backbone (nn.Layer): backbone instance
@@ -94,10 +94,3 @@ class YOLOv5(BaseArch):
 
     def get_pred(self):
         return self._forward()
-
-
-@register
-class YOLOv5u(YOLOv5):
-    """YOLOv5u is YOLOv5 + YOLOv8Head
-    """
-    pass

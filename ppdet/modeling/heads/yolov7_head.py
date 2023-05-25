@@ -169,8 +169,7 @@ class YOLOv7Head(nn.Layer):
         for i, conv in enumerate(self.yolo_outputs):
             b = conv.bias.numpy().reshape([3, -1])  # [255] to [3,85]
             b[:, 4] += math.log(8 / (640 / self.stride[i])**2)
-            b[:, 5:self.num_classes + 5] += math.log(0.6 / (
-                self.num_classes - 0.999999))
+            b[:, 5:self.num_classes + 5] += math.log(0.6 / (self.num_classes - 0.999999))
             conv.bias.set_value(b.reshape([-1]))
 
         if self.use_aux:
@@ -414,20 +413,16 @@ class YOLOv7uHead(nn.Layer):
             l = h * w
             bbox_dist_preds = self.im2[i](self.conv_reg[i](self.ia2[i](feat)))
             cls_logit = self.im3[i]((self.conv_cls[i](self.ia3[i](feat))))
-            bbox_dist_preds = bbox_dist_preds.reshape(
-                [-1, 4, self.reg_max, l]).transpose([0, 3, 1, 2])
-            bbox_preds = F.softmax(
-                bbox_dist_preds,
-                axis=3).matmul(self.proj.reshape([-1, 1])).squeeze(-1)
+            bbox_dist_preds = bbox_dist_preds.reshape([-1, 4, self.reg_max, l]).transpose([0, 3, 1, 2])
+            bbox_preds = F.softmax(bbox_dist_preds, axis=3).matmul(self.proj.reshape([-1, 1])).squeeze(-1)
 
             cls_logits_list.append(cls_logit)
-            bbox_preds_list.append(
-                bbox_preds.transpose([0, 2, 1]).reshape([-1, 4, h, w]))
+            bbox_preds_list.append(bbox_preds.transpose([0, 2, 1]).reshape([-1, 4, h, w]))
             bbox_dist_preds_list.append(bbox_dist_preds)
 
         return self.get_loss([
-            cls_logits_list, bbox_preds_list, bbox_dist_preds_list, anchors,
-            anchor_points, num_anchors_list, stride_tensor
+            cls_logits_list, bbox_preds_list, bbox_dist_preds_list, anchors, anchor_points,
+            num_anchors_list, stride_tensor
         ], targets)
 
     def forward_eval(self, feats):
@@ -443,17 +438,13 @@ class YOLOv7uHead(nn.Layer):
 
             bbox_dist_preds = bbox_dist_preds.reshape(
                 [-1, 4, self.reg_max, l]).transpose([0, 3, 1, 2])
-            bbox_preds = F.softmax(
-                bbox_dist_preds,
-                axis=3).matmul(self.proj.reshape([-1, 1])).squeeze(-1)
+            bbox_preds = F.softmax(bbox_dist_preds, axis=3).matmul(self.proj.reshape([-1, 1])).squeeze(-1)
             cls_logits_list.append(cls_logit)
-            bbox_preds_list.append(
-                bbox_preds.transpose([0, 2, 1]).reshape([-1, 4, h, w]))
+            bbox_preds_list.append(bbox_preds.transpose([0, 2, 1]).reshape([-1, 4, h, w]))
             feats_shapes.append(l)
 
         pred_scores = [
-            cls_score.transpose([0, 2, 3, 1]).reshape(
-                [-1, size, self.num_classes])
+            cls_score.transpose([0, 2, 3, 1]).reshape([-1, size, self.num_classes])
             for size, cls_score in zip(feats_shapes, cls_logits_list)
         ]
         pred_dists = [
@@ -510,10 +501,11 @@ class YOLOv7uHead(nn.Layer):
         cls_scores, bbox_preds, bbox_dist_preds, anchors,\
         anchor_points, num_anchors_list, stride_tensor = head_outs
 
+
         bs = cls_scores[0].shape[0]
         flatten_cls_preds = [
-            cls_pred.transpose([0, 2, 3, 1]).reshape(
-                [bs, -1, self.num_classes]) for cls_pred in cls_scores
+            cls_pred.transpose([0, 2, 3, 1]).reshape([bs, -1, self.num_classes])
+            for cls_pred in cls_scores
         ]
         flatten_pred_bboxes = [
             bbox_pred.transpose([0, 2, 3, 1]).reshape([bs, -1, 4])
@@ -528,12 +520,13 @@ class YOLOv7uHead(nn.Layer):
         pred_scores = paddle.concat(flatten_cls_preds, 1)
         pred_distri = paddle.concat(flatten_pred_bboxes, 1)
 
+
         anchor_points_s = anchor_points / stride_tensor
-        pred_bboxes = batch_distance2bbox(anchor_points_s, pred_distri)  # xyxy
+        pred_bboxes = batch_distance2bbox(anchor_points_s, pred_distri) # xyxy
         pred_bboxes = pred_bboxes * stride_tensor
 
         gt_labels = gt_meta['gt_class']
-        gt_bboxes = gt_meta['gt_bbox']  # xyxy
+        gt_bboxes = gt_meta['gt_bbox'] # xyxy
         pad_gt_mask = gt_meta['pad_gt_mask']
 
         assigned_labels, assigned_bboxes, assigned_scores = \
@@ -567,18 +560,16 @@ class YOLOv7uHead(nn.Layer):
         if num_pos > 0:
             # ciou loss
             bbox_mask = mask_positive.unsqueeze(-1).tile([1, 1, 4])
-            pred_bboxes_pos = paddle.masked_select(pred_bboxes,
-                                                   bbox_mask).reshape([-1, 4])
+            pred_bboxes_pos = paddle.masked_select(
+                pred_bboxes, bbox_mask).reshape([-1, 4])
             assigned_bboxes_pos = paddle.masked_select(
                 assigned_bboxes, bbox_mask).reshape([-1, 4])
             bbox_weight = paddle.masked_select(
                 assigned_scores.sum(-1), mask_positive).unsqueeze(-1)
-            iou = bbox_iou(
-                pred_bboxes_pos.split(
-                    4, axis=-1),
-                assigned_bboxes_pos.split(
-                    4, axis=-1),
-                x1y1x2y2=True,  # xyxy
+            iou = bbox_iou( 
+                pred_bboxes_pos.split(4, axis=-1),
+                assigned_bboxes_pos.split(4, axis=-1),
+                x1y1x2y2=True, # xyxy
                 ciou=True,
                 eps=1e-7)
             loss_iou = ((1.0 - iou) * bbox_weight).sum() / assigned_scores_sum
@@ -635,7 +626,8 @@ class YOLOv7uHead(nn.Layer):
         pred_bboxes *= stride_tensor
 
         if self.exclude_post_process:
-            return paddle.concat([pred_bboxes, pred_scores], axis=-1), None
+            return paddle.concat(
+                [pred_bboxes, pred_scores], axis=-1), None
         else:
             pred_scores = pred_scores.transpose([0, 2, 1])
             # scale bbox to origin

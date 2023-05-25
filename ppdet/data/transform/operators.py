@@ -4512,8 +4512,8 @@ class YOLOv5KeepRatioResize(BaseOperator):
 
     def apply_image(self, image):
         original_h, original_w = image.shape[:2]
-        ratio = self._get_rescale_ratio((original_h, original_w),
-                                        self.target_size)
+        ratio = self._get_rescale_ratio(
+            (original_h, original_w), self.target_size)
         if ratio != 1:
             # resize image according to the shape
             # NOTE: We are currently testing on COCO that modifying
@@ -4548,8 +4548,8 @@ class YOLOv5KeepRatioResize(BaseOperator):
 
         shapes = [[1, 1]]
         aspect_ratio = resize_h / resize_w
-        shapes = [aspect_ratio,
-                  1] if aspect_ratio < 1 else [1, 1 / aspect_ratio]
+        shapes = [aspect_ratio, 1
+                  ] if aspect_ratio < 1 else [1, 1 / aspect_ratio]
         batch_shapes = np.ceil(
             np.array(shapes) * 640 / self.size_divisor +
             self.extra_pad_ratio).astype(np.int64) * self.size_divisor

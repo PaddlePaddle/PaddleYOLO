@@ -31,11 +31,13 @@ TRT_MIN_SUBGRAPH = {
     'YOLO': 3,
     'PPYOLOE': 10,
     'YOLOX': 20,
+    'YOLOF': 40,
     'YOLOv5': 20,
     'RTMDet': 20,
     'YOLOv6': 10,
     'YOLOv7': 10,
     'YOLOv8': 10,
+    'DETR': 3,
 }
 
 TO_STATIC_SPEC = {
@@ -166,8 +168,11 @@ def _dump_infer_config(config, path, image_shape, model):
             arch_state = True
             break
 
+    if infer_arch == 'PPYOLOEWithAuxHead':
+        infer_arch = 'PPYOLOE'
+
     if infer_arch in [
-            'YOLOX', 'PPYOLOE', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8'
+            'YOLOX', 'YOLOF', 'PPYOLOE', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8'
     ]:
         infer_cfg['arch'] = infer_arch
         infer_cfg['min_subgraph_size'] = TRT_MIN_SUBGRAPH[infer_arch]

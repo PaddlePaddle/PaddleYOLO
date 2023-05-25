@@ -29,6 +29,7 @@
 
 ## 更新日志
 
+* 【2023/05/21】支持[RT-DETR](configs/rtdetr)、[YOLOv8](configs/yolov8)、[YOLOv5u](configs/yolov5/yolov5u)和[YOLOv7u](configs/yolov7/yolov7u)训练全流程，支持[YOLOv6Lite](configs/yolov6/yolov6lite)预测和部署；
 * 【2023/03/13】支持[YOLOv5u](configs/yolov5/yolov5u)和[YOLOv7u](configs/yolov7/yolov7u)预测和部署；
 * 【2022/01/10】支持[YOLOv8](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.6/configs/yolov8)预测和部署；
 * 【2022/09/29】支持[RTMDet](https://github.com/PaddlePaddle/PaddleYOLO/tree/release/2.6/configs/rtmdet)预测和部署；
