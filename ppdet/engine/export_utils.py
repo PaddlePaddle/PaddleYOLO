@@ -42,6 +42,7 @@ TRT_MIN_SUBGRAPH = {
 
 TO_STATIC_SPEC = {
     'yolov5_l_300e_coco': None,
+    'yolov7_l_300e_coco': None,
     'yolov3_darknet53_270e_coco': [{
         'im_id': paddle.static.InputSpec(
             name='im_id', shape=[-1, 1], dtype='float32'),

@@ -249,8 +249,9 @@ class YOLOv5Loss(nn.Layer):
             t_indices = indices[i]
 
             bs, ch, h, w = p_det.shape
-            pi = p_det.reshape((bs, self.na, -1, h, w)).transpose(
-                (0, 1, 3, 4, 2))
+            pi = p_det.reshape(
+                (bs, self.na, int(ch / self.na), h, w)).transpose(
+                    (0, 1, 3, 4, 2))
 
             yolo_loss = self.yolov5_loss(pi, t_cls, t_box, t_indices, t_anchor,
                                          balance)
