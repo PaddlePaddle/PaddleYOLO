@@ -222,6 +222,8 @@ class YOLOv5Loss(nn.Layer):
                     for i in range(n):
                         t[i, t_cls[i]] = self.cls_pos_label
 
+                loss_cls = self.BCEcls(ps[:, 5:], t)
+
         obji = self.BCEobj(pi[:, :, :, :, 4], tobj)  # [bs, 3, h, w]
 
         loss_obj = obji * balance
