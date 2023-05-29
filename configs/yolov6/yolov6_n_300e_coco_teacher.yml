@@ -1,0 +1,31 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  '_base_/optimizer_300e.yml',
+  '_base_/yolov6_efficientrep.yml',
+  '_base_/yolov6_reader.yml',
+]
+depth_mult: 0.33
+width_mult: 0.25
+snapshot_epoch: 10
+### model config
+act: 'relu'
+training_mode: "repvgg"
+model_type: "YOLOv6n"
+YOLOv6:
+  backbone: EfficientRep
+  neck: RepBiFPAN
+  yolo_head: EffiDeHead_fuseab
+  post_process: ~
+
+
+EffiDeHead_fuseab:
+  reg_max: 16
+  anchors: [[10, 13, 19, 19, 33, 23],
+            [ 30, 61, 59, 59, 59, 119 ],
+            [ 116, 90, 185, 185, 373, 326 ] ]
+  use_dfl: True # False in n/s
+  static_assigner_epoch: 0
+  loss_weight: {cls: 1.0, iou: 2.5}
+  iou_type: 'siou' # only in n/t version
+  

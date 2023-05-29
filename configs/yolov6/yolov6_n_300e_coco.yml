@@ -14,7 +14,7 @@ weights: output/yolov6_n_300e_coco/model_final
 
 ### reader config
 TrainReader:
-  batch_size: 16 # default 8 gpus, total bs = 128
+  batch_size: 32 # default 8 gpus, total bs = 128
 
 EvalReader:
   batch_size: 1
@@ -23,19 +23,29 @@ EvalReader:
 ### model config
 act: 'relu'
 training_mode: "repvgg"
-
+model_type: "YOLOv6n"
 YOLOv6:
   backbone: EfficientRep
   neck: RepBiFPAN
-  yolo_head: EffiDeHead
+  yolo_head: EffiDeHead_fuseab
   post_process: ~
 
-EffiDeHead:
+# EffiDeHead:
+#   reg_max: 0
+#   use_dfl: False # False in n/s
+#   loss_weight: {cls: 1.0, iou: 2.5}
+#   iou_type: 'siou' # only in n/t version
+
+EffiDeHead_fuseab:
   reg_max: 0
   use_dfl: False # False in n/s
+  anchors: [[10, 13, 19, 19, 33, 23],
+            [ 30, 61, 59, 59, 59, 119 ],
+            [ 116, 90, 185, 185, 373, 326 ] ]
+  static_assigner_epoch: 4
   loss_weight: {cls: 1.0, iou: 2.5}
   iou_type: 'siou' # only in n/t version
-
+  
 
 ### distill config
 ## Step 1: Training the base model, get about 37.0 mAP
@@ -52,8 +62,9 @@ EffiDeHead_distill_ns:
   reg_max: 16
   use_dfl: True
 
-## Please cancel the following comment and train again:
-# self_distill: True
-# pretrain_weights: output/yolov6_n_300e_coco/model_final.pdparams
-# save_dir: output_distill
-# weights: output_distill/yolov6_n_300e_coco/model_final
+### Please cancel the following comment and train again:
+temperature: 20
+self_distill: True
+pretrain_weights: model/best_model.pdparams
+save_dir: output_distill
+weights: output_distill/yolov6_n_300e_coco/model_final
