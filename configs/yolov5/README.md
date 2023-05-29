@@ -18,6 +18,18 @@
 | YOLOv5-x        |  640     |    16      |   300e   |     13.7   |  50.6  | 68.7 |  86.75  | 205.92 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [配置文件](./yolov5_x_300e_coco.yml) |
 | YOLOv5-s ConvNeXt|  640    |    8       |   36e    |      -     |  42.4  | 65.3 |  34.54  |  17.96 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_convnext_s_36e_coco.pdparams) | [配置文件](../convnext/yolov5_convnext_s_36e_coco.yml) |
 
+### SSOD预训练模型
+
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| YOLOv5-s        |  640     |    16      |   80e   |     2.6    |  38.8  | 58.2 |  7.24  | 16.54 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_s_80e_ssod_finetune_coco.pdparams) | [配置文件](./yolov5_s_80e_ssod_finetune_coco.yml) |
+
+### Objects-365预训练模型
+
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| YOLOv5-l        |  640     |    16      |   30e   |     7.9    |  49.3  | 67.8 |  46.56  | 109.32 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_l_30e_obj365_finetune_coco.pdparams) | [配置文件](./yolov5_l_30e_obj365_finetune_coco.yml) |
+
 ### P6大尺度模型
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
