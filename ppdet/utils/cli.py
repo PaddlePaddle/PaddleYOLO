@@ -48,6 +48,7 @@ class ArgsParser(ArgumentParser):
         super(ArgsParser, self).__init__(
             formatter_class=RawDescriptionHelpFormatter)
         self.add_argument("-c", "--config", help="configuration file to use")
+        self.add_argument("-c_teacher", "--config_teacher", help="configuration file to use")
         self.add_argument(
             "-o", "--opt", nargs='*', help="set configuration options")
 
