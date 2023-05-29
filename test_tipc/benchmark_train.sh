@@ -88,7 +88,7 @@ lines=(${dataline})
 model_name=$(func_parser_value "${lines[1]}")
 
 # 获取benchmark_params所在的行数
-line_num=`grep -n "train_benchmark_params" $FILENAME  | cut -d ":" -f 1`
+line_num=`grep -n -w "train_benchmark_params" $FILENAME  | cut -d ":" -f 1`
 # for train log parser
 batch_size=$(func_parser_value "${lines[line_num]}")
 line_num=`expr $line_num + 1`
@@ -144,6 +144,14 @@ if  [ ! -n "$PARAMS" ] ;then
     device_num="N1C4"
     device_num_list=($device_num)
     run_mode="DP"
+elif [[ ${PARAMS} = "dynamicTostatic" ]] ;then
+    IFS="|"
+    model_type=$PARAMS
+    batch_size_list=(${batch_size})
+    fp_items_list=(${fp_items})
+    device_num="N1C4"
+    device_num_list=($device_num)
+    run_mode="DP"
 else
     # parser params from input: modeltype_bs${bs_item}_${fp_item}_${run_mode}_${device_num}
     IFS="_"
@@ -165,16 +173,46 @@ else
     device_num_list=($device_num)
 fi
 
-if [[ ${model_name} =~ "higherhrnet" ]] || [[ ${model_name} =~ "hrnet" ]] || [[ ${model_name} =~ "tinypose" ]];then
+if [[ ${model_name} =~ "yolov5" ]];then 
+   echo "${model_name} run unset MosaicPerspective and RandomHSV"
+   eval "sed -i '10c 10c    - MosaicPerspective: {mosaic_prob: 0.0, target_size: *input_size, scale: 0.9, mixup_prob: 0.1, copy_paste_prob: 0.1}' configs/yolov5/_base_/yolov5_reader_high_aug.yml"
+   eval "sed -i 's/10c//' configs/yolov5/_base_/yolov5_reader_high_aug.yml"
+   eval "sed -i 's/^    - RandomHSV: /#&/' configs/yolov5/_base_/yolov5_reader_high_aug.yml"
+fi
+
+if [[ ${model_name} =~ "yolov7" ]];then 
+   echo "${model_name} run unset MosaicPerspective and RandomHSV"
+   eval "sed -i '10c 10c    - MosaicPerspective: {mosaic_prob: 0.0, target_size: *input_size, scale: 0.9, mixup_prob: 0.1, copy_paste_prob: 0.1}' configs/yolov7/_base_/yolov7_reader.yml"
+   eval "sed -i 's/10c//' configs/yolov7/_base_/yolov7_reader.yml"
+   eval "sed -i 's/^    - RandomHSV: /#&/' configs/yolov7/_base_/yolov7_reader.yml"
+fi
+
+# for log name
+to_static=""
+# parse "to_static" options and modify trainer into "to_static_trainer"
+if [[ ${model_type} = "dynamicTostatic" ]];then
+    to_static="d2sT_"
+    sed -i 's/trainer:norm_train/trainer:to_static_train/g' $FILENAME
+    #yolov5 and yolov7 static need MosaicPerspective
+    eval "sed -i '10c 10c    - MosaicPerspective: {mosaic_prob: 1.0, target_size: *input_size, scale: 0.9, mixup_prob: 0.1, copy_paste_prob: 0.1}' configs/yolov5/_base_/yolov5_reader_high_aug.yml"
+    eval "sed -i 's/10c//' configs/yolov5/_base_/yolov5_reader_high_aug.yml"
+    eval "sed -i '10c 10c    - MosaicPerspective: {mosaic_prob: 1.0, target_size: *input_size, scale: 0.9, mixup_prob: 0.1, copy_paste_prob: 0.1}' configs/yolov7/_base_/yolov7_reader.yml"
+    eval "sed -i 's/10c//' configs/yolov7/_base_/yolov7_reader.yml"
+fi
+
+
+
+if [[ ${model_name} =~ "higherhrnet" ]] || [[ ${model_name} =~ "hrnet" ]] || [[ ${model_name} =~ "tinypose" ]] || [[ ${model_name} =~ "ppyoloe_r_crn_s_3x_spine_coco" ]] ;then
     echo "${model_name} run on full coco dataset"
     epoch=$(set_dynamic_epoch $device_num $epoch)
 else
     epoch=1
     repeat=$(set_dynamic_epoch $device_num $repeat)
-    eval "sed -i '10c\    repeat: ${repeat}' configs/datasets/coco_detection.yml"
-    eval "sed -i '10c\    repeat: ${repeat}' configs/datasets/coco_instance.yml"
-    eval "sed -i '10c\    repeat: ${repeat}' configs/datasets/mot.yml"
+    eval "sed -i '10c\  repeat: ${repeat}' configs/datasets/coco_detection.yml"
+    eval "sed -i '10c\  repeat: ${repeat}' configs/datasets/coco_instance.yml"
+    eval "sed -i '10c\  repeat: ${repeat}' configs/datasets/mot.yml"
 fi
+
 
 IFS="|"
 for batch_size in ${batch_size_list[*]}; do
@@ -189,7 +227,7 @@ for batch_size in ${batch_size_list[*]}; do
             if [ ${#gpu_id} -le 1 ];then
                 log_path="$SAVE_LOG/profiling_log"
                 mkdir -p $log_path
-                log_name="${repo_name}_${model_name}_bs${batch_size}_${precision}_${run_mode}_${device_num}_profiling"
+                log_name="${repo_name}_${model_name}_bs${batch_size}_${precision}_${run_mode}_${device_num}_${to_static}profiling"
                 func_sed_params "$FILENAME" "${line_gpuid}" "0"  # sed used gpu_id
                 # set profile_option params
                 tmp=`sed -i "${line_profile}s/.*/${profile_option}/" "${FILENAME}"`
@@ -205,8 +243,8 @@ for batch_size in ${batch_size_list[*]}; do
                 speed_log_path="$SAVE_LOG/index"
                 mkdir -p $log_path
                 mkdir -p $speed_log_path
-                log_name="${repo_name}_${model_name}_bs${batch_size}_${precision}_${run_mode}_${device_num}_log"
-                speed_log_name="${repo_name}_${model_name}_bs${batch_size}_${precision}_${run_mode}_${device_num}_speed"
+                log_name="${repo_name}_${model_name}_bs${batch_size}_${precision}_${run_mode}_${device_num}_${to_static}log"
+                speed_log_name="${repo_name}_${model_name}_bs${batch_size}_${precision}_${run_mode}_${device_num}_${to_static}speed"
                 func_sed_params "$FILENAME" "${line_profile}" "null"  # sed profile_id as null
                 cmd="bash test_tipc/test_train_inference_python.sh ${FILENAME} benchmark_train > ${log_path}/${log_name} 2>&1 "
                 echo $cmd
@@ -225,7 +263,7 @@ for batch_size in ${batch_size_list[*]}; do
                         --run_mode ${run_mode} \
                         --fp_item ${precision} \
                         --keyword ips: \
-                        --skip_steps 2 \
+                        --skip_steps 4 \
                         --device_num ${device_num} \
                         --speed_unit images/s \
                         --convergence_key loss: "
@@ -240,8 +278,8 @@ for batch_size in ${batch_size_list[*]}; do
                 speed_log_path="$SAVE_LOG/index"
                 mkdir -p $log_path
                 mkdir -p $speed_log_path
-                log_name="${repo_name}_${model_name}_bs${batch_size}_${precision}_${run_mode}_${device_num}_log"
-                speed_log_name="${repo_name}_${model_name}_bs${batch_size}_${precision}_${run_mode}_${device_num}_speed"
+                log_name="${repo_name}_${model_name}_bs${batch_size}_${precision}_${run_mode}_${device_num}_${to_static}log"
+                speed_log_name="${repo_name}_${model_name}_bs${batch_size}_${precision}_${run_mode}_${device_num}_${to_static}speed"
                 func_sed_params "$FILENAME" "${line_gpuid}" "$gpu_id"  # sed used gpu_id
                 func_sed_params "$FILENAME" "${line_profile}" "null"  # sed --profile_option as null
                 cmd="bash test_tipc/test_train_inference_python.sh ${FILENAME} benchmark_train > ${log_path}/${log_name} 2>&1 "
@@ -261,7 +299,7 @@ for batch_size in ${batch_size_list[*]}; do
                         --run_mode ${run_mode} \
                         --fp_item ${precision} \
                         --keyword ips: \
-                        --skip_steps 2 \
+                        --skip_steps 4 \
                         --device_num ${device_num} \
                         --speed_unit images/s \
                         --convergence_key loss: "
