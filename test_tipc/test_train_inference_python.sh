@@ -96,6 +96,10 @@ LOG_PATH="./test_tipc/output/${model_name}/${MODE}"
 mkdir -p ${LOG_PATH}
 status_log="${LOG_PATH}/results_python.log"
 
+line_num=`grep -n -w "to_static_train_benchmark_params" $FILENAME  | cut -d ":" -f 1`
+to_static_key=$(func_parser_key "${lines[line_num]}")
+to_static_trainer=$(func_parser_value "${lines[line_num]}")
+
 
 function func_inference(){
     IFS='|'
@@ -256,6 +260,10 @@ else
                 elif [ ${trainer} = "${trainer_key2}" ]; then
                     run_train=${trainer_value2}
                     run_export=${export_value2}
+                elif [ ${trainer} = "${to_static_key}" ]; then
+                    run_train=${norm_trainer}
+                    run_export=${norm_export}
+                    set_to_static=${to_static_trainer}
                 else
                     continue
                 fi
@@ -303,7 +311,11 @@ else
                 fi
                 # run train
                 train_log_path="${LOG_PATH}/${trainer}_gpus_${gpu}_autocast_${autocast}_nodes_${nodes}.log"
-                eval "${cmd} > ${train_log_path} 2>&1"
+                if [ ${MODE} = "benchmark_train" ]; then
+                    eval "timeout 5m ${cmd} > ${train_log_path} 2>&1"
+                else
+                    eval "${cmd} > ${train_log_path} 2>&1"
+                fi
                 last_status=$?
                 cat ${train_log_path}
                 status_check $last_status "${cmd}" "${status_log}" "${model_name}" "${train_log_path}"
