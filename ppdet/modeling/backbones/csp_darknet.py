@@ -1,15 +1,15 @@
-# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved. 
-#   
-# Licensed under the Apache License, Version 2.0 (the "License");   
-# you may not use this file except in compliance with the License.  
-# You may obtain a copy of the License at   
-#   
-#     http://www.apache.org/licenses/LICENSE-2.0    
-# 
-# Unless required by applicable law or agreed to in writing, software   
-# distributed under the License is distributed on an "AS IS" BASIS, 
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  
-# See the License for the specific language governing permissions and   
+# Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
 # limitations under the License.
 
 import paddle
@@ -18,8 +18,11 @@ import paddle.nn.functional as F
 from paddle import ParamAttr
 from paddle.regularizer import L2Decay
 from ppdet.core.workspace import register, serializable
-from ppdet.modeling.initializer import conv_init_
+from ppdet.modeling.initializer import conv_init_, resnet_unit_init_, yolo_unit_conv_init_
 from ..shape_spec import ShapeSpec
+from paddle.incubate.operators.resnet_unit import ResNetUnit
+from paddle_xpu.ops.fusion import YoloUnit
+import os
 
 __all__ = [
     'CSPDarkNet',
@@ -59,37 +62,76 @@ class BaseConv(nn.Layer):
                  stride,
                  groups=1,
                  bias=False,
-                 act="silu"):
+                 act="silu",
+                 has_dx=True):
         super(BaseConv, self).__init__()
-        self.conv = nn.Conv2D(
-            in_channels,
-            out_channels,
-            kernel_size=ksize,
-            stride=stride,
-            padding=(ksize - 1) // 2,
-            groups=groups,
-            bias_attr=bias)
-        self.bn = nn.BatchNorm2D(
-            out_channels,
-            # epsilon=1e-3,  # for amp(fp16), set in ppdet/engine/trainer.py
-            # momentum=0.97,
-            weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
-            bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
-        self.act = get_activation(act) if isinstance(act, str) else act
-        self._init_weights()
+        if os.getenv('YOLOv5_Fusion_ResnetUnit'):
+            self.resnet_unit = ResNetUnit(num_channels_x = in_channels,
+                                        num_filters = out_channels,
+                                        filter_size = ksize,
+                                        stride = stride,
+                                        act = act,
+                                        data_format = 'NCHW',
+                                        scale_x_attr = ParamAttr(regularizer=L2Decay(0.0)),
+                                        bias_x_attr = ParamAttr(regularizer=L2Decay(0.0)),
+                                        has_dx = has_dx
+                                        )
+            self.resnet_unit.bias = bias
+            if act != 'silu':
+                print("FuseConv act is not silu !!, act = ", act)
+            self._init_weights()
+        elif os.getenv('YOLOv5_Fusion_YoloUnit'):
+            self.yolo_unit = YoloUnit(num_channels = in_channels,
+                                        num_filters = out_channels,
+                                        filter_size = ksize,
+                                        stride = stride,
+                                        act = act,
+                                        data_format = 'NCHW',
+                                        scale_attr = ParamAttr(regularizer=L2Decay(0.0)),
+                                        bias_attr = ParamAttr(regularizer=L2Decay(0.0)),
+                                        has_dx = has_dx
+                                        )
+            self.yolo_unit.conv_bias = bias
+            if act != 'silu':
+                print("FuseConv act is not silu !!, act = ", act)
+            self._init_weights()
+        else:
+            self.conv = nn.Conv2D(
+                in_channels,
+                out_channels,
+                kernel_size=ksize,
+                stride=stride,
+                padding=(ksize - 1) // 2,
+                groups=groups,
+                bias_attr=bias)
+            self.bn = nn.BatchNorm2D(
+                out_channels,
+                # epsilon=1e-3,  # for amp(fp16), set in ppdet/engine/trainer.py
+                # momentum=0.97,
+                weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
+                bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
+            self.act = get_activation(act)
+            self._init_weights()
 
     def _init_weights(self):
-        conv_init_(self.conv)
+        if os.getenv('YOLOv5_Fusion_ResnetUnit'):
+            resnet_unit_init_(self.resnet_unit)
+        elif os.getenv('YOLOv5_Fusion_YoloUnit'):
+            yolo_unit_conv_init_(self.yolo_unit)
+        else:
+            conv_init_(self.conv)
 
     def forward(self, x):
-        x = self.bn(self.conv(x))
-        if self.training:
-            y = self.act(x)
+        if os.getenv('YOLOv5_Fusion_ResnetUnit'):
+            y = self.resnet_unit(x)
+            return y
+        elif os.getenv('YOLOv5_Fusion_YoloUnit'):
+            y = self.yolo_unit(x)
+            return y
         else:
-            if isinstance(self.act, nn.Silu):
-                self.act = SiLU()
+            x = self.bn(self.conv(x))
             y = self.act(x)
-        return y
+            return y
 
 
 class DWConv(nn.Layer):
@@ -350,7 +392,7 @@ class CSPDarkNet(nn.Layer):
         if arch in ['P5', 'P6']:
             # in the latest YOLOv5, use Conv stem, and SPPF (fast, only single spp kernal size)
             self.stem = Conv(
-                3, base_channels, ksize=6, stride=2, bias=False, act=act)
+                3, base_channels, ksize=6, stride=2, bias=False, act=act, has_dx=False)
             spp_kernal_sizes = 5
         elif arch in ['X']:
             # in the original YOLOX, use Focus stem, and SPP (three spp kernal sizes)

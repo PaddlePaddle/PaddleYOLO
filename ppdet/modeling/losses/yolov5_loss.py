@@ -76,7 +76,7 @@ class YOLOv5Loss(nn.Layer):
         self.to_static = False
 
     def build_targets(self, outputs, targets, anchors):
-        if 0:
+        if 1:
             # collate_batch True
             # targets['gt_class'] [bs, max_gt_nums, 1]
             # targets['gt_bbox'] [bs, max_gt_nums, 4]

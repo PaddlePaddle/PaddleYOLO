@@ -50,6 +50,8 @@ from .callbacks import Callback, ComposeCallback, LogPrinter, Checkpointer, Visu
 from .export_utils import _dump_infer_config, _prune_input_spec, apply_to_static
 
 from paddle.distributed.fleet.utils.hybrid_parallel_util import fused_allreduce_gradients
+from paddle.incubate.operators.resnet_unit import ResNetUnit
+from paddle_xpu.ops.fusion import YoloUnit
 
 from ppdet.utils.logger import setup_logger
 logger = setup_logger('ppdet.engine')
@@ -105,6 +107,12 @@ class Trainer(object):
                 if isinstance(m, nn.BatchNorm2D):
                     m._epsilon = 1e-3  # for amp(fp16)
                     m._momentum = 0.97  # 0.03 in pytorch
+                elif isinstance(m, ResNetUnit):
+                    m._eps = 1e-3
+                    m._momentum = 0.97
+                elif isinstance(m, YoloUnit):
+                    m._eps = 1e-3
+                    m._momentum = 0.97
 
         #normalize params for deploy
         if 'slim' in cfg and cfg['slim_type'] == 'OFA':
@@ -326,8 +334,9 @@ class Trainer(object):
 
         # enabel auto mixed precision mode
         if self.use_amp:
+            os.environ['XPU_YOLO_UNIT_AMP'] = "1"
             scaler = paddle.amp.GradScaler(
-                enable=self.cfg.use_gpu or self.cfg.use_npu or self.cfg.use_mlu,
+                enable=self.cfg.use_gpu or self.cfg.use_npu or self.cfg.use_mlu or self.cfg.use_xpu,
                 init_loss_scaling=self.cfg.get('init_loss_scaling', 1024))
 
         # get distributed model
@@ -402,7 +411,7 @@ class Trainer(object):
                         with model.no_sync():
                             with paddle.amp.auto_cast(
                                     enable=self.cfg.use_gpu or
-                                    self.cfg.use_npu or self.cfg.use_mlu,
+                                    self.cfg.use_npu or self.cfg.use_mlu or self.cfg.use_xpu,
                                     custom_white_list=self.custom_white_list,
                                     custom_black_list=self.custom_black_list,
                                     level=self.amp_level):
@@ -417,7 +426,7 @@ class Trainer(object):
                     else:
                         with paddle.amp.auto_cast(
                                 enable=self.cfg.use_gpu or self.cfg.use_npu or
-                                self.cfg.use_mlu,
+                                self.cfg.use_mlu or self.cfg.use_xpu,
                                 custom_white_list=self.custom_white_list,
                                 custom_black_list=self.custom_black_list,
                                 level=self.amp_level):
@@ -721,7 +730,7 @@ class Trainer(object):
         clsid2catid, catid2name = get_categories(
             self.cfg.metric, anno_file=anno_file)
 
-        # Run Infer 
+        # Run Infer
         self.status['mode'] = 'test'
         self.model.eval()
         if self.cfg.get('print_flops', False):
@@ -873,7 +882,7 @@ class Trainer(object):
         clsid2catid, catid2name = get_categories(
             self.cfg.metric, anno_file=anno_file)
 
-        # Run Infer 
+        # Run Infer
         self.status['mode'] = 'test'
         self.model.eval()
         if self.cfg.get('print_flops', False):
