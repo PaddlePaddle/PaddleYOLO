@@ -7,7 +7,7 @@ auto_cast:null
 epoch:lite_train_lite_infer=1|lite_train_whole_infer=1|whole_train_whole_infer=300
 save_dir:null
 TrainReader.batch_size:lite_train_lite_infer=2|lite_train_whole_infer=2|whole_train_whole_infer=2
-pretrain_weights:https://paddledet.bj.bcebos.com/models/yolov5_s_300e_coco.pdparams 
+pretrain_weights:https://paddledet.bj.bcebos.com/models/yolov5_s_300e_coco.pdparams
 trained_model_name:model_final.pdparams
 train_infer_img_dir:./dataset/coco/test2017/
 filename:null
@@ -49,7 +49,7 @@ inference:./deploy/python/infer.py
 --save_log_path:null
 --run_benchmark:False
 --trt_max_shape:1600
-===========================train_benchmark_params==========================
+===========================disable_train_benchmark==========================
 batch_size:16
 fp_items:fp32|fp16
 epoch:1
