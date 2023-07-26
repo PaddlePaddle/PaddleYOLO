@@ -4625,7 +4625,7 @@ class LetterResize(BaseOperator):
             # compare with no resize and padding size
             image = cv2.resize(
                 image, (no_pad_shape[1], no_pad_shape[0]),
-                interpolation='bilinear')
+                interpolation=cv2.INTER_LINEAR)
 
         scale_factor = (no_pad_shape[1] / image_shape[1],
                         no_pad_shape[0] / image_shape[0])
