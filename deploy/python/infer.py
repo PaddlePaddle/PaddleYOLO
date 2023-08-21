@@ -38,7 +38,8 @@ from utils import argsparser, Timer, get_current_memory_mb, multiclass_nms, coco
 
 # Global dictionary
 SUPPORT_MODELS = {
-    'YOLO', 'PPYOLOE', 'YOLOX', 'YOLOF', 'YOLOv5', 'RTMDet', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'DETR'
+    'YOLO', 'PPYOLOE', 'YOLOX', 'YOLOF', 'YOLOv5', 'RTMDet', 'YOLOv6', 'YOLOv7',
+    'YOLOv8', 'DETR'
 }
 
 
@@ -438,7 +439,7 @@ class Detector(object):
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
         out_path = os.path.join(self.output_dir, video_out_name)
-        fourcc = cv2.VideoWriter_fourcc(* 'mp4v')
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         writer = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
         index = 1
         while (1):
@@ -673,6 +674,10 @@ def load_predictor(model_dir,
         if config.lite_engine_enabled():
             config.enable_lite_engine()
         config.enable_custom_device('npu')
+    elif device == 'MLU':
+        if config.lite_engine_enabled():
+            config.enable_lite_engine()
+        config.enable_custom_device('mlu')
     else:
         config.disable_gpu()
         config.set_cpu_math_library_num_threads(cpu_threads)
@@ -875,8 +880,8 @@ if __name__ == '__main__':
     FLAGS = parser.parse_args()
     print_arguments(FLAGS)
     FLAGS.device = FLAGS.device.upper()
-    assert FLAGS.device in ['CPU', 'GPU', 'XPU', 'NPU'
-                            ], "device should be CPU, GPU, XPU or NPU"
+    assert FLAGS.device in ['CPU', 'GPU', 'XPU', 'NPU', 'MLU'
+                            ], "device should be CPU, GPU, XPU , NPU or MLU"
     assert not FLAGS.use_gpu, "use_gpu has been deprecated, please use --device"
 
     assert not (
