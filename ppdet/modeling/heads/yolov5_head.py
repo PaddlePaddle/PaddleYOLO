@@ -159,7 +159,7 @@ class YOLOv5Head(nn.Layer):
         scores = out[..., 5:] * out[..., 4].unsqueeze(-1)
         return bboxes, scores
 
-    def post_process(self, head_outs, img_meta):
+    def post_process(self, head_outs, im_shape, scale_factor):
         bbox_list, score_list = [], []
         for i, head_out in enumerate(head_outs):
             _, _, ny, nx = head_out.shape
@@ -184,8 +184,7 @@ class YOLOv5Head(nn.Layer):
                 [pred_bboxes, pred_scores.transpose([0, 2, 1])], axis=-1)
         else:
             # scale bbox to origin
-            scale_factor = img_meta['scale_factor'].flip(-1).tile(
-                [1, 2]).unsqueeze(1)
+            scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
             pred_bboxes /= scale_factor
             if self.exclude_nms:
                 # `exclude_nms=True` just use in benchmark
