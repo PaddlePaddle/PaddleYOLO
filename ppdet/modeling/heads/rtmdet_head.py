@@ -33,7 +33,7 @@ __all__ = ['RTMDetHead', 'RTMDetInsHead']
 @register
 class RTMDetHead(nn.Layer):
     __shared__ = [
-        'num_classes', 'width_mult', 'eval_size', 'act', 'trt', 'exclude_nms',
+        'num_classes', 'width_mult', 'trt', 'exclude_nms',
         'exclude_post_process'
     ]
     __inject__ = ['assigner', 'nms']
@@ -46,9 +46,8 @@ class RTMDetHead(nn.Layer):
             feat_channels=256,
             stacked_convs=2,
             pred_kernel_size=1,
-            act='silu',
+            act='swish',
             fpn_strides=(32, 16, 8),
-            eval_size=[640, 640],
             share_conv=True,
             exp_on_reg=False,
             assigner='SimOTAAssigner',  # just placeholder
@@ -67,7 +66,6 @@ class RTMDetHead(nn.Layer):
         self.in_channels = in_channels
         self.num_classes = num_classes
         self.fpn_strides = fpn_strides
-        self.eval_size = eval_size
         self.pred_kernel_size = pred_kernel_size
         self.stacked_convs = stacked_convs
         self.feat_channels = int(feat_channels * width_mult)
@@ -96,12 +94,8 @@ class RTMDetHead(nn.Layer):
             reg_convs = nn.LayerList()
             for i in range(self.stacked_convs):
                 chn = self.in_channels[idx] if i == 0 else self.feat_channels
-                cls_convs.append(
-                    BaseConv(
-                        chn, self.feat_channels, 3, 1, act=act))
-                reg_convs.append(
-                    BaseConv(
-                        chn, self.feat_channels, 3, 1, act=act))
+                cls_convs.append(BaseConv(chn, self.feat_channels, 3, 1))
+                reg_convs.append(BaseConv(chn, self.feat_channels, 3, 1))
             self.cls_convs.append(cls_convs)
             self.reg_convs.append(reg_convs)
 
@@ -181,11 +175,11 @@ class RTMDetHead(nn.Layer):
             [cls_score_list, reg_distri_list, anchor_points,
              stride_tensor], targets)
 
-    def _generate_anchors(self, fpn_strides, feats=None, dtype='float32'):
+    def _generate_anchors(self, feats=None, dtype='float32'):
         # just use in eval time
         anchor_points = []
         stride_tensor = []
-        for i, stride in enumerate(fpn_strides):
+        for i, stride in enumerate(self.fpn_strides):
             if feats is not None:
                 _, _, h, w = feats[i].shape
             else:
@@ -204,8 +198,7 @@ class RTMDetHead(nn.Layer):
         return anchor_points, stride_tensor
 
     def forward_eval(self, feats):
-        anchor_points, stride_tensor = self._generate_anchors(self.fpn_strides,
-                                                              feats)
+        anchor_points, stride_tensor = self._generate_anchors(feats)
         cls_score_list, reg_dist_list = [], []
         for idx, x in enumerate(feats):
             _, _, h, w = x.shape
@@ -222,7 +215,6 @@ class RTMDetHead(nn.Layer):
                 reg_dist = self.reg_preds[idx](reg_feat).exp()
             else:
                 reg_dist = self.reg_preds[idx](reg_feat)
-
             # cls and reg
             cls_score = F.sigmoid(cls_logit)
             cls_score_list.append(cls_score.reshape([-1, self.num_classes, l]))

@@ -27,7 +27,10 @@ __all__ = ['YOLOv5Head', 'YOLOv5InsHead']
 
 @register
 class YOLOv5Head(nn.Layer):
-    __shared__ = ['num_classes', 'trt', 'exclude_nms', 'exclude_post_process']
+    __shared__ = [
+        'num_classes', 'data_format', 'trt', 'exclude_nms',
+        'exclude_post_process'
+    ]
     __inject__ = ['loss', 'nms']
 
     def __init__(self,
@@ -38,6 +41,7 @@ class YOLOv5Head(nn.Layer):
                  anchor_masks=[[0, 1, 2], [3, 4, 5], [6, 7, 8]],
                  stride=[8, 16, 32],
                  loss='YOLOv5Loss',
+                 data_format='NCHW',
                  nms='MultiClassNMS',
                  trt=False,
                  exclude_post_process=False,
@@ -52,6 +56,8 @@ class YOLOv5Head(nn.Layer):
             anchor_masks (list): anchor masks
             stride (list): strides
             loss (object): YOLOv5Loss instance
+            data_format (str): nms format, NCHW or NHWC
+            loss (object): YOLOv5Loss instance
         """
         super(YOLOv5Head, self).__init__()
         assert len(in_channels) > 0, "in_channels length should > 0"
@@ -64,6 +70,7 @@ class YOLOv5Head(nn.Layer):
 
         self.stride = stride
         self.loss = loss
+        self.data_format = data_format
         self.nms = nms
         if isinstance(self.nms, MultiClassNMS) and trt:
             self.nms.trt = trt
@@ -83,6 +90,7 @@ class YOLOv5Head(nn.Layer):
                 kernel_size=1,
                 stride=1,
                 padding=0,
+                data_format=data_format,
                 bias_attr=ParamAttr(regularizer=L2Decay(0.)))
             conv.skip_quant = True
             yolo_output = self.add_sublayer(name, conv)
@@ -119,6 +127,8 @@ class YOLOv5Head(nn.Layer):
         yolo_outputs = []
         for i, feat in enumerate(feats):
             yolo_output = self.yolo_outputs[i](feat)
+            if self.data_format == 'NHWC':
+                yolo_output = paddle.transpose(yolo_output, [0, 3, 1, 2])
             yolo_outputs.append(yolo_output)
 
         if self.training:
@@ -147,14 +157,10 @@ class YOLOv5Head(nn.Layer):
         lt_xy = (xy - wh / 2.)
         rb_xy = (xy + wh / 2.)
         bboxes = paddle.concat((lt_xy, rb_xy), axis=-1)
-        scores = out[..., 5:self.num_classes + 5] * out[..., 4].unsqueeze(-1)
+        scores = out[..., 5:] * out[..., 4].unsqueeze(-1)
         return bboxes, scores
 
-    def post_process(self,
-                     head_outs,
-                     im_shape,
-                     scale_factor,
-                     infer_shape=[640, 640]):
+    def post_process(self, head_outs, im_shape, scale_factor):
         bbox_list, score_list = [], []
         for i, head_out in enumerate(head_outs):
             _, _, ny, nx = head_out.shape
