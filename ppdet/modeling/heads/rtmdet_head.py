@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import math
-from IPython import embed
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
@@ -655,7 +654,7 @@ class RTMDetInsHead(nn.Layer):
     def post_process(self, head_outs, im_shape, scale_factor, rescale=True):
         assert not self.exclude_post_process or not self.exclude_nms
 
-        pred_scores, pred_dist, ker_preds, mask_feat, anchor_points, stride_tensor = head_outs
+        pred_scores, pred_dist, ker_preds, mask_feats, anchor_points, stride_tensor = head_outs
         pred_bboxes = batch_distance2bbox(anchor_points,
                                           pred_dist.transpose([0, 2, 1]))
         pred_bboxes *= stride_tensor
@@ -672,27 +671,27 @@ class RTMDetInsHead(nn.Layer):
 
             anchor_points_keep = paddle.gather(anchor_points, keep_idxs)
             stride_tensor_keep = paddle.gather(stride_tensor, keep_idxs)
-            mask_logits = self.mask_post_process(mask_feat, ker_preds_keep,
+            mask_logits = self.mask_post_process(mask_feats, ker_preds_keep,
                                                  anchor_points_keep,
                                                  stride_tensor_keep)
 
             mask_logits = F.interpolate(
                 mask_logits.unsqueeze(0), scale_factor=8, mode='bilinear')
             if rescale:
-                ori_h, ori_w = im_shape[0]
+                ori_h, ori_w = im_shape[0] / scale_factor[0]
                 mask_logits = F.interpolate(
                     mask_logits,
                     size=[
-                        math.ceil(mask_logits.shape[-2] * scale_factor[0][0]),
-                        math.ceil(mask_logits.shape[-1] * scale_factor[0][1])
+                        math.ceil(mask_logits.shape[-2] / scale_factor[0][0]),
+                        math.ceil(mask_logits.shape[-1] / scale_factor[0][1])
                     ],
                     mode='bilinear',
-                    align_corners=False)[..., :ori_h, :ori_w]
+                    align_corners=False)[..., :int(ori_h), :int(ori_w)]
             masks = F.sigmoid(mask_logits).squeeze(0)
             mask_pred = masks > self.mask_thr_binary
         else:
-            h, w = im_shape[0]
-            mask_pred = paddle.zeros([bbox_num, h, w])
+            ori_h, ori_w = im_shape[0] / scale_factor[0]
+            mask_pred = paddle.zeros([bbox_num, int(ori_h), int(ori_w)])
 
         if self.with_mask:
             return bbox_pred, bbox_num, mask_pred

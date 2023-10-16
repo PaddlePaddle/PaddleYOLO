@@ -475,6 +475,20 @@ class Decode(BaseOperator):
         return sample
 
 
+@register_op
+class RGBReverse(BaseOperator):
+    """RGB to BGR, or BGR to RGB, sensitive to MOTRandomAffine
+    """
+
+    def __init__(self):
+        super(RGBReverse, self).__init__()
+
+    def apply(self, sample, context=None):
+        im = sample['image']
+        sample['image'] = np.ascontiguousarray(im[:, :, ::-1])
+        return sample
+
+
 def _make_dirs(dirname):
     try:
         from pathlib import Path

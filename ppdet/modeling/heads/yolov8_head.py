@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import math
-from IPython import embed
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
@@ -219,7 +218,11 @@ class YOLOv8Head(nn.Layer):
             'loss_box': paddle.zeros([1]),
         }
 
-    def post_process(self, head_outs, im_shape, scale_factor):
+    def post_process(self,
+                     head_outs,
+                     im_shape,
+                     scale_factor,
+                     infer_shape=[640, 640]):
         pred_scores, pred_dist, anchor_points, stride_tensor = head_outs
         pred_bboxes = batch_distance2bbox(anchor_points, pred_dist)
         pred_bboxes *= stride_tensor
@@ -241,13 +244,13 @@ class YOLOv8Head(nn.Layer):
 
 class MaskProto(nn.Layer):
     # YOLOv8 mask Proto module for instance segmentation models
-    def __init__(self, ch_in, num_protos=256, num_masks=32):
+    def __init__(self, ch_in, num_protos=256, num_masks=32, act='silu'):
         super().__init__()
-        self.conv1 = BaseConv(ch_in, num_protos, 3, 1)
+        self.conv1 = BaseConv(ch_in, num_protos, 3, 1, act=act)
         self.upsample = nn.Conv2DTranspose(
             num_protos, num_protos, 2, 2, 0, bias_attr=True)
-        self.conv2 = BaseConv(num_protos, num_protos, 3, 1)
-        self.conv3 = BaseConv(num_protos, num_masks, 1, 1)
+        self.conv2 = BaseConv(num_protos, num_protos, 3, 1, act=act)
+        self.conv3 = BaseConv(num_protos, num_masks, 1, 1, act=act)
 
     def forward(self, x):
         return self.conv3(self.conv2(self.upsample(self.conv1(x))))
@@ -363,7 +366,8 @@ class YOLOv8InsHead(YOLOv8Head):
                         bias_attr=ParamAttr(regularizer=L2Decay(0.0))),
                 ]))
         self.mask_thr_binary = mask_thr_binary
-        self.proto = MaskProto(in_channels[0], self.num_protos, self.num_masks)
+        self.proto = MaskProto(
+            in_channels[0], self.num_protos, self.num_masks, act=act)
 
         # projection conv
         self.dfl_conv = nn.Conv2D(self.reg_channels, 1, 1, bias_attr=False)
@@ -451,34 +455,46 @@ class YOLOv8InsHead(YOLOv8Head):
             'loss_box': loss_iou,
         }
 
-    def post_process(self, head_outs, im_shape, scale_factor):
+    def post_process(self,
+                     head_outs,
+                     im_shape,
+                     scale_factor,
+                     infer_shape=[640, 640],
+                     rescale=True):
         assert not self.exclude_post_process or not self.exclude_nms
 
         pred_scores, pred_dist, pred_mask_coeffs, mask_feats, anchor_points, stride_tensor = head_outs
         pred_bboxes = batch_distance2bbox(anchor_points, pred_dist)
         pred_bboxes *= stride_tensor
 
-        # scale bbox to origin
-        scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
-        pred_bboxes /= scale_factor
-
         bbox_pred, bbox_num, keep_idxs = self.nms(pred_bboxes, pred_scores)
-        # [146, 6], [1], [146, 1]
 
         if self.with_mask and bbox_num.sum() > 0:
             pred_mask_coeffs = pred_mask_coeffs.transpose([0, 2, 1])  ### Note
             mask_coeffs = paddle.gather(
                 pred_mask_coeffs.reshape([-1, self.num_masks]), keep_idxs)
 
-            # masks = process_mask(
-            #     mask_feats[0], mask_coeffs, bbox_pred, shape=im_shape[0], upsample=True)  # HWC
-            masks = process_mask_upsample(
-                mask_feats[0], mask_coeffs, bbox_pred, shape=im_shape[0])
-
+            mask_logits = process_mask_upsample(mask_feats[0], mask_coeffs,
+                                                bbox_pred[:, 2:6], infer_shape)
+            if rescale:
+                ori_h, ori_w = im_shape[0] / scale_factor[0]
+                mask_logits = F.interpolate(
+                    mask_logits.unsqueeze(0),
+                    size=[
+                        math.ceil(mask_logits.shape[-2] / scale_factor[0][0]),
+                        math.ceil(mask_logits.shape[-1] / scale_factor[0][1])
+                    ],
+                    mode='bilinear',
+                    align_corners=False)[..., :int(ori_h), :int(ori_w)]
+            masks = mask_logits.squeeze(0)
             mask_pred = masks > self.mask_thr_binary
         else:
-            h, w = im_shape[0]
-            mask_pred = paddle.zeros([bbox_num, h, w])
+            ori_h, ori_w = im_shape[0] / scale_factor[0]
+            mask_pred = paddle.zeros([bbox_num, int(ori_h), int(ori_w)])
+
+        # scale bbox to origin
+        scale_factor = scale_factor.flip(-1).tile([1, 2])
+        bbox_pred[:, 2:6] /= scale_factor
 
         if self.with_mask:
             return bbox_pred, bbox_num, mask_pred
@@ -491,19 +507,16 @@ def crop_mask(masks, boxes):
     It takes a mask and a bounding box, and returns a mask that is cropped to the bounding box
 
     Args:
-      masks (torch.Tensor): [h, w, n] tensor of masks
-      boxes (torch.Tensor): [n, 4] tensor of bbox coordinates in relative point form
+      masks (paddle.Tensor): [h, w, n] tensor of masks
+      boxes (paddle.Tensor): [n, 4] tensor of bbox coordinates in relative point form
 
     Returns:
-      (torch.Tensor): The masks are being cropped to the bounding box.
+      (paddle.Tensor): The masks are being cropped to the bounding box.
     """
     _, h, w = masks.shape
-    x1, y1, x2, y2 = paddle.chunk(boxes[:, 2:6, None], 4, axis=1)
-    # x1 shape(n,1,1) # [146, 428, 640]
+    x1, y1, x2, y2 = paddle.chunk(boxes[:, :, None], 4, axis=1)
     r = paddle.arange(w, dtype=x1.dtype)[None, None, :]
-    # rows shape(1,w,1) # [1, 1, 640]
     c = paddle.arange(h, dtype=y1.dtype)[None, :, None]
-    # cols shape(h,1,1) # [1, 428, 1]
     return masks * ((r >= x1) * (r < x2) * (c >= y1) * (c < y2))
 
 
@@ -513,50 +526,17 @@ def process_mask_upsample(protos, masks_in, bboxes, shape):
     quality but is slower.
 
     Args:
-      protos (torch.Tensor): [mask_dim, mask_h, mask_w]
-      masks_in (torch.Tensor): [n, mask_dim], n is number of masks after nms
-      bboxes (torch.Tensor): [n, 4], n is number of masks after nms
+      protos (paddle.Tensor): [mask_dim, mask_h, mask_w]
+      masks_in (paddle.Tensor): [n, mask_dim], n is number of masks after nms
+      bboxes (paddle.Tensor): [n, 4], n is number of masks after nms
       shape (tuple): the size of the input image (h,w)
 
     Returns:
-      (torch.Tensor): The upsampled masks.
+      (paddle.Tensor): The upsampled masks.
     """
     c, mh, mw = protos.shape  # CHW
     masks = F.sigmoid(masks_in @protos.reshape([c, -1])).reshape([-1, mh, mw])
     masks = F.interpolate(
         masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
     masks = crop_mask(masks, bboxes)  # CHW
-    return masks
-
-
-def process_mask(protos, masks_in, bboxes, shape, upsample=False):
-    """
-    It takes the output of the mask head, and applies the mask to the bounding boxes. This is faster but produces
-    downsampled quality of mask
-
-    Args:
-      protos (torch.Tensor): [mask_dim, mask_h, mask_w]
-      masks_in (torch.Tensor): [n, mask_dim], n is number of masks after nms
-      bboxes (torch.Tensor): [n, 4], n is number of masks after nms
-      shape (tuple): the size of the input image (h,w)
-
-    Returns:
-      (torch.Tensor): The processed masks.
-    """
-
-    c, mh, mw = protos.shape  # CHW
-    ih, iw = shape
-    masks = F.sigmoid(masks_in @protos.reshape([c, -1])).reshape(
-        [-1, mh, mw])  # CHW
-
-    downsampled_bboxes = bboxes.clone()
-    downsampled_bboxes[:, 0] *= mw / iw
-    downsampled_bboxes[:, 2] *= mw / iw
-    downsampled_bboxes[:, 3] *= mh / ih
-    downsampled_bboxes[:, 1] *= mh / ih
-
-    masks = crop_mask(masks, downsampled_bboxes)  # CHW
-    if upsample:
-        masks = F.interpolate(
-            masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
     return masks

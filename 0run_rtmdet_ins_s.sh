@@ -5,7 +5,7 @@ job_name=rtmdet_ins_${name}_300e_coco
 config=configs/${model_type}/${job_name}.yml
 log_dir=log_dir/${job_name}
 #weights=/paddle/yolo/yolov7_u/${job_name}.pdparams
-weights=/paddle/mypaddleyolo/rtmdet/rtmdet_tools/rtmdet_txts/rtmdet_ins_${name}_coco_300e.pdparams
+weights=/paddle/yolo/weights/rtmdet_txts/rtmdet_ins_${name}_coco_300e.pdparams
 
 # 1. training
 #CUDA_VISIBLE_DEVICES=3 python3.7 tools/train.py -c ${config} --amp #-r ${weights}
@@ -13,10 +13,11 @@ weights=/paddle/mypaddleyolo/rtmdet/rtmdet_tools/rtmdet_txts/rtmdet_ins_${name}_
 
 # 2. eval
 #CUDA_VISIBLE_DEVICES=0 python3.7 tools/eval.py -c ${config} -o weights=https://paddledet.bj.bcebos.com/models/${job_name}.pdparams
-#CUDA_VISIBLE_DEVICES=1 python3.7 tools/eval.py -c ${config} -o weights=${weights} #--amp
+CUDA_VISIBLE_DEVICES=1 python3.7 tools/eval.py -c ${config} -o weights=${weights} #--amp
 
 # 3. tools infer
-CUDA_VISIBLE_DEVICES=7 python3.7 tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000329219.jpg --draw_threshold=0.2
+#CUDA_VISIBLE_DEVICES=7 python3.7 tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000329219.jpg --draw_threshold=0.5
+#CUDA_VISIBLE_DEVICES=7 python3.7 tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000404484.jpg --draw_threshold=0.5
 
 # 4.导出模型
 #CUDA_VISIBLE_DEVICES=1 python3.7 tools/export_model.py -c ${config} -o weights=${weights} #exclude_nms=True trt=True

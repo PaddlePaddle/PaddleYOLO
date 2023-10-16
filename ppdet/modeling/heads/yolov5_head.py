@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import math
-from IPython import embed
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
@@ -149,7 +148,11 @@ class YOLOv5Head(nn.Layer):
         scores = out[..., 5:self.num_classes + 5] * out[..., 4].unsqueeze(-1)
         return bboxes, scores
 
-    def post_process(self, head_outs, im_shape, scale_factor):
+    def post_process(self,
+                     head_outs,
+                     im_shape,
+                     scale_factor,
+                     infer_shape=[640, 640]):
         bbox_list, score_list = [], []
         for i, head_out in enumerate(head_outs):
             _, _, ny, nx = head_out.shape
@@ -189,11 +192,12 @@ class MaskProto(nn.Layer):
     def __init__(self, ch_in, num_protos=256, num_masks=32, act='silu'):
         super().__init__()
         self.conv1 = BaseConv(ch_in, num_protos, 3, 1, act=act)
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
         self.conv2 = BaseConv(num_protos, num_protos, 3, 1, act=act)
         self.conv3 = BaseConv(num_protos, num_masks, 1, 1, act=act)
 
     def forward(self, x):
-        return self.conv3(self.conv2(self.conv1(x)))
+        return self.conv3(self.conv2(self.upsample(self.conv1(x))))
 
 
 @register
@@ -342,7 +346,12 @@ class YOLOv5InsHead(nn.Layer):
         masks = head_out[..., -self.num_masks:]
         return bboxes, scores, masks
 
-    def post_process(self, head_outs, im_shape, scale_factor):
+    def post_process(self,
+                     head_outs,
+                     im_shape,
+                     scale_factor,
+                     infer_shape=[640, 640],
+                     rescale=True):
         assert not self.exclude_post_process or not self.exclude_nms
 
         mask_feats = head_outs[-1]
@@ -371,29 +380,37 @@ class YOLOv5InsHead(nn.Layer):
         pred_scores = paddle.concat(score_list, axis=-1)
         pred_masks = paddle.concat(mask_list, axis=1)
 
-        # scale bbox to origin
-        scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
-        pred_bboxes /= scale_factor
-
         bbox_pred, bbox_num, keep_idxs = self.nms(pred_bboxes, pred_scores)
 
         if self.with_mask and bbox_num.sum() > 0:
             mask_coeffs = paddle.gather(
                 pred_masks.reshape([-1, self.num_masks]), keep_idxs)
 
-            masks = process_mask(
+            mask_logits = process_mask(
                 mask_feats[0],
                 mask_coeffs,
-                bbox_pred,
-                shape=im_shape[0],
+                bbox_pred[:, 2:6],
+                shape=infer_shape,
                 upsample=True)  # HWC
-            # masks = process_mask_upsample(
-            #     mask_feats[0], mask_coeffs, bbox_pred, shape=im_shape[0])
-
+            if rescale:
+                ori_h, ori_w = im_shape[0] / scale_factor[0]
+                mask_logits = F.interpolate(
+                    mask_logits.unsqueeze(0),
+                    size=[
+                        math.ceil(mask_logits.shape[-2] / scale_factor[0][0]),
+                        math.ceil(mask_logits.shape[-1] / scale_factor[0][1])
+                    ],
+                    mode='bilinear',
+                    align_corners=False)[..., :int(ori_h), :int(ori_w)]
+            masks = mask_logits.squeeze(0)
             mask_pred = masks > self.mask_thr_binary
         else:
-            h, w = im_shape[0]
-            mask_pred = paddle.zeros([bbox_num, h, w])
+            ori_h, ori_w = im_shape[0] / scale_factor[0]
+            mask_pred = paddle.zeros([bbox_num, int(ori_h), int(ori_w)])
+
+        # scale bbox to origin
+        scale_factor = scale_factor.flip(-1).tile([1, 2])
+        bbox_pred[:, 2:6] /= scale_factor
 
         if self.with_mask:
             return bbox_pred, bbox_num, mask_pred
@@ -406,14 +423,14 @@ def crop_mask(masks, boxes):
     It takes a mask and a bounding box, and returns a mask that is cropped to the bounding box
 
     Args:
-      masks (torch.Tensor): [h, w, n] tensor of masks
-      boxes (torch.Tensor): [n, 4] tensor of bbox coordinates in relative point form
+      masks (paddle.Tensor): [h, w, n] tensor of masks
+      boxes (paddle.Tensor): [n, 4] tensor of bbox coordinates in relative point form
 
     Returns:
-      (torch.Tensor): The masks are being cropped to the bounding box.
+      (paddle.Tensor): The masks are being cropped to the bounding box.
     """
     _, h, w = masks.shape
-    x1, y1, x2, y2 = paddle.chunk(boxes[:, 2:6, None], 4, axis=1)
+    x1, y1, x2, y2 = paddle.chunk(boxes[:, :, None], 4, axis=1)
     # x1 shape(n,1,1) # [146, 428, 640]
     r = paddle.arange(w, dtype=x1.dtype)[None, None, :]
     # rows shape(1,w,1) # [1, 1, 640]
@@ -422,41 +439,19 @@ def crop_mask(masks, boxes):
     return masks * ((r >= x1) * (r < x2) * (c >= y1) * (c < y2))
 
 
-def process_mask_upsample(protos, masks_in, bboxes, shape):
-    """
-    It takes the output of the mask head, and applies the mask to the bounding boxes. This produces masks of higher
-    quality but is slower.
-
-    Args:
-      protos (torch.Tensor): [mask_dim, mask_h, mask_w]
-      masks_in (torch.Tensor): [n, mask_dim], n is number of masks after nms
-      bboxes (torch.Tensor): [n, 4], n is number of masks after nms
-      shape (tuple): the size of the input image (h,w)
-
-    Returns:
-      (torch.Tensor): The upsampled masks.
-    """
-    c, mh, mw = protos.shape  # CHW
-    masks = F.sigmoid(masks_in @protos.reshape([c, -1])).reshape([-1, mh, mw])
-    masks = F.interpolate(
-        masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
-    masks = crop_mask(masks, bboxes)  # CHW
-    return masks
-
-
-def process_mask(protos, masks_in, bboxes, shape, upsample=False):
+def process_mask(protos, masks_in, bboxes, shape, upsample=True):
     """
     It takes the output of the mask head, and applies the mask to the bounding boxes. This is faster but produces
     downsampled quality of mask
 
     Args:
-      protos (torch.Tensor): [mask_dim, mask_h, mask_w]
-      masks_in (torch.Tensor): [n, mask_dim], n is number of masks after nms
-      bboxes (torch.Tensor): [n, 4], n is number of masks after nms
-      shape (tuple): the size of the input image (h,w)
+      protos (paddle.Tensor): [mask_dim, mask_h, mask_w]
+      masks_in (paddle.Tensor): [n, mask_dim], n is number of masks after nms
+      bboxes (paddle.Tensor): [n, 4], n is number of masks after nms
+      shape (paddle): the size of the input image (h,w)
 
     Returns:
-      (torch.Tensor): The processed masks.
+      (paddle.Tensor): The processed masks.
     """
 
     c, mh, mw = protos.shape  # CHW

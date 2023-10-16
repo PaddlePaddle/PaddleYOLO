@@ -1,11 +1,12 @@
 export FLAGS_allocator_strategy=auto_growth
-name=n
+name=s
 model_type=yolov8
-job_name=yolov8_${name}_500e_coco
+#job_name=yolov8_${name}_500e_coco
 job_name=yolov8_ins_${name}_500e_coco
 config=configs/${model_type}/${job_name}.yml
 log_dir=log_dir/${job_name}
 weights=/paddle/mypaddleyolo/yolov8/ultralytics-0.0.59/yolov8_ins_${name}_500e_coco.pdparams
+weights=/paddle/yolo/weights/yolov8_ins_${name}_500e_coco.pdparams
 
 # 1. training
 #CUDA_VISIBLE_DEVICES=3 python3.7 tools/train.py -c ${config} --amp #-r ${weights}
@@ -13,10 +14,12 @@ weights=/paddle/mypaddleyolo/yolov8/ultralytics-0.0.59/yolov8_ins_${name}_500e_c
 
 # 2. eval
 #CUDA_VISIBLE_DEVICES=0 python3.7 tools/eval.py -c ${config} -o weights=https://paddledet.bj.bcebos.com/models/${job_name}.pdparams
-CUDA_VISIBLE_DEVICES=6 python3.7 tools/eval.py -c ${config} -o weights=${weights} #--amp
+CUDA_VISIBLE_DEVICES=7 python3.7 tools/eval.py -c ${config} -o weights=${weights} #--amp
 
 # 3. tools infer
-#CUDA_VISIBLE_DEVICES=6 python3.7 tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000329219.jpg
+#CUDA_VISIBLE_DEVICES=4 python3.7 tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000404484.jpg --draw_threshold=0.2
+#CUDA_VISIBLE_DEVICES=4 python3.7 tools/infer.py -c ${config} -o weights=${weights} --infer_img=demo/000000329219.jpg --draw_threshold=0.2
+
 
 # 4.导出模型
 #CUDA_VISIBLE_DEVICES=1 python3.7 tools/export_model.py -c ${config} -o weights=${weights} #exclude_nms=True trt=True
