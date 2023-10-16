@@ -18,6 +18,7 @@ import paddle.nn as nn
 import paddle.nn.functional as F
 from paddle import ParamAttr
 from paddle.regularizer import L2Decay
+from ..initializer import constant_
 from ppdet.core.workspace import register
 
 from ..bbox_utils import batch_distance2bbox
@@ -57,6 +58,7 @@ class YOLOv8Head(nn.Layer):
                  trt=False,
                  exclude_nms=False,
                  exclude_post_process=False,
+                 use_shared_conv=True,
                  print_l1_loss=True):
         super(YOLOv8Head, self).__init__()
         assert len(in_channels) > 0, "len(in_channels) should > 0"
@@ -80,6 +82,7 @@ class YOLOv8Head(nn.Layer):
         self.exclude_nms = exclude_nms
         self.exclude_post_process = exclude_post_process
         self.print_l1_loss = print_l1_loss
+        self.use_shared_conv = use_shared_conv
 
         # cls loss
         self.bce = nn.BCEWithLogitsLoss(
@@ -123,17 +126,16 @@ class YOLOv8Head(nn.Layer):
             self.proj.reshape([1, self.reg_channels, 1, 1]))
         self.dfl_conv.weight.stop_gradient = True
 
-        # self._init_bias()
-
     @classmethod
     def from_config(cls, cfg, input_shape):
         return {'in_channels': [i.channels for i in input_shape], }
 
-    def _init_bias(self):
+    def _initialize_biases(self):
         for a, b, s in zip(self.conv_reg, self.conv_cls, self.fpn_strides):
-            a[-1].bias.set_value(1.0)  # box
-            b[-1].bias[:self.num_classes] = math.log(5 / self.num_classes /
-                                                     (640 / s)**2)
+            constant_(a[-1].weight)
+            constant_(a[-1].bias, 1.0)
+            constant_(b[-1].weight)
+            constant_(b[-1].bias, math.log(5 / self.num_classes / (640 / s)**2))
 
     def forward(self, feats, targets=None):
         if self.training:

@@ -1,0 +1,48 @@
+architecture: YOLOv6
+norm_type: sync_bn
+use_ema: True
+ema_decay: 0.9999
+ema_decay_type: "exponential"
+find_unused_parameters: True
+
+act: 'relu'
+training_mode: "repvgg"
+self_distill: False
+
+width_mult: 1.0
+
+YOLOv6:
+  backbone: Lite_EffiBackbone
+  neck: Lite_EffiNeck
+  yolo_head: Lite_EffideHead
+  post_process: ~
+
+Lite_EffiBackbone:
+  return_idx: [2, 3, 4]
+
+Lite_EffiNeck:
+  unified_channels: 96
+
+Lite_EffideHead:
+  fpn_strides: [8, 16, 32, 64]
+  grid_cell_scale: 5.0
+  grid_cell_offset: 0.5
+  reg_max: 0
+  use_dfl: False
+  static_assigner_epoch: 4 # warmup_epoch
+  loss_weight: {cls: 1.0, iou: 2.5}
+  iou_type: 'siou' # 'siou' in lite s/m/l
+  static_assigner:
+    name: ATSSAssigner
+    topk: 9
+  assigner:
+    name: TaskAlignedAssigner
+    topk: 13
+    alpha: 1.0
+    beta: 6.0
+  nms:
+    name: MultiClassNMS
+    nms_top_k: 2000
+    keep_top_k: 300
+    score_threshold: 0.03
+    nms_threshold: 0.65

@@ -25,13 +25,17 @@ from ppdet.modeling.initializer import conv_init_, normal_
 from ppdet.core.workspace import register, serializable
 from ..shape_spec import ShapeSpec
 
-__all__ = ['EfficientRep', 'CSPBepBackbone']
+__all__ = ['EfficientRep', 'CSPBepBackbone', 'Lite_EffiBackbone']
+
+activation_table = {
+    'relu': nn.ReLU(),
+    'silu': nn.Silu(),
+    'hardswish': nn.Hardswish()
+}
 
 
 class SiLU(nn.Layer):
-    def __init__(self):
-        super(SiLU, self).__init__()
-
+    @staticmethod
     def forward(self, x):
         return x * F.sigmoid(x)
 
@@ -58,7 +62,10 @@ class BaseConv(nn.Layer):
             out_channels,
             weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
             bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
-        self.act = nn.Silu()
+        if act is not None:
+            self.act = activation_table.get(act)
+        else:
+            self.act = nn.Identity()
         self._init_weights()
 
     def _init_weights(self):
@@ -755,3 +762,370 @@ class ConvBNReLUBlock(nn.Layer):
 
     def forward(self, x):
         return self.base_block(x)
+
+
+######################### YOLOv6 lite #########################
+
+
+class ConvBN(nn.Layer):
+    '''Conv and BN without activation'''
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size=3,
+                 stride=1,
+                 groups=1,
+                 bias=False):
+        super().__init__()
+        self.base_block = BaseConv(
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride,
+            groups,
+            bias,
+            act=None)
+
+    def forward(self, x):
+        return self.base_block(x)
+
+
+class ConvBNHS(nn.Layer):
+    '''Conv and BN with Hardswish activation'''
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size=3,
+                 stride=1,
+                 padding=None,
+                 groups=1,
+                 bias=False):
+        super().__init__()
+        self.base_block = BaseConv(
+            in_channels,
+            out_channels,
+            kernel_size,
+            stride,
+            groups,
+            bias,
+            act='hardswish')
+
+    def forward(self, x):
+        return self.base_block(x)
+
+
+class SEBlock(nn.Layer):
+    def __init__(self, channel, reduction=4):
+        super().__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2D(1)
+        self.conv1 = nn.Conv2D(
+            in_channels=channel,
+            out_channels=channel // reduction,
+            kernel_size=1,
+            stride=1,
+            padding=0)
+        self.relu = nn.ReLU()
+        self.conv2 = nn.Conv2D(
+            in_channels=channel // reduction,
+            out_channels=channel,
+            kernel_size=1,
+            stride=1,
+            padding=0)
+        self.hardsigmoid = nn.Hardsigmoid()
+
+    def forward(self, x):
+        identity = x
+        x = self.avg_pool(x)
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+        x = self.hardsigmoid(x)
+        out = identity * x
+        return out
+
+
+class DPBlock(nn.Layer):
+    def __init__(self, in_channel=96, out_channel=96, kernel_size=3, stride=1):
+        super().__init__()
+        self.conv_dw_1 = nn.Conv2D(
+            in_channels=in_channel,
+            out_channels=out_channel,
+            kernel_size=kernel_size,
+            groups=out_channel,
+            padding=(kernel_size - 1) // 2,
+            stride=stride)
+        self.bn_1 = nn.BatchNorm2D(out_channel)
+        self.act_1 = nn.Hardswish()
+        self.conv_pw_1 = nn.Conv2D(
+            in_channels=out_channel,
+            out_channels=out_channel,
+            kernel_size=1,
+            groups=1,
+            padding=0)
+        self.bn_2 = nn.BatchNorm2D(out_channel)
+        self.act_2 = nn.Hardswish()
+
+    def forward(self, x):
+        x = self.act_1(self.bn_1(self.conv_dw_1(x)))
+        x = self.act_2(self.bn_2(self.conv_pw_1(x)))
+        return x
+
+    def forward_fuse(self, x):
+        x = self.act_1(self.conv_dw_1(x))
+        x = self.act_2(self.conv_pw_1(x))
+        return x
+
+
+class DarknetBlock(nn.Layer):
+    def __init__(self, in_channels, out_channels, kernel_size=3, expansion=0.5):
+        super().__init__()
+        hidden_channels = int(out_channels * expansion)
+        self.conv_1 = ConvBNHS(
+            in_channels=in_channels,
+            out_channels=hidden_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0)
+        self.conv_2 = DPBlock(
+            in_channel=hidden_channels,
+            out_channel=out_channels,
+            kernel_size=kernel_size,
+            stride=1)
+
+    def forward(self, x):
+        out = self.conv_1(x)
+        out = self.conv_2(out)
+        return out
+
+
+class CSPBlock(nn.Layer):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size=3,
+                 expand_ratio=0.5):
+        super().__init__()
+        mid_channels = int(out_channels * expand_ratio)
+        self.conv_1 = ConvBNHS(in_channels, mid_channels, 1, 1, 0)
+        self.conv_2 = ConvBNHS(in_channels, mid_channels, 1, 1, 0)
+        self.conv_3 = ConvBNHS(2 * mid_channels, out_channels, 1, 1, 0)
+        self.blocks = DarknetBlock(mid_channels, mid_channels, kernel_size, 1.0)
+
+    def forward(self, x):
+        x_1 = self.conv_1(x)
+        x_1 = self.blocks(x_1)
+        x_2 = self.conv_2(x)
+        x = paddle.concat((x_1, x_2), axis=1)
+        x = self.conv_3(x)
+        return x
+
+
+def channel_shuffle(x, groups):
+    _, num_channels, height, width = x.shape
+    channels_per_group = num_channels // groups
+    # reshape
+    x = x.reshape([-1, groups, channels_per_group, height, width])
+    x = x.transpose([0, 2, 1, 3, 4])
+    # flatten
+    x = x.reshape([-1, groups * channels_per_group, height, width])
+    return x
+
+
+class Lite_EffiBlockS1(nn.Layer):
+    def __init__(self, in_channels, mid_channels, out_channels, stride):
+        super().__init__()
+        self.conv_pw_1 = ConvBNHS(
+            in_channels=in_channels // 2,
+            out_channels=mid_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+            groups=1)
+        self.conv_dw_1 = ConvBN(
+            in_channels=mid_channels,
+            out_channels=mid_channels,
+            kernel_size=3,
+            stride=stride,
+            groups=mid_channels)
+        self.se = SEBlock(mid_channels)
+        self.conv_1 = ConvBNHS(
+            in_channels=mid_channels,
+            out_channels=out_channels // 2,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+            groups=1)
+
+    def forward(self, inputs):
+        x1, x2 = paddle.split(
+            inputs,
+            num_or_sections=[inputs.shape[1] // 2, inputs.shape[1] // 2],
+            axis=1)
+        x2 = self.conv_pw_1(x2)
+        x3 = self.conv_dw_1(x2)
+        x3 = self.se(x3)
+        x3 = self.conv_1(x3)
+        out = paddle.concat([x1, x3], axis=1)
+        return channel_shuffle(out, 2)
+
+
+class Lite_EffiBlockS2(nn.Layer):
+    def __init__(self, in_channels, mid_channels, out_channels, stride):
+        super().__init__()
+        # branch1
+        self.conv_dw_1 = ConvBN(
+            in_channels=in_channels,
+            out_channels=in_channels,
+            kernel_size=3,
+            stride=stride,
+            groups=in_channels)
+        self.conv_1 = ConvBNHS(
+            in_channels=in_channels,
+            out_channels=out_channels // 2,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+            groups=1)
+        # branch2
+        self.conv_pw_2 = ConvBNHS(
+            in_channels=in_channels,
+            out_channels=mid_channels // 2,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+            groups=1)
+        self.conv_dw_2 = ConvBN(
+            in_channels=mid_channels // 2,
+            out_channels=mid_channels // 2,
+            kernel_size=3,
+            stride=stride,
+            groups=mid_channels // 2)
+        self.se = SEBlock(mid_channels // 2)
+        self.conv_2 = ConvBNHS(
+            in_channels=mid_channels // 2,
+            out_channels=out_channels // 2,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+            groups=1)
+        self.conv_dw_3 = ConvBNHS(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=3,
+            stride=1,
+            padding=1,
+            groups=out_channels)
+        self.conv_pw_3 = ConvBNHS(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+            groups=1)
+
+    def forward(self, inputs):
+        x1 = self.conv_dw_1(inputs)
+        x1 = self.conv_1(x1)
+        x2 = self.conv_pw_2(inputs)
+        x2 = self.conv_dw_2(x2)
+        x2 = self.se(x2)
+        x2 = self.conv_2(x2)
+        out = paddle.concat([x1, x2], axis=1)
+        out = self.conv_dw_3(out)
+        out = self.conv_pw_3(out)
+        return out
+
+
+def make_divisible_lite(v, divisor=16):
+    new_v = max(divisor, int(v + divisor / 2) // divisor * divisor)
+    if new_v < 0.9 * v:
+        new_v += divisor
+    return new_v
+
+
+@register
+@serializable
+class Lite_EffiBackbone(nn.Layer):
+    """Lite_EffiBackbone of YOLOv6-lite"""
+    __shared__ = ['width_mult']
+
+    def __init__(self,
+                 width_mult=1.0,
+                 return_idx=[2, 3, 4],
+                 out_channels=[24, 32, 64, 128, 256],
+                 num_repeat=[1, 3, 7, 3],
+                 scale_size=0.5):
+        super().__init__()
+        self.return_idx = return_idx
+        out_channels = [
+            make_divisible_lite(i * width_mult) for i in out_channels
+        ]
+        mid_channels = [
+            make_divisible_lite(
+                int(i * scale_size), divisor=8) for i in out_channels
+        ]
+
+        out_channels[0] = 24
+        self.conv_0 = ConvBNHS(
+            in_channels=3,
+            out_channels=out_channels[0],
+            kernel_size=3,
+            stride=2,
+            padding=1)
+
+        self.lite_effiblock_1 = self.build_block(
+            num_repeat[0], out_channels[0], mid_channels[1], out_channels[1])
+
+        self.lite_effiblock_2 = self.build_block(
+            num_repeat[1], out_channels[1], mid_channels[2], out_channels[2])
+
+        self.lite_effiblock_3 = self.build_block(
+            num_repeat[2], out_channels[2], mid_channels[3], out_channels[3])
+
+        self.lite_effiblock_4 = self.build_block(
+            num_repeat[3], out_channels[3], mid_channels[4], out_channels[4])
+
+        self._out_channels = [out_channels[i] for i in self.return_idx]
+        self.strides = [[2, 4, 8, 16, 32, 64][i] for i in self.return_idx]
+
+    def forward(self, inputs):
+        x = inputs['image']
+        outputs = []
+        x = self.conv_0(x)
+        x = self.lite_effiblock_1(x)
+        x = self.lite_effiblock_2(x)
+        outputs.append(x)
+        x = self.lite_effiblock_3(x)
+        outputs.append(x)
+        x = self.lite_effiblock_4(x)
+        outputs.append(x)
+        return outputs
+
+    @staticmethod
+    def build_block(num_repeat, in_channels, mid_channels, out_channels):
+        block_list = nn.Sequential()
+        for i in range(num_repeat):
+            if i == 0:
+                block = Lite_EffiBlockS2(
+                    in_channels=in_channels,
+                    mid_channels=mid_channels,
+                    out_channels=out_channels,
+                    stride=2)
+            else:
+                block = Lite_EffiBlockS1(
+                    in_channels=out_channels,
+                    mid_channels=mid_channels,
+                    out_channels=out_channels,
+                    stride=1)
+            block_list.add_sublayer(str(i), block)
+        return block_list
+
+    @property
+    def out_shape(self):
+        return [
+            ShapeSpec(
+                channels=c, stride=s)
+            for c, s in zip(self._out_channels, self.strides)
+        ]

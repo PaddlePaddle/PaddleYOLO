@@ -32,8 +32,6 @@ import paddle
 import paddle.nn as nn
 import paddle.distributed as dist
 from paddle.distributed import fleet
-from paddle.distributed.fleet.utils.hybrid_parallel_util import fused_allreduce_gradients
-
 from paddle.static import InputSpec
 from ppdet.optimizer import ModelEMA
 
@@ -47,28 +45,21 @@ from ppdet.utils.fuse_utils import fuse_conv_bn
 from ppdet.utils import profiler
 from ppdet.modeling.initializer import reset_initialized_parameter
 from ppdet.modeling.post_process import multiclass_nms
+
 from .callbacks import Callback, ComposeCallback, LogPrinter, Checkpointer, VisualDLWriter, WandbCallback
 from .export_utils import _dump_infer_config, _prune_input_spec, apply_to_static
+
+from paddle.distributed.fleet.utils.hybrid_parallel_util import fused_allreduce_gradients
 
 from ppdet.utils.logger import setup_logger
 logger = setup_logger('ppdet.engine')
 
 __all__ = ['Trainer']
 
-RESET_INIT_MODELS = [
-    'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'YOLOv5u', 'YOLOv7u'
-]
-RESET_BN_MODELS = [
-    'YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'YOLOv5u', 'YOLOv7u'
-]
-UNSUPPORTED_TRAINING_MODELS = [
-    'RTMDet', 'YOLOv6', 'YOLOv8', 'YOLOv5u', 'YOLOv7u'
-]
-
 
 class Trainer(object):
     def __init__(self, cfg, mode='train'):
-        self.cfg = cfg
+        self.cfg = cfg.copy()
         assert mode.lower() in ['train', 'eval', 'test'], \
                 "mode should be 'train', 'eval' or 'test'"
         self.mode = mode.lower()
@@ -79,9 +70,12 @@ class Trainer(object):
         self.custom_white_list = self.cfg.get('custom_white_list', None)
         self.custom_black_list = self.cfg.get('custom_black_list', None)
 
-        if self.cfg.architecture in UNSUPPORTED_TRAINING_MODELS and self.mode == 'train':
+        if self.cfg.architecture in ['RTMDet', 'YOLOv6'
+                                     ] and self.mode == 'train':
             raise NotImplementedError('{} training not supported yet.'.format(
                 self.cfg.architecture))
+        if 'slim' in cfg and cfg['slim_type'] == 'PTQ':
+            self.cfg['TestDataset'] = create('TestDataset')()
 
         # build data loader
         capital_mode = self.mode.capitalize()
@@ -100,10 +94,13 @@ class Trainer(object):
             self.model = self.cfg.model
             self.is_loaded_weights = True
 
-        if self.cfg.architecture in RESET_INIT_MODELS:
+        if self.cfg.architecture in ['YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8']:
             reset_initialized_parameter(self.model)
+            self.model.yolo_head._initialize_biases()  # Note: must added
 
-        if cfg.architecture in RESET_BN_MODELS:
+        if cfg.architecture in [
+                'YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8'
+        ]:
             for k, m in self.model.named_sublayers():
                 if isinstance(m, nn.BatchNorm2D):
                     m._epsilon = 1e-3  # for amp(fp16)
@@ -131,7 +128,7 @@ class Trainer(object):
             reader_name = '{}Reader'.format(self.mode.capitalize())
             # If metric is VOC, need to be set collate_batch=False.
             if cfg.metric == 'VOC':
-                cfg[reader_name]['collate_batch'] = False
+                self.cfg[reader_name]['collate_batch'] = False
             self.loader = create(reader_name)(self.dataset, cfg.worker_num,
                                               self._eval_batch_sampler)
         # TestDataset build after user set images, skip loader creation here
@@ -141,7 +138,7 @@ class Trainer(object):
         if print_params:
             params = sum([
                 p.numel() for n, p in self.model.named_parameters()
-                if all([x not in n for x in ['_mean', '_variance']])
+                if all([x not in n for x in ['_mean', '_variance', 'aux_']])
             ])  # exclude BatchNorm running status
             logger.info('Model Params : {} M.'.format((params / 1e6).numpy()[
                 0]))
@@ -160,7 +157,6 @@ class Trainer(object):
             if self.cfg.get('unstructured_prune'):
                 self.pruner = create('UnstructuredPruner')(self.model,
                                                            steps_per_epoch)
-
         if self.use_amp and self.amp_level == 'O2':
             self.model, self.optimizer = paddle.amp.decorate(
                 models=self.model,
@@ -172,15 +168,14 @@ class Trainer(object):
             ema_decay_type = self.cfg.get('ema_decay_type', 'threshold')
             cycle_epoch = self.cfg.get('cycle_epoch', -1)
             ema_black_list = self.cfg.get('ema_black_list', None)
+            ema_filter_no_grad = self.cfg.get('ema_filter_no_grad', False)
             self.ema = ModelEMA(
                 self.model,
                 decay=ema_decay,
                 ema_decay_type=ema_decay_type,
                 cycle_epoch=cycle_epoch,
-                ema_black_list=ema_black_list)
-        self.self_distill = self.cfg.get('self_distill', False)
-        if self.self_distill:
-            self.teacher_model = self.model
+                ema_black_list=ema_black_list,
+                ema_filter_no_grad=ema_filter_no_grad)
 
         self._nranks = dist.get_world_size()
         self._local_rank = dist.get_rank()
@@ -299,20 +294,8 @@ class Trainer(object):
         load_pretrain_weight(self.model, weights)
         logger.debug("Load weights {} to start training".format(weights))
 
-        if self.self_distill:
-            load_pretrain_weight(self.teacher_model, weights)
-            logger.debug("Load weights {} to start training as teacher_model".
-                         format(weights))
-
         if self.mode in ['eval', 'test'] and self.cfg.architecture == 'YOLOv7':
             self.model.yolo_head.fuse()
-
-    def load_weights_sde(self, det_weights, reid_weights):
-        if self.model.detector:
-            load_weight(self.model.detector, det_weights)
-            load_weight(self.model.reid, reid_weights)
-        else:
-            load_weight(self.model.reid, reid_weights)
 
     def resume_weights(self, weights):
         # support Distill resume weights
@@ -334,12 +317,10 @@ class Trainer(object):
         model = self.model
         if self.cfg.get('to_static', False):
             model = apply_to_static(self.cfg, model)
-
-        sync_bn = (
-            getattr(self.cfg, 'norm_type', None) == 'sync_bn' and
-            (self.cfg.use_gpu or self.cfg.use_npu or self.cfg.use_mlu) and
-            self._nranks > 1)
-
+            if self.cfg.architecture == 'YOLOv5':
+                model.yolo_head.loss.to_static = True
+        sync_bn = (getattr(self.cfg, 'norm_type', None) == 'sync_bn' and
+                   (self.cfg.use_gpu or self.cfg.use_mlu) and self._nranks > 1)
         if sync_bn:
             model = paddle.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
@@ -348,16 +329,14 @@ class Trainer(object):
             scaler = paddle.amp.GradScaler(
                 enable=self.cfg.use_gpu or self.cfg.use_npu or self.cfg.use_mlu,
                 init_loss_scaling=self.cfg.get('init_loss_scaling', 1024))
-        else:
-            scaler = paddle.amp.GradScaler(enable=False)
 
         # get distributed model
         if self.cfg.get('fleet', False):
             model = fleet.distributed_model(model)
             self.optimizer = fleet.distributed_optimizer(self.optimizer)
         elif self._nranks > 1:
-            find_unused_parameters = self.cfg.get('find_unused_parameters',
-                                                  False)
+            find_unused_parameters = self.cfg[
+                'find_unused_parameters'] if 'find_unused_parameters' in self.cfg else False
             model = paddle.DataParallel(
                 model, find_unused_parameters=find_unused_parameters)
 
@@ -381,8 +360,8 @@ class Trainer(object):
 
         self._compose_callback.on_train_begin(self.status)
 
-        use_fused_allreduce_gradients = self.cfg.get(
-            'use_fused_allreduce_gradients', False)
+        use_fused_allreduce_gradients = self.cfg[
+            'use_fused_allreduce_gradients'] if 'use_fused_allreduce_gradients' in self.cfg else False
 
         for epoch_id in range(self.start_epoch, self.cfg.epoch):
             self.status['mode'] = 'train'
@@ -412,20 +391,42 @@ class Trainer(object):
                 self._compose_callback.on_step_begin(self.status)
                 data['epoch_id'] = epoch_id
                 data['num_gpus'] = self._nranks
+                if self.cfg.get('to_static',
+                                False) and 'image_file' in data.keys():
+                    data.pop('image_file')
 
                 if self.use_amp:
-                    with paddle.amp.auto_cast(
-                            enable=self.cfg.use_gpu or self.cfg.use_npu or
-                            self.cfg.use_mlu,
-                            custom_white_list=self.custom_white_list,
-                            custom_black_list=self.custom_black_list,
-                            level=self.amp_level):
-                        # model forward
-                        outputs = model(data)
-                        loss = outputs['loss']
-                    # model backward
-                    scaled_loss = scaler.scale(loss)
-                    scaled_loss.backward()
+                    if isinstance(
+                            model, paddle.
+                            DataParallel) and use_fused_allreduce_gradients:
+                        with model.no_sync():
+                            with paddle.amp.auto_cast(
+                                    enable=self.cfg.use_gpu or
+                                    self.cfg.use_npu or self.cfg.use_mlu,
+                                    custom_white_list=self.custom_white_list,
+                                    custom_black_list=self.custom_black_list,
+                                    level=self.amp_level):
+                                # model forward
+                                outputs = model(data)
+                                loss = outputs['loss']
+                            # model backward
+                            scaled_loss = scaler.scale(loss)
+                            scaled_loss.backward()
+                        fused_allreduce_gradients(
+                            list(model.parameters()), None)
+                    else:
+                        with paddle.amp.auto_cast(
+                                enable=self.cfg.use_gpu or self.cfg.use_npu or
+                                self.cfg.use_mlu,
+                                custom_white_list=self.custom_white_list,
+                                custom_black_list=self.custom_black_list,
+                                level=self.amp_level):
+                            # model forward
+                            outputs = model(data)
+                            loss = outputs['loss']
+                        # model backward
+                        scaled_loss = scaler.scale(loss)
+                        scaled_loss.backward()
                     # in dygraph mode, optimizer.minimize is equal to optimizer.step
                     scaler.minimize(self.optimizer, scaled_loss)
                 else:
@@ -678,6 +679,44 @@ class Trainer(object):
         loader = create('TestReader')(self.dataset, 0)
         imid2path = self.dataset.get_imid2path()
 
+        def setup_metrics_for_loader():
+            # mem
+            metrics = copy.deepcopy(self._metrics)
+            mode = self.mode
+            save_prediction_only = self.cfg[
+                'save_prediction_only'] if 'save_prediction_only' in self.cfg else None
+            output_eval = self.cfg[
+                'output_eval'] if 'output_eval' in self.cfg else None
+
+            # modify
+            self.mode = '_test'
+            self.cfg['save_prediction_only'] = True
+            self.cfg['output_eval'] = output_dir
+            self.cfg['imid2path'] = imid2path
+            self._init_metrics()
+
+            # restore
+            self.mode = mode
+            self.cfg.pop('save_prediction_only')
+            if save_prediction_only is not None:
+                self.cfg['save_prediction_only'] = save_prediction_only
+
+            self.cfg.pop('output_eval')
+            if output_eval is not None:
+                self.cfg['output_eval'] = output_eval
+
+            self.cfg.pop('imid2path')
+
+            _metrics = copy.deepcopy(self._metrics)
+            self._metrics = metrics
+
+            return _metrics
+
+        if save_results:
+            metrics = setup_metrics_for_loader()
+        else:
+            metrics = []
+
         anno_file = self.dataset.get_anno()
         clsid2catid, catid2name = get_categories(
             self.cfg.metric, anno_file=anno_file)
@@ -723,6 +762,9 @@ class Trainer(object):
                 merged_bboxs = []
                 data['im_id'] = data['ori_im_id']
 
+                for _m in metrics:
+                    _m.update(data, merged_results)
+
                 for key in ['im_shape', 'scale_factor', 'im_id']:
                     if isinstance(data, typing.Sequence):
                         merged_results[key] = data[0][key]
@@ -733,31 +775,36 @@ class Trainer(object):
                         merged_results[key] = value.numpy()
                 results.append(merged_results)
 
+        for _m in metrics:
+            _m.accumulate()
+            _m.reset()
+
         if visualize:
             for outs in results:
                 batch_res = get_infer_results(outs, clsid2catid)
                 bbox_num = outs['bbox_num']
+
                 start = 0
                 for i, im_id in enumerate(outs['im_id']):
                     image_path = imid2path[int(im_id)]
                     image = Image.open(image_path).convert('RGB')
                     image = ImageOps.exif_transpose(image)
                     self.status['original_image'] = np.array(image.copy())
+
                     end = start + bbox_num[i]
                     bbox_res = batch_res['bbox'][start:end] \
                             if 'bbox' in batch_res else None
-
+                    mask_res = batch_res['mask'][start:end] \
+                            if 'mask' in batch_res else None
+                    segm_res = batch_res['segm'][start:end] \
+                            if 'segm' in batch_res else None
+                    keypoint_res = batch_res['keypoint'][start:end] \
+                            if 'keypoint' in batch_res else None
+                    pose3d_res = batch_res['pose3d'][start:end] \
+                            if 'pose3d' in batch_res else None
                     image = visualize_results(
-                        image,
-                        bbox_res,
-                        mask_res=None,
-                        segm_res=None,
-                        keypoint_res=None,
-                        pose3d_res=None,
-                        im_id=int(im_id),
-                        catid2name=catid2name,
-                        threshold=draw_threshold)
-
+                        image, bbox_res, mask_res, segm_res, keypoint_res,
+                        pose3d_res, int(im_id), catid2name, draw_threshold)
                     self.status['result_image'] = np.array(image.copy())
                     if self._compose_callback:
                         self._compose_callback.on_step_end(self.status)
@@ -767,6 +814,7 @@ class Trainer(object):
                     logger.info("Detection bbox results save in {}".format(
                         save_name))
                     image.save(save_name, quality=95)
+
                     start = end
 
     def predict(self,
@@ -895,6 +943,7 @@ class Trainer(object):
                     image.save(save_name, quality=95)
 
                     start = end
+        return results
 
     def _get_save_image_name(self, output_dir, image_path):
         """
@@ -1002,6 +1051,10 @@ class Trainer(object):
         return static_model, pruned_input_spec
 
     def export(self, output_dir='output_inference'):
+        if hasattr(self.model, 'aux_neck'):
+            self.model.__delattr__('aux_neck')
+        if hasattr(self.model, 'aux_head'):
+            self.model.__delattr__('aux_head')
         self.model.eval()
 
         if hasattr(self.cfg, 'export') and 'fuse_conv_bn' in self.cfg[
@@ -1052,6 +1105,10 @@ class Trainer(object):
         logger.info("Export Post-Quant model and saved in {}".format(save_dir))
 
     def _flops(self, loader):
+        if hasattr(self.model, 'aux_neck'):
+            self.model.__delattr__('aux_neck')
+        if hasattr(self.model, 'aux_head'):
+            self.model.__delattr__('aux_head')
         self.model.eval()
         try:
             import paddleslim

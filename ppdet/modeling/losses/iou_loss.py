@@ -222,31 +222,20 @@ class SIoULoss(GIoULoss):
         reduction (str): Options are "none", "mean" and "sum". default as none
     """
 
-    def __init__(self,
-                 loss_weight=1.,
-                 eps=1e-10,
-                 theta=4.,
-                 reduction='none',
-                 splited=True):
+    def __init__(self, loss_weight=1., eps=1e-10, theta=4., reduction='none'):
         super(SIoULoss, self).__init__(loss_weight=loss_weight, eps=eps)
         self.loss_weight = loss_weight
         self.eps = eps
         self.theta = theta
         self.reduction = reduction
-        self.splited = splited
 
     def __call__(self, pbox, gbox):
-        if self.splited:
-            x1, y1, x2, y2 = paddle.split(pbox, num_or_sections=4, axis=-1)
-            x1g, y1g, x2g, y2g = paddle.split(gbox, num_or_sections=4, axis=-1)
+        x1, y1, x2, y2 = paddle.split(pbox, num_or_sections=4, axis=-1)
+        x1g, y1g, x2g, y2g = paddle.split(gbox, num_or_sections=4, axis=-1)
 
-            box1 = [x1, y1, x2, y2]
-            box2 = [x1g, y1g, x2g, y2g]
-            iou = bbox_iou(box1, box2)
-        else:
-            x1, y1, x2, y2 = pbox
-            x1g, y1g, x2g, y2g = gbox
-            iou = bbox_iou(pbox, gbox)
+        box1 = [x1, y1, x2, y2]
+        box2 = [x1g, y1g, x2g, y2g]
+        iou = bbox_iou(box1, box2)
 
         cx = (x1 + x2) / 2
         cy = (y1 + y2) / 2

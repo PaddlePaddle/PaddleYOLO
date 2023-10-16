@@ -31,55 +31,18 @@ TRT_MIN_SUBGRAPH = {
     'YOLO': 3,
     'PPYOLOE': 10,
     'YOLOX': 20,
+    'YOLOF': 40,
     'YOLOv5': 20,
     'RTMDet': 20,
     'YOLOv6': 10,
     'YOLOv7': 10,
     'YOLOv8': 10,
+    'DETR': 3,
 }
 
 TO_STATIC_SPEC = {
-
-    'yolov5_l_300e_coco': [{
-        'im_id': paddle.static.InputSpec(
-            name='im_id', shape=[-1, 1], dtype='float32'),
-        'gt_class': paddle.static.InputSpec(
-            name='gt_class', shape=[-1,-1,1], dtype='int32'),
-        'gt_bbox': paddle.static.InputSpec(
-            name='gt_bbox', shape=[-1, -1, 4], dtype='float32'),
-        'curr_iter': paddle.static.InputSpec(
-            name='curr_iter', shape=[-1], dtype='float32'),
-        'image': paddle.static.InputSpec(
-            name='image', shape=[-1, 3, -1, -1], dtype='float32'),
-        'im_shape': paddle.static.InputSpec(
-            name='im_shape', shape=[-1, 2], dtype='float32'),
-        'scale_factor': paddle.static.InputSpec(
-            name='scale_factor', shape=[-1, 2], dtype='float32'),
-        'pad_gt_mask': paddle.static.InputSpec(
-            name='pad_gt_mask', shape=[-1, -1, 1], dtype='float32'),
-        
-    }],
-
-     'yolov7_l_300e_coco': [{
-        'im_id': paddle.static.InputSpec(
-            name='im_id', shape=[-1, 1], dtype='float32'),
-        'gt_class': paddle.static.InputSpec(
-            name='gt_class', shape=[-1,-1,1], dtype='int32'),
-        'gt_bbox': paddle.static.InputSpec(
-            name='gt_bbox', shape=[-1, -1, 4], dtype='float32'),
-        'curr_iter': paddle.static.InputSpec(
-            name='curr_iter', shape=[-1], dtype='float32'),
-        'image': paddle.static.InputSpec(
-            name='image', shape=[-1, 3, -1, -1], dtype='float32'),
-        'im_shape': paddle.static.InputSpec(
-            name='im_shape', shape=[-1, 2], dtype='float32'),
-        'scale_factor': paddle.static.InputSpec(
-            name='scale_factor', shape=[-1, 2], dtype='float32'),
-        'pad_gt_mask': paddle.static.InputSpec(
-            name='pad_gt_mask', shape=[-1, -1, 1], dtype='float32'),
-        
-    }],
-
+    'yolov5_l_300e_coco': None,
+    'yolov7_l_300e_coco': None,
     'yolov3_darknet53_270e_coco': [{
         'im_id': paddle.static.InputSpec(
             name='im_id', shape=[-1, 1], dtype='float32'),
@@ -205,8 +168,11 @@ def _dump_infer_config(config, path, image_shape, model):
             arch_state = True
             break
 
+    if infer_arch == 'PPYOLOEWithAuxHead':
+        infer_arch = 'PPYOLOE'
+
     if infer_arch in [
-            'YOLOX', 'PPYOLOE', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8'
+            'YOLOX', 'YOLOF', 'PPYOLOE', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8'
     ]:
         infer_cfg['arch'] = infer_arch
         infer_cfg['min_subgraph_size'] = TRT_MIN_SUBGRAPH[infer_arch]

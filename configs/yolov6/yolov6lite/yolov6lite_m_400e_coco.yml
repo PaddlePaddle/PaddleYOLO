@@ -1,0 +1,19 @@
+_BASE_: [
+  '../../datasets/coco_detection.yml',
+  '../../runtime.yml',
+  '_base_/optimizer_400e.yml',
+  '_base_/yolov6lite_effibackbone.yml',
+  '_base_/yolov6lite_reader_320.yml',
+]
+width_mult: 1.1
+log_iter: 100
+snapshot_epoch: 10
+weights: output/yolov6lite_m_400e_coco/model_final
+
+
+### reader config
+TrainReader:
+  batch_size: 32 # default 8 gpus, total bs = 256
+
+EvalReader:
+  batch_size: 8

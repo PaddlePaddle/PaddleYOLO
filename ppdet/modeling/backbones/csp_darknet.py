@@ -75,7 +75,7 @@ class BaseConv(nn.Layer):
             # momentum=0.97,
             weight_attr=ParamAttr(regularizer=L2Decay(0.0)),
             bias_attr=ParamAttr(regularizer=L2Decay(0.0)))
-        self.act = get_activation(act)
+        self.act = get_activation(act) if isinstance(act, str) else act
         self._init_weights()
 
     def _init_weights(self):

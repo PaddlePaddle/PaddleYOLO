@@ -24,5 +24,6 @@
 
 
 **注意:**
-  - YOLOv5u 模型表示YOLOv5使用YOLOv8的head和loss，是Anchor Free的检测方案，YOLOv5u 模型暂未支持完全训练；
+  - YOLOv5u 模型表示YOLOv5使用YOLOv8的head和loss，是Anchor Free的检测方案；
   - YOLOv5u 模型训练使用COCO train2017作为训练集，Box AP为在COCO val2017上的`mAP(IoU=0.5:0.95)`结果；
+  - 使用教程可参照[YOLOv5](../yolov5)；
