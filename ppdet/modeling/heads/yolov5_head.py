@@ -464,8 +464,7 @@ def process_mask(protos, masks_in, bboxes, shape, upsample=True):
 
     c, mh, mw = protos.shape  # CHW
     ih, iw = shape
-    masks = F.sigmoid(masks_in @protos.reshape([c, -1])).reshape(
-        [-1, mh, mw])  # CHW
+    masks = F.sigmoid(masks_in @protos.reshape([c, -1])).reshape([-1, mh, mw])
 
     downsampled_bboxes = bboxes.clone()
     downsampled_bboxes[:, 0] *= mw / iw

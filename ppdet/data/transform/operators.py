@@ -1284,8 +1284,8 @@ class Resize(BaseOperator):
             im_scale = min(target_size_min / im_size_min,
                            target_size_max / im_size_max)
 
-            resize_h = int(im_scale * float(im_shape[0]) + 0.5)
-            resize_w = int(im_scale * float(im_shape[1]) + 0.5)
+            resize_h = im_scale * float(im_shape[0])
+            resize_w = im_scale * float(im_shape[1])
 
             im_scale_x = im_scale
             im_scale_y = im_scale

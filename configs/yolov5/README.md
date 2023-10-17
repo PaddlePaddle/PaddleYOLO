@@ -7,7 +7,7 @@
 
 ## 模型库
 
-### 基础模型
+### 基础检测模型
 
 | 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | mAP<sup>val<br>0.5:0.95 | mAP<sup>val<br>0.5 | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
 | :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
@@ -17,6 +17,16 @@
 | YOLOv5-l        |  640     |    16      |   300e   |     7.9    |  48.9  | 67.1 |  46.56  | 109.32 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_l_300e_coco.pdparams) | [配置文件](./yolov5_l_300e_coco.yml) |
 | YOLOv5-x        |  640     |    16      |   300e   |     13.7   |  50.6  | 68.7 |  86.75  | 205.92 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_x_300e_coco.pdparams) | [配置文件](./yolov5_x_300e_coco.yml) |
 | YOLOv5-s ConvNeXt|  640    |    8       |   36e    |      -     |  42.4  | 65.3 |  34.54  |  17.96 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_convnext_s_36e_coco.pdparams) | [配置文件](../convnext/yolov5_convnext_s_36e_coco.yml) |
+
+### 实例分割模型
+
+| 网络网络        | 输入尺寸   | 图片数/GPU | 学习率策略 | 模型推理耗时(ms) | box AP | mask AP | Params(M) | FLOPs(G) |    下载链接       | 配置文件 |
+| :------------- | :------- | :-------: | :------: | :------------: | :---------------------: | :----------------: |:---------: | :------: |:---------------: |:-----: |
+| YOLOv5-n        |  640     |    16      |   300e   |     -    |  27.6  | - |  2.0  | 7.1 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_ins_n_300e_coco.pdparams) | [配置文件](./yolov5_ins_n_300e_coco.yml) |
+| YOLOv5-s        |  640     |    16      |   300e   |     -    |  37.6  | - |  7.8  | 26.4 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_ins_s_300e_coco.pdparams) | [配置文件](./yolov5_ins_s_300e_coco.yml) |
+| YOLOv5-m        |  640     |    16      |   300e   |     -    |  45.0  | - |  22.0  | 70.8 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_ins_m_300e_coco.pdparams) | [配置文件](./yolov5_ins_m_300e_coco.yml) |
+| YOLOv5-l        |  640     |    16      |   300e   |     -    |  48.9  | - |  47.9  | 147.7 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_ins_l_300e_coco.pdparams) | [配置文件](./yolov5_ins_l_300e_coco.yml) |
+| YOLOv5-x        |  640     |    16      |   300e   |     -    |  50.6  | - |  88.8  | 265.7 | [下载链接](https://paddledet.bj.bcebos.com/models/yolov5_ins_x_300e_coco.pdparams) | [配置文件](./yolov5_ins_x_300e_coco.yml) |
 
 ### SSOD预训练模型
 
