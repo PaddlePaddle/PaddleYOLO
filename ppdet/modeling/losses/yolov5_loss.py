@@ -46,10 +46,8 @@ class YOLOv5Loss(nn.Layer):
         self.na = 3  # not len(anchors)
         self.gr = 1.0
 
-        self.BCEcls = nn.BCEWithLogitsLoss(
-            pos_weight=paddle.to_tensor([1.0]), reduction="mean")
-        self.BCEobj = nn.BCEWithLogitsLoss(
-            pos_weight=paddle.to_tensor([1.0]), reduction="mean")
+        self.BCEcls = nn.BCEWithLogitsLoss(reduction="mean")
+        self.BCEobj = nn.BCEWithLogitsLoss(reduction="mean")
 
         self.loss_weights = {
             'box': box_weight,
