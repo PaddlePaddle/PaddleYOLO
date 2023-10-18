@@ -160,7 +160,11 @@ class YOLOv5Head(nn.Layer):
         scores = out[..., 5:] * out[..., 4].unsqueeze(-1)
         return bboxes, scores
 
-    def post_process(self, head_outs, im_shape, scale_factor):
+    def post_process(self,
+                     head_outs,
+                     im_shape,
+                     scale_factor,
+                     infer_shape=[640, 640]):
         bbox_list, score_list = [], []
         for i, head_out in enumerate(head_outs):
             _, _, ny, nx = head_out.shape

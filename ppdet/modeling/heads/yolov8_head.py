@@ -59,6 +59,7 @@ class YOLOv8Head(nn.Layer):
                  trt=False,
                  exclude_nms=False,
                  exclude_post_process=False,
+                 customized_c3=-1,
                  print_l1_loss=True):
         super(YOLOv8Head, self).__init__()
         assert len(in_channels) > 0, "len(in_channels) should > 0"
@@ -82,6 +83,7 @@ class YOLOv8Head(nn.Layer):
         self.loss_weight = loss_weight
         self.exclude_nms = exclude_nms
         self.exclude_post_process = exclude_post_process
+        self.customized_c3 = customized_c3
         self.print_l1_loss = print_l1_loss
 
         # cls loss
@@ -89,7 +91,10 @@ class YOLOv8Head(nn.Layer):
 
         # pred head
         c2 = max((16, in_channels[0] // 4, self.reg_max * 4))
-        c3 = max(in_channels[0], self.num_classes)
+        if self.customized_c3 < 0:
+            c3 = max(in_channels[0], self.num_classes)
+        else:
+            c3 = self.customized_c3
         self.conv_reg = nn.LayerList()
         self.conv_cls = nn.LayerList()
         for in_c in self.in_channels:
@@ -363,7 +368,11 @@ class YOLOv8Head(nn.Layer):
             out_dict.update({'loss_l1': loss_l1 * total_bs})
         return out_dict
 
-    def post_process(self, head_outs, im_shape, scale_factor):
+    def post_process(self,
+                     head_outs,
+                     im_shape,
+                     scale_factor,
+                     infer_shape=[640, 640]):
         pred_scores, pred_bboxes, anchor_points, stride_tensor = head_outs
 
         pred_bboxes = batch_distance2bbox(anchor_points, pred_bboxes)
