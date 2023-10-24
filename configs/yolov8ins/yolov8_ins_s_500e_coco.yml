@@ -3,7 +3,7 @@ _BASE_: [
   '../runtime.yml',
   '_base_/optimizer_500e.yml',
   '_base_/yolov8_ins_cspdarknet.yml',
-  '_base_/yolov8_reader.yml',
+  '_base_/yolov8_ins_reader.yml',
 ]
 depth_mult: 0.33
 width_mult: 0.50

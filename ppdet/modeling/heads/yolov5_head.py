@@ -21,6 +21,7 @@ from paddle import ParamAttr
 from paddle.regularizer import L2Decay
 from ppdet.core.workspace import register
 from ppdet.modeling.layers import MultiClassNMS
+from ..bbox_utils import custom_ceil
 
 __all__ = ['YOLOv5Head', 'YOLOv5InsHead']
 
@@ -160,7 +161,11 @@ class YOLOv5Head(nn.Layer):
         scores = out[..., 5:] * out[..., 4].unsqueeze(-1)
         return bboxes, scores
 
-    def post_process(self, head_outs, im_shape, scale_factor):
+    def post_process(self,
+                     head_outs,
+                     im_shape,
+                     scale_factor,
+                     infer_shape=[640, 640]):
         bbox_list, score_list = [], []
         for i, head_out in enumerate(head_outs):
             _, _, ny, nx = head_out.shape
@@ -405,8 +410,8 @@ class YOLOv5InsHead(nn.Layer):
                 mask_logits = F.interpolate(
                     mask_logits.unsqueeze(0),
                     size=[
-                        math.ceil(mask_logits.shape[-2] / scale_factor[0][0]),
-                        math.ceil(mask_logits.shape[-1] / scale_factor[0][1])
+                        custom_ceil(mask_logits.shape[-2] / scale_factor[0][0]),
+                        custom_ceil(mask_logits.shape[-1] / scale_factor[0][1])
                     ],
                     mode='bilinear',
                     align_corners=False)[..., :int(ori_h), :int(ori_w)]

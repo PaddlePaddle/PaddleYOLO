@@ -18,7 +18,7 @@ import paddle.nn as nn
 import paddle.nn.functional as F
 from ppdet.core.workspace import register
 
-from ..bbox_utils import batch_distance2bbox
+from ..bbox_utils import batch_distance2bbox, custom_ceil
 from ..losses import GIoULoss, QualityFocalLoss, IouLoss
 from ..initializer import bias_init_with_prob, constant_
 from ppdet.modeling.backbones.csp_darknet import BaseConv
@@ -674,8 +674,8 @@ class RTMDetInsHead(nn.Layer):
                 mask_logits = F.interpolate(
                     mask_logits,
                     size=[
-                        math.ceil(mask_logits.shape[-2] / scale_factor[0][0]),
-                        math.ceil(mask_logits.shape[-1] / scale_factor[0][1])
+                        custom_ceil(mask_logits.shape[-2] / scale_factor[0][0]),
+                        custom_ceil(mask_logits.shape[-1] / scale_factor[0][1])
                     ],
                     mode='bilinear',
                     align_corners=False)[..., :int(ori_h), :int(ori_w)]
@@ -692,8 +692,8 @@ class RTMDetInsHead(nn.Layer):
 
     def mask_post_process(self, mask_feat, kernels, anchor_points,
                           stride_tensor):
-        h, w = mask_feat.shape[-2:]
-        num_inst = kernels.shape[0]
+        _, c, h, w = mask_feat.shape  # [1, 8, 80, 80]
+        num_inst = 100  # kernels.shape[0] # [100, 169]
         coord, coord_stride = self._generate_anchors(fpn_strides=[8])
         coord = (coord * coord_stride).reshape([1, -1, 2])
 
@@ -704,10 +704,10 @@ class RTMDetInsHead(nn.Layer):
         relative_coord = relative_coord.reshape([num_inst, 2, h, w])
         mask_feat = paddle.concat(
             [relative_coord, mask_feat.tile([num_inst, 1, 1, 1])], axis=1)
-        weights, biases = self.parse_dynamic_params(kernels)
+        weights, biases = self.parse_dynamic_params(kernels, num_inst)
 
         n_layers = len(weights)
-        x = mask_feat.reshape([1, -1, h, w])
+        x = mask_feat.reshape([-1, num_inst * (c + 2), h, w])
         for i, (weight, bias) in enumerate(zip(weights, biases)):
             x = F.conv2d(
                 x, weight, bias=bias, stride=1, padding=0, groups=num_inst)
@@ -716,23 +716,26 @@ class RTMDetInsHead(nn.Layer):
         x = x.reshape([num_inst, h, w])
         return x
 
-    def parse_dynamic_params(self, flatten_kernels):
+    def parse_dynamic_params(self, flatten_kernels, n_inst):
         """split kernel head prediction to conv weight and bias."""
-        n_inst = flatten_kernels.shape[0]
         n_layers = len(self.weight_nums)
         params_splits = list(
             paddle.split(
                 flatten_kernels, self.weight_nums + self.bias_nums, axis=1))
-        weight_splits = params_splits[:n_layers]
-        bias_splits = params_splits[n_layers:]
+        weight_splits = params_splits[:n_layers]  # [100, 80] [100, 64] [100, 8]
+        bias_splits = params_splits[n_layers:]  # [100, 8] [100, 8] [100, 1]
         for i in range(n_layers):
+            w_dim = weight_splits[i].shape[1]
             if i < n_layers - 1:
-                weight_splits[i] = weight_splits[i].reshape(
-                    [n_inst * self.dyconv_channels, -1, 1, 1])
+                weight_splits[i] = weight_splits[i].reshape([
+                    n_inst * self.dyconv_channels,
+                    int(w_dim / self.dyconv_channels), 1, 1
+                ])
                 bias_splits[i] = bias_splits[i].reshape(
                     [n_inst * self.dyconv_channels])
             else:
-                weight_splits[i] = weight_splits[i].reshape([n_inst, -1, 1, 1])
+                weight_splits[i] = weight_splits[i].reshape(
+                    [n_inst, w_dim, 1, 1])
                 bias_splits[i] = bias_splits[i].reshape([n_inst])
 
         return weight_splits, bias_splits

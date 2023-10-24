@@ -15,6 +15,7 @@ YOLOv8:
   backbone: YOLOv8CSPDarkNet
   neck: YOLOv8CSPPAN
   yolo_head: YOLOv8InsHead
+  with_mask: True
   post_process: ~
 
 YOLOv8CSPDarkNet:
