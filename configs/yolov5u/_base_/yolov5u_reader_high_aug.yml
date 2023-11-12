@@ -6,7 +6,7 @@ mosaic_epoch: &mosaic_epoch 290 # last 10 epochs close mosaic, totally 300 epoch
 worker_num: 4
 TrainReader:
   sample_transforms:
-    - Decode: {}
+    - DecodeNormResize: {target_size: *input_size, mosaic: True}
     - MosaicPerspective: {mosaic_prob: 1.0, target_size: *input_size, scale: 0.9, mixup_prob: 0.1, copy_paste_prob: 0.1}
     - RandomHSV: {hgain: 0.015, sgain: 0.7, vgain: 0.4}
     - RandomFlip: {}
