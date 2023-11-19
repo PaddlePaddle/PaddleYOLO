@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from IPython import embed
-import pycocotools.mask as mask_util
+
 import math
 import numpy as np
 import paddle
@@ -479,7 +478,7 @@ class YOLOv8InsHead(nn.Layer):
         self.print_l1_loss = print_l1_loss
 
         # cls loss
-        self.bce = nn.BCEWithLogitsLoss(reduction="mean")
+        self.bce = nn.BCEWithLogitsLoss(reduction="none")
 
         # pred head
         c2 = max((16, in_channels[0] // 4, self.reg_max * 4))
@@ -674,24 +673,6 @@ class YOLOv8InsHead(nn.Layer):
             reduction='none') * weight_right
         return (loss_left + loss_right).mean(-1, keepdim=True)
 
-    @staticmethod
-    def get_gt_mask_from_polygons(gt_poly, pad_mask):
-        out_gt_mask = []
-        for polygons, padding in zip(gt_poly, pad_mask):
-            height, width = int(padding[:, 0].sum()), int(padding[0, :].sum())
-            masks = []
-            for obj_poly in polygons:
-                rles = mask_util.frPyObjects(obj_poly, height, width)
-                rle = mask_util.merge(rles)
-                masks.append(
-                    paddle.to_tensor(mask_util.decode(rle)).astype('float32'))
-            masks = paddle.stack(masks)
-            masks_pad = paddle.zeros(
-                [masks.shape[0], pad_mask.shape[1], pad_mask.shape[2]])
-            masks_pad[:, :height, :width] = masks
-            out_gt_mask.append(masks_pad)
-        return out_gt_mask
-
     def get_loss(self, head_outs, gt_meta):
         assert 'gt_bbox' in gt_meta and 'gt_class' in gt_meta
         assert 'gt_segm' in gt_meta
@@ -732,11 +713,14 @@ class YOLOv8InsHead(nn.Layer):
         gt_labels = paddle.stack(gt_meta['gt_class'])
         gt_bboxes = paddle.stack(gt_meta['gt_bbox'])  # xyxy
         pad_gt_mask = paddle.stack(gt_meta['pad_gt_mask'])
+        gt_segms = paddle.stack(gt_meta['gt_segm']).cast('float32')
 
-        gt_mask_labels = gt_meta['gt_segm']
-        #pad_mask = gt_meta['pad_mask']
+        if tuple(gt_segms.shape[-2:]) != (mask_h, mask_w):  # downsample
+            gt_segms = F.interpolate(
+                gt_segms, (mask_h, mask_w),
+                mode='nearest').reshape([bs, -1, mask_h * mask_w])
 
-        assigned_labels, assigned_bboxes, assigned_scores = \
+        assigned_labels, assigned_bboxes, assigned_scores, assigned_gt_index = \
             self.assigner(
             F.sigmoid(pred_scores.detach()),
             pred_bboxes.detach(),
@@ -745,10 +729,19 @@ class YOLOv8InsHead(nn.Layer):
             gt_labels,
             gt_bboxes, # xyxy
             pad_gt_mask,
-            bg_index=self.num_classes)
+            bg_index=self.num_classes,
+            gt_segms=gt_segms)
         # rescale bbox
         assigned_bboxes /= stride_tensor
         pred_bboxes /= stride_tensor
+
+        # assign segms for masks
+        assigned_masks = paddle.gather(
+            gt_segms.reshape([-1, mask_h * mask_w]),
+            assigned_gt_index.flatten(),
+            axis=0)
+        assigned_masks = assigned_masks.reshape(
+            [bs, assigned_gt_index.shape[1], mask_h * mask_w])
 
         # cls loss
         loss_cls = self.bce(pred_scores, assigned_scores).sum()
@@ -804,22 +797,14 @@ class YOLOv8InsHead(nn.Layer):
             loss_dfl = self._df_loss(pred_dist_pos,
                                      assigned_ltrb_pos) * bbox_weight
             loss_dfl = loss_dfl.sum() / assigned_scores_sum
-            # embed()
-            # mask loss
-            # gt_mask_labels = gt_mask_labels.cast('float32')
-            # if tuple(gt_mask_labels.shape[-2:]) != (mask_h, mask_w):  # downsample
-            #     gt_mask_labels = F.interpolate(gt_mask_labels[None], (mask_h, mask_w), mode='nearest')[0]
 
-            # # maskcoeff_mask = mask_positive.unsqueeze(-1).tile(
-            # #     [1, 1, self.num_masks])
-            # # pred_dist_pos = paddle.masked_select(
-            # #     flatten_dist_preds, maskcoeff_mask).reshape([-1, self.num_masks])
-            # # embed()
-            # loss_mask = self.calculate_segmentation_loss(
-            #     mask_positive, gt_mask_labels, assigned_bboxes, mask_proto, pred_mask_coeff, imgsz)
-            #     #                             [8, 8400, 4] [8, 32, 160, 160] [8, 8400, 32]
-            # loss_mask /= assigned_scores_sum
-            loss_mask = flatten_dist_preds.sum() * 0.
+            # mask loss
+            loss_mask = self.calculate_segmentation_loss(
+                mask_positive, assigned_gt_index, assigned_masks,
+                assigned_bboxes * stride_tensor, mask_proto, pred_mask_coeff,
+                imgsz)
+            # [bs, 8400] [bs, 8400] [bs, 8400, 160 * 160] [bs, 8400, 4] [bs, 32, 160, 160] [bs, 8400, 32]
+            loss_mask /= assigned_scores_sum
         else:
             loss_iou = flatten_dist_preds.sum() * 0.
             loss_dfl = flatten_dist_preds.sum() * 0.
@@ -830,7 +815,7 @@ class YOLOv8InsHead(nn.Layer):
         loss_iou *= self.loss_weight['iou']
         loss_dfl *= self.loss_weight['dfl']
         loss_mask *= self.loss_weight['iou']  # same as iou
-        loss_total = loss_cls + loss_iou + loss_dfl
+        loss_total = loss_cls + loss_iou + loss_dfl + loss_mask
 
         num_gpus = gt_meta.get('num_gpus', 8)
         total_bs = bs * num_gpus
@@ -849,6 +834,7 @@ class YOLOv8InsHead(nn.Layer):
 
     def calculate_segmentation_loss(self,
                                     fg_mask,
+                                    target_gt_idx,
                                     masks,
                                     target_bboxes,
                                     proto,
@@ -882,9 +868,11 @@ class YOLOv8InsHead(nn.Layer):
 
         # Normalize to 0-1
         target_bboxes_normalized = target_bboxes / imgsz[[1, 0, 1, 0]]
+        # [8, 8400, 4]
 
         # Areas of target bboxes
-        marea = xyxy2xywh(target_bboxes_normalized)[..., 2:].prod(2)
+        marea = xyxy2xywh(target_bboxes_normalized)[..., 2:].prod(2).unsqueeze(
+            -1)
 
         # Normalize to mask size
         mxyxy = target_bboxes_normalized * paddle.to_tensor(
@@ -894,19 +882,12 @@ class YOLOv8InsHead(nn.Layer):
                 zip(fg_mask, target_gt_idx, pred_masks, proto, mxyxy, marea,
                     masks)):
             fg_mask_i, target_gt_idx_i, pred_masks_i, proto_i, mxyxy_i, marea_i, masks_i = single_i
+            #  [8400] [8400] [8400, 32] [32, 160, 160] [8400, 4] [8400, 1] [8400, 25600]
             if fg_mask_i.any():
-                mask_idx = target_gt_idx_i[fg_mask_i]
-                if overlap:
-                    gt_mask = masks_i == (mask_idx + 1).reshape([-1, 1, 1])
-                    gt_mask = gt_mask.cast('float32')
-                else:
-                    gt_mask = masks[batch_idx.reshape([-1]) == i][mask_idx]
-
-                loss += self.single_mask_loss(gt_mask, pred_masks_i[fg_mask_i],
-                                              proto_i, mxyxy_i[fg_mask_i],
-                                              marea_i[fg_mask_i])
-                # [n, H, W]  [n, 32]   [32, H, W]  [n, 4]  [n,]
-            # WARNING: lines below prevents Multi-GPU DDP 'unused gradient' PyTorch errors, do not remove
+                loss += self.single_mask_loss(
+                    masks_i[fg_mask_i], pred_masks_i[fg_mask_i], proto_i,
+                    mxyxy_i[fg_mask_i], marea_i[fg_mask_i])
+                #  [10, 25600] [10, 32] [32, 160, 160] [10, 4] [10, 1]
             else:
                 loss += (proto * 0).sum() + (pred_masks * 0).sum()
                 # inf sums may lead to nan loss
@@ -931,9 +912,15 @@ class YOLOv8InsHead(nn.Layer):
         """
         pred_mask = paddle.einsum(
             'in,nhw->ihw', pred, proto)  # (n, 32) @ (32, 80, 80) -> (n, 80, 80)
+        nt = pred.shape[0]
+        gt_mask = gt_mask.reshape([nt, *proto.shape[1:]])
+        nmasks = 32
+        pred_mask = (pred @proto.reshape([nmasks, -1])).reshape(
+            [-1, *proto.shape[1:]])  # (n,32) @ (32,80,80) -> (n,80,80)
         loss = F.binary_cross_entropy_with_logits(
             pred_mask, gt_mask, reduction='none')
-        return (crop_mask(loss, xyxy).mean(axis=(1, 2)) / area).sum()
+        return (crop_mask(loss, xyxy).mean(axis=(1, 2)) /
+                area.squeeze(-1)).sum()
 
     def post_process(self,
                      head_outs,
@@ -968,13 +955,15 @@ class YOLOv8InsHead(nn.Layer):
                     align_corners=False)[..., :int(ori_h), :int(ori_w)]
             masks = mask_logits.squeeze(0)
             mask_pred = masks > self.mask_thr_binary
+
+            # scale bbox to origin
+            scale_factor = scale_factor.flip(-1).tile([1, 2])
+            bbox_pred[:, 2:6] /= scale_factor
         else:
             ori_h, ori_w = im_shape[0] / scale_factor[0]
+            bbox_num = paddle.to_tensor([1])
+            bbox_pred = paddle.zeros([bbox_num, 6])
             mask_pred = paddle.zeros([bbox_num, int(ori_h), int(ori_w)])
-
-        # scale bbox to origin
-        scale_factor = scale_factor.flip(-1).tile([1, 2])
-        bbox_pred[:, 2:6] /= scale_factor
 
         if self.with_mask:
             return bbox_pred, bbox_num, mask_pred
@@ -986,12 +975,6 @@ def xyxy2xywh(x):
     """
     Convert bounding box coordinates from (x1, y1, x2, y2) format to (x, y, width, height) format where (x1, y1) is the
     top-left corner and (x2, y2) is the bottom-right corner.
-
-    Args:
-        x (np.ndarray | paddle.Tensor): The input bounding box coordinates in (x1, y1, x2, y2) format.
-
-    Returns:
-        y (np.ndarray | paddle.Tensor): The bounding box coordinates in (x, y, width, height) format.
     """
     assert x.shape[
         -1] == 4, f'input shape last dimension expected 4 but input shape is {x.shape}'

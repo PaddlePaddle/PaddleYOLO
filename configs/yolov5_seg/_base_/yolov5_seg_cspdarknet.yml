@@ -33,7 +33,7 @@ YOLOv5InsHead:
             [116, 90], [156, 198], [373, 326]]
   anchor_masks: [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
   stride: [8, 16, 32]
-  loss: YOLOv5Loss
+  loss: YOLOv5InsLoss
   nms:
     name: MultiClassNMS
     nms_top_k: 3000
@@ -42,9 +42,10 @@ YOLOv5InsHead:
     nms_threshold: 0.65
     return_index: True
 
-YOLOv5Loss:
+YOLOv5InsLoss:
   downsample_ratios: [8, 16, 32]
   balance: [4.0, 1.0, 0.4]
+  overlap: True
   box_weight: 0.05
   obj_weight: 1.0
   cls_weght: 0.5

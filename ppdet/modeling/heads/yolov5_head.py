@@ -233,7 +233,7 @@ class YOLOv5InsHead(nn.Layer):
                  anchor_masks=[[0, 1, 2], [3, 4, 5], [6, 7, 8]],
                  act='silu',
                  stride=[8, 16, 32],
-                 loss='YOLOv5Loss',
+                 loss='YOLOv5InsLoss',
                  nms='MultiClassNMS',
                  mask_thr_binary=0.5,
                  trt=False,
@@ -329,8 +329,7 @@ class YOLOv5InsHead(nn.Layer):
         yolo_outputs.append(mask_feats)
 
         if self.training:
-            return self.loss(yolo_outputs, targets, self.anchors,
-                             self.with_mask)
+            return self.loss(yolo_outputs, targets, self.anchors)
         else:
             return yolo_outputs
 

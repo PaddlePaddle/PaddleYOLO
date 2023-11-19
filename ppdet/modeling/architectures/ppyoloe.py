@@ -55,6 +55,7 @@ class PPYOLOE(BaseArch):
                  ssod_loss='SSODPPYOLOELoss',
                  for_distill=False,
                  feat_distill_place='neck_feats',
+                 with_mask=False,
                  for_mot=False):
         super(PPYOLOE, self).__init__()
         self.backbone = backbone
@@ -62,6 +63,7 @@ class PPYOLOE(BaseArch):
         self.yolo_head = yolo_head
         self.post_process = post_process
         self.for_mot = for_mot
+        self.with_mask = with_mask
 
         # for ssod, semi-det
         self.is_teacher = False
@@ -115,22 +117,40 @@ class PPYOLOE(BaseArch):
                     self.inputs['im_shape'], self.inputs['scale_factor'])
 
             else:
-                bbox, bbox_num, nms_keep_idx = self.yolo_head.post_process(
-                    yolo_head_outs, self.inputs['scale_factor'])
+                if not self.with_mask:
+                    bbox, bbox_num = self.yolo_head.post_process(
+                        yolo_head_outs,
+                        im_shape=self.inputs['im_shape'],
+                        scale_factor=self.inputs['scale_factor'],
+                        infer_shape=self.inputs['image'].shape[2:])
+                else:
+                    bbox, bbox_num, mask = self.yolo_head.post_process(
+                        yolo_head_outs,
+                        im_shape=self.inputs['im_shape'],
+                        scale_factor=self.inputs['scale_factor'],
+                        infer_shape=self.inputs['image'].shape[2:])
 
             if self.use_extra_data:
-                extra_data = {}  # record the bbox output before nms, such like scores and nms_keep_idx
+                extra_data = {
+                }  # record the bbox output before nms, such like scores and nms_keep_idx
                 """extra_data:{
                             'scores': predict scores,
                             'nms_keep_idx': bbox index before nms,
                            }
                            """
-                extra_data['scores'] = yolo_head_outs[0]  # predict scores (probability)
+                extra_data['scores'] = yolo_head_outs[
+                    0]  # predict scores (probability)
                 extra_data['nms_keep_idx'] = nms_keep_idx
-                output = {'bbox': bbox, 'bbox_num': bbox_num, 'extra_data': extra_data}
+                output = {
+                    'bbox': bbox,
+                    'bbox_num': bbox_num,
+                    'extra_data': extra_data
+                }
             else:
-                output = {'bbox': bbox, 'bbox_num': bbox_num}
-
+                if not self.with_mask:
+                    output = {'bbox': bbox, 'bbox_num': bbox_num}
+                else:
+                    output = {'bbox': bbox, 'bbox_num': bbox_num, 'mask': mask}
             return output
 
     def get_loss(self):
@@ -213,13 +233,13 @@ class PPYOLOEWithAuxHead(BaseArch):
             if self.inputs['epoch_id'] >= self.detach_epoch:
                 aux_neck_feats = self.aux_neck([f.detach() for f in body_feats])
                 dual_neck_feats = (paddle.concat(
-                    [f.detach(), aux_f], axis=1) for f, aux_f in
-                                   zip(neck_feats, aux_neck_feats))
+                    [f.detach(), aux_f],
+                    axis=1) for f, aux_f in zip(neck_feats, aux_neck_feats))
             else:
                 aux_neck_feats = self.aux_neck(body_feats)
                 dual_neck_feats = (paddle.concat(
-                    [f, aux_f], axis=1) for f, aux_f in
-                                   zip(neck_feats, aux_neck_feats))
+                    [f, aux_f],
+                    axis=1) for f, aux_f in zip(neck_feats, aux_neck_feats))
             aux_cls_scores, aux_bbox_preds = self.aux_head(dual_neck_feats)
             loss = self.yolo_head(
                 neck_feats,

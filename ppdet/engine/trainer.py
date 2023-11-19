@@ -140,8 +140,7 @@ class Trainer(object):
                 p.numel() for n, p in self.model.named_parameters()
                 if all([x not in n for x in ['_mean', '_variance', 'aux_']])
             ])  # exclude BatchNorm running status
-            logger.info('Model Params : {} M.'.format((params / 1e6).numpy()[
-                0]))
+            logger.info('Model Params : {} M.'.format((params / 1e6).numpy()))
 
         # build optimizer in train mode
         if self.mode == 'train':
@@ -1018,7 +1017,7 @@ class Trainer(object):
 
         if prune_input:
             static_model = paddle.jit.to_static(
-                self.model, input_spec=input_spec)
+                self.model, input_spec=input_spec, full_graph=True)
             # NOTE: dy2st do not pruned program, but jit.save will prune program
             # input spec, prune input spec here and save with pruned input spec
             pruned_input_spec = _prune_input_spec(

@@ -1,24 +1,25 @@
 input_height: &input_height 640
 input_width: &input_width 640
 input_size: &input_size [*input_height, *input_width]
-mosaic_epoch: &mosaic_epoch 490 # last 10 epochs close mosaic, totally 500 epochs as default
+mosaic_epoch: &mosaic_epoch 300
 
-worker_num: 4
+worker_num: 2
 TrainReader:
   sample_transforms:
-    - Decode: {}
+    - DecodeNormResize: {target_size: *input_size, mosaic: True}
     - MosaicPerspective: {mosaic_prob: 1.0, target_size: *input_size}
+    - Poly2Mask: {del_poly: True}
     - RandomHSV: {hgain: 0.015, sgain: 0.7, vgain: 0.4}
     - RandomFlip: {}
-    - Poly2Mask: {del_poly: True}
-  batch_transforms:
+    - BboxXYXY2XYWH: {}
+    - NormalizeBox: {}
     - NormalizeImage: {mean: [0., 0., 0.], std: [1., 1., 1.], norm_type: none}
+    - RGBReverse: {} # bgr->rgb
     - Permute: {}
-    - PadGT: {}
-  batch_size: 8
+  batch_size: 16
   shuffle: True
   drop_last: False
-  use_shared_memory: True
+  use_shared_memory: False
   collate_batch: False
   mosaic_epoch: *mosaic_epoch
 
