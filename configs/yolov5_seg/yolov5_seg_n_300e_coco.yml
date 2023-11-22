@@ -11,24 +11,3 @@ width_mult: 0.25
 log_iter: 50
 snapshot_epoch: 10
 weights: output/yolov5_seg_n_300e_coco/model_final
-
-
-epoch: 100
-
-LearningRate:
-  base_lr: 0.01
-  schedulers:
-  - !YOLOv5LRDecay
-    max_epochs: 100
-    min_lr_ratio: 0.01
-  - !ExpWarmup
-    epochs: 3
-
-OptimizerBuilder:
-  optimizer:
-    type: Momentum
-    momentum: 0.937
-    use_nesterov: True
-  regularizer:
-    factor: 0.0005
-    type: L2

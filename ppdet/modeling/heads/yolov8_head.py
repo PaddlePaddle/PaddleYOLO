@@ -410,14 +410,8 @@ class MaskProto(nn.Layer):
 @register
 class YOLOv8InsHead(nn.Layer):
     __shared__ = [
-        'num_classes',
-        'eval_size',
-        'act',
-        'trt',
-        'exclude_nms',
-        'exclude_post_process',
-        'with_mask',
-        'width_mult',
+        'num_classes', 'eval_size', 'act', 'trt', 'exclude_nms',
+        'exclude_post_process', 'with_mask', 'width_mult'
     ]
     __inject__ = ['assigner', 'nms']
 

@@ -26,10 +26,11 @@ from ..assigners.utils import generate_anchors_for_grid_cell
 from ..backbones.yolov6_efficientrep import BaseConv, DPBlock
 from ppdet.modeling.ops import get_static_shape
 from ppdet.modeling.layers import MultiClassNMS
+from ..bbox_utils import batch_distance2bbox, bbox_iou, custom_ceil
 
 __all__ = [
     'EffiDeHead', 'EffiDeHead_distill_ns', 'EffiDeHead_fuseab',
-    'Lite_EffideHead'
+    'Lite_EffideHead', 'EffiDeInsHead'
 ]
 
 
@@ -407,7 +408,12 @@ class EffiDeHead(nn.Layer):
             out_dict.update({'loss_l1': loss_l1})
         return out_dict
 
-    def post_process(self, head_outs, im_shape, scale_factor):
+    def post_process(self,
+                     head_outs,
+                     im_shape,
+                     scale_factor,
+                     infer_shape=[640, 640],
+                     rescale=True):
         pred_scores, pred_dist, anchor_points, stride_tensor = head_outs
         pred_bboxes = batch_distance2bbox(anchor_points,
                                           pred_dist.transpose([0, 2, 1]))
@@ -1250,7 +1256,12 @@ class Lite_EffideHead(nn.Layer):
             out_dict.update({'loss_l1': loss_l1 * num_gpus})
         return out_dict
 
-    def post_process(self, head_outs, im_shape, scale_factor):
+    def post_process(self,
+                     head_outs,
+                     im_shape,
+                     scale_factor,
+                     infer_shape=[640, 640],
+                     rescale=True):
         pred_scores, pred_dist, anchor_points, stride_tensor = head_outs
         pred_bboxes = batch_distance2bbox(anchor_points,
                                           pred_dist.transpose([0, 2, 1]))
@@ -1269,3 +1280,525 @@ class Lite_EffideHead(nn.Layer):
             else:
                 bbox_pred, bbox_num, _ = self.nms(pred_bboxes, pred_scores)
                 return bbox_pred, bbox_num
+
+
+class MaskProto(nn.Layer):
+    # YOLOv6 mask Proto module for instance segmentation models
+    def __init__(self, ch_in, num_protos=256, num_masks=32, act='silu'):
+        super().__init__()
+        self.conv1 = BaseConv(ch_in, num_protos, 3, 1, act=act)
+        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.conv2 = BaseConv(num_protos, num_protos, 3, 1, act=act)
+        self.conv3 = BaseConv(num_protos, num_masks, 1, 1, act=act)
+
+    def forward(self, x):
+        return self.conv3(self.conv2(self.upsample(self.conv1(x))))
+
+
+@register
+class EffiDeInsHead(nn.Layer):
+    __shared__ = [
+        'num_classes', 'eval_size', 'act', 'trt', 'exclude_nms',
+        'exclude_post_process', 'with_mask', 'width_mult'
+    ]
+    __inject__ = ['static_assigner', 'assigner', 'nms']
+
+    def __init__(
+            self,
+            with_mask=True,
+            in_channels=[128, 256, 512],
+            num_classes=80,
+            num_masks=32,
+            num_protos=256,
+            width_mult=1.0,
+            act='silu',
+            fpn_strides=[8, 16, 32],
+            grid_cell_scale=5.0,
+            grid_cell_offset=0.5,
+            anchors=1,
+            reg_max=16,  # reg_max=0 if use_dfl is False
+            use_dfl=True,  # False in n/s version, True in m/l version
+            static_assigner_epoch=0,  # warmup_epoch
+            static_assigner='ATSSAssigner',
+            assigner='TaskAlignedAssigner',
+            nms='MultiClassNMS',
+            eval_size=[640, 640],
+            iou_type='giou',  # 'siou' in n version
+            loss_weight={
+                'cls': 1.0,
+                'iou': 2.5,
+                'dfl': 0.5,  # used in m/l version 
+            },
+            trt=False,
+            exclude_nms=False,
+            exclude_post_process=False,
+            stack_protos=1,
+            mask_thr_binary=0.5,
+            print_l1_loss=True):
+        super(EffiDeInsHead, self).__init__()
+        assert len(in_channels) > 0, "len(in_channels) should > 0"
+        self.with_mask = with_mask
+        self.in_channels = in_channels
+        self.num_classes = num_classes
+        self.fpn_strides = fpn_strides
+        self.grid_cell_scale = grid_cell_scale
+        self.grid_cell_offset = grid_cell_offset
+        self.reg_max = reg_max
+        self.use_dfl = use_dfl
+
+        self.num_masks = num_masks
+        self.width_mult = width_mult
+        self.act = act
+        self.num_protos = int(num_protos * width_mult)
+        self.stack_protos = stack_protos
+        self.mask_thr_binary = mask_thr_binary
+
+        if isinstance(anchors, (list, tuple)):
+            self.na = len(anchors[0]) // 2
+        else:
+            self.na = anchors
+        self.anchors = anchors
+
+        self.static_assigner_epoch = static_assigner_epoch
+        self.static_assigner = static_assigner
+        self.assigner = assigner
+        self.eval_size = eval_size
+        self.iou_loss = GIoULoss()
+        assert iou_type in ['giou', 'siou'], "only support giou and siou loss."
+        if iou_type == 'siou':
+            self.iou_loss = SIoULoss()
+        self.loss_weight = loss_weight
+
+        self.nms = nms
+        if isinstance(self.nms, MultiClassNMS) and trt:
+            self.nms.trt = trt
+        self.exclude_nms = exclude_nms
+        self.exclude_post_process = exclude_post_process
+        self.print_l1_loss = print_l1_loss
+
+        # Init decouple head
+        self.stems = nn.LayerList()
+        self.cls_convs = nn.LayerList()
+        self.cls_preds = nn.LayerList()
+        self.reg_convs = nn.LayerList()
+        self.reg_preds = nn.LayerList()
+        self.seg_convs = nn.LayerList()
+        self.seg_preds = nn.LayerList()
+
+        bias_attr = ParamAttr(regularizer=L2Decay(0.0))
+        reg_ch = self.reg_max + self.na
+        cls_ch = self.num_classes * self.na
+        for in_c in self.in_channels:
+            self.stems.append(BaseConv(in_c, in_c, 1, 1))
+
+            self.cls_convs.append(BaseConv(in_c, in_c, 3, 1))
+            self.cls_preds.append(
+                nn.Conv2D(
+                    in_c, cls_ch, 1, bias_attr=bias_attr))
+
+            self.reg_convs.append(BaseConv(in_c, in_c, 3, 1))
+            self.reg_preds.append(
+                nn.Conv2D(
+                    in_c, 4 * reg_ch, 1, bias_attr=bias_attr))
+
+            self.seg_convs.append(BaseConv(in_c, in_c, 3, 1))
+            self.seg_preds.append(
+                nn.Conv2D(
+                    in_c, self.num_masks, 1, bias_attr=bias_attr))
+
+        self.seg_proto = nn.LayerList()
+        for i in range(self.stack_protos):
+            self.seg_proto.append(
+                MaskProto(
+                    in_channels[0], self.num_protos, self.num_masks,
+                    act='silu'))
+
+        self.use_dfl = use_dfl
+        self.reg_max = reg_max
+        self.proj_conv = nn.Conv2D(self.reg_max + 1, 1, 1, bias_attr=False)
+        self.proj_conv.skip_quant = True
+
+        self.proj = paddle.linspace(0, self.reg_max, self.reg_max + 1)
+        self.proj_conv.weight.set_value(
+            self.proj.reshape([1, self.reg_max + 1, 1, 1]))
+        self.proj_conv.weight.stop_gradient = True
+        self.print_l1_loss = print_l1_loss
+        self._initialize_biases()
+
+    @classmethod
+    def from_config(cls, cfg, input_shape):
+        return {'in_channels': [i.channels for i in input_shape], }
+
+    def _initialize_biases(self):
+        bias_cls = bias_init_with_prob(0.01)
+        for cls_, reg_ in zip(self.cls_preds, self.reg_preds):
+            constant_(cls_.weight)
+            constant_(cls_.bias, bias_cls)
+            constant_(reg_.weight)
+            constant_(reg_.bias, 1.0)
+
+        self.proj = paddle.linspace(0, self.reg_max, self.reg_max + 1)
+        self.proj_conv.weight.set_value(
+            self.proj.reshape([1, self.reg_max + 1, 1, 1]))
+        self.proj_conv.weight.stop_gradient = True
+
+        if self.eval_size:
+            anchor_points, stride_tensor = self._generate_anchors()
+            self.anchor_points = anchor_points
+            self.stride_tensor = stride_tensor
+
+    def forward(self, feats, targets=None):
+        if self.training:
+            return self.forward_train(feats, targets)
+        else:
+            return self.forward_eval(feats)
+
+    def forward_train(self, feats, targets):
+        anchors, anchor_points, num_anchors_list, stride_tensor = \
+            generate_anchors_for_grid_cell(
+                feats, self.fpn_strides, self.grid_cell_scale,
+                self.grid_cell_offset)
+
+        cls_score_list, reg_distri_list = [], []
+        for i, feat in enumerate(feats):
+            feat = self.stems[i](feat)
+            cls_x = feat
+            reg_x = feat
+            cls_feat = self.cls_convs[i](cls_x)
+            cls_output = self.cls_preds[i](cls_feat)
+            reg_feat = self.reg_convs[i](reg_x)
+            reg_output = self.reg_preds[i](reg_feat)
+            # cls and reg
+            cls_output = F.sigmoid(cls_output)
+            cls_score_list.append(cls_output.flatten(2).permute((0, 2, 1)))
+            reg_distri_list.append(reg_output.flatten(2).permute((0, 2, 1)))
+
+        cls_score_list = paddle.concat(cls_score_list, axis=1)
+        reg_distri_list = paddle.concat(reg_distri_list, axis=1)
+
+        return self.get_loss([
+            cls_score_list, reg_distri_list, anchors, anchor_points,
+            num_anchors_list, stride_tensor
+        ], targets)
+
+    def forward_eval(self, feats):
+        seg_feats = []
+        seg_mask = self.seg_proto[0](feats[0])  # [1, 32, 80, 80]
+        seg_feats.append(seg_mask)
+
+        anchor_points, stride_tensor = self._generate_anchors(feats)
+        cls_score_list, reg_dist_list, seg_conf_list = [], [], []
+        for i, feat in enumerate(feats):
+            bs, _, h, w = feat.shape
+            l = h * w
+            feat = self.stems[i](feat)
+            cls_x = feat
+            reg_x = feat
+            seg_x = feat
+            cls_output = self.cls_preds[i](self.cls_convs[i](cls_x))
+            reg_output = self.reg_preds[i](self.reg_convs[i](reg_x))
+            seg_output = self.seg_preds[i](self.seg_convs[i](seg_x))
+
+            if self.use_dfl:
+                reg_output = reg_output.reshape(
+                    [-1, 4, self.reg_max + 1, l]).transpose([0, 2, 1, 3])
+                reg_output = self.proj_conv(F.softmax(reg_output, 1))
+
+            proto_no = paddle.ones([bs, 1, l]) * i
+
+            # cls and reg
+            cls_output = F.sigmoid(cls_output)
+            cls_score_list.append(cls_output.reshape([-1, self.num_classes, l]))
+            reg_dist_list.append(reg_output.reshape([-1, 4, l]))
+            #seg_conf_list.append(paddle.concat([proto_no, seg_output.reshape([-1, 32, l])], 1))
+            seg_conf_list.append(seg_output.reshape([-1, 32, l]))
+
+        cls_score_list = paddle.concat(cls_score_list, axis=-1)
+        reg_dist_list = paddle.concat(reg_dist_list, axis=-1)
+        seg_conf_list = paddle.concat(seg_conf_list, axis=-1)
+
+        return cls_score_list, reg_dist_list, seg_conf_list, seg_feats, anchor_points, stride_tensor
+
+    def _generate_anchors(self, feats=None, dtype='float32'):
+        # just use in eval time
+        anchor_points = []
+        stride_tensor = []
+        for i, stride in enumerate(self.fpn_strides):
+            if feats is not None:
+                _, _, h, w = feats[i].shape
+            else:
+                h = int(self.eval_size[0] / stride)
+                w = int(self.eval_size[1] / stride)
+            shift_x = paddle.arange(end=w) + self.grid_cell_offset
+            shift_y = paddle.arange(end=h) + self.grid_cell_offset
+            shift_y, shift_x = paddle.meshgrid(shift_y, shift_x)
+            anchor_point = paddle.cast(
+                paddle.stack(
+                    [shift_x, shift_y], axis=-1), dtype=dtype)
+            anchor_points.append(anchor_point.reshape([-1, 2]))
+            stride_tensor.append(paddle.full([h * w, 1], stride, dtype=dtype))
+        anchor_points = paddle.concat(anchor_points)
+        stride_tensor = paddle.concat(stride_tensor)
+        return anchor_points, stride_tensor
+
+    @staticmethod
+    def _varifocal_loss(pred_score, gt_score, label, alpha=0.75, gamma=2.0):
+        weight = alpha * pred_score.pow(gamma) * (1 - label) + gt_score * label
+        loss = F.binary_cross_entropy(
+            pred_score, gt_score, weight=weight, reduction='sum')
+        return loss
+
+    def _bbox_decode(self, anchor_points, pred_dist):
+        ### diff with PPYOLOEHead
+        if self.use_dfl:
+            b, l, _ = get_static_shape(pred_dist)
+            pred_dist = F.softmax(
+                pred_dist.reshape([b, l, 4, self.reg_max + 1])).matmul(
+                    self.proj)
+        return batch_distance2bbox(anchor_points, pred_dist)
+
+    def _bbox2distance(self, points, bbox):
+        x1y1, x2y2 = paddle.split(bbox, 2, -1)
+        lt = points - x1y1
+        rb = x2y2 - points
+        return paddle.concat([lt, rb], -1).clip(0, self.reg_max - 0.01)
+
+    def _df_loss(self, pred_dist, target):
+        target_left = paddle.cast(target, 'int64')
+        target_right = target_left + 1
+        weight_left = target_right.astype('float32') - target
+        weight_right = 1 - weight_left
+        loss_left = F.cross_entropy(
+            pred_dist, target_left, reduction='none') * weight_left
+        loss_right = F.cross_entropy(
+            pred_dist, target_right, reduction='none') * weight_right
+        return (loss_left + loss_right).mean(-1, keepdim=True)
+
+    def _bbox_loss(self, pred_dist, pred_bboxes, anchor_points, assigned_labels,
+                   assigned_bboxes, assigned_scores, assigned_scores_sum):
+        # select positive samples mask
+        mask_positive = (assigned_labels != self.num_classes)
+        num_pos = mask_positive.sum()
+        # pos/neg loss
+        if num_pos > 0:
+            # iou loss
+            bbox_mask = mask_positive.unsqueeze(-1).tile([1, 1, 4])
+            pred_bboxes_pos = paddle.masked_select(pred_bboxes,
+                                                   bbox_mask).reshape([-1, 4])
+            assigned_bboxes_pos = paddle.masked_select(
+                assigned_bboxes, bbox_mask).reshape([-1, 4])
+            bbox_weight = paddle.masked_select(
+                assigned_scores.sum(-1), mask_positive).unsqueeze(-1)
+            loss_iou = self.iou_loss(pred_bboxes_pos,
+                                     assigned_bboxes_pos) * bbox_weight
+            loss_iou = loss_iou.sum() / assigned_scores_sum
+
+            # l1 loss just see the convergence, same in PPYOLOEHead
+            loss_l1 = F.l1_loss(pred_bboxes_pos, assigned_bboxes_pos)
+
+            # dfl loss ### diff with PPYOLOEHead
+            if self.use_dfl:
+                dist_mask = mask_positive.unsqueeze(-1).tile(
+                    [1, 1, (self.reg_max + 1) * 4])
+                pred_dist_pos = paddle.masked_select(
+                    pred_dist, dist_mask).reshape([-1, 4, self.reg_max + 1])
+                assigned_ltrb = self._bbox2distance(anchor_points,
+                                                    assigned_bboxes)
+                assigned_ltrb_pos = paddle.masked_select(
+                    assigned_ltrb, bbox_mask).reshape([-1, 4])
+                loss_dfl = self._df_loss(pred_dist_pos,
+                                         assigned_ltrb_pos) * bbox_weight
+                loss_dfl = loss_dfl.sum() / assigned_scores_sum
+            else:
+                loss_dfl = pred_dist.sum() * 0.
+        else:
+            loss_l1 = paddle.zeros([1])
+            loss_iou = paddle.zeros([1])
+            loss_dfl = pred_dist.sum() * 0.
+        return loss_l1, loss_iou, loss_dfl
+
+    def get_loss(self, head_outs, gt_meta):
+        pred_scores, pred_distri, anchors,\
+        anchor_points, num_anchors_list, stride_tensor = head_outs
+
+        anchor_points_s = anchor_points / stride_tensor
+        pred_bboxes = self._bbox_decode(anchor_points_s, pred_distri)
+
+        gt_labels = gt_meta['gt_class']
+        gt_bboxes = gt_meta['gt_bbox']
+        pad_gt_mask = gt_meta['pad_gt_mask']
+        # label assignment
+        if gt_meta['epoch_id'] < self.static_assigner_epoch:
+            assigned_labels, assigned_bboxes, assigned_scores = \
+                self.static_assigner(
+                    anchors,
+                    num_anchors_list,
+                    gt_labels,
+                    gt_bboxes,
+                    pad_gt_mask,
+                    bg_index=self.num_classes,
+                    pred_bboxes=pred_bboxes.detach() * stride_tensor)
+        else:
+            assigned_labels, assigned_bboxes, assigned_scores = \
+                self.assigner(
+                pred_scores.detach(),
+                pred_bboxes.detach() * stride_tensor,
+                anchor_points,
+                num_anchors_list,
+                gt_labels,
+                gt_bboxes,
+                pad_gt_mask,
+                bg_index=self.num_classes)
+        # rescale bbox
+        assigned_bboxes /= stride_tensor
+
+        # cls loss: varifocal_loss
+        one_hot_label = F.one_hot(assigned_labels,
+                                  self.num_classes + 1)[..., :-1]
+        loss_cls = self._varifocal_loss(pred_scores, assigned_scores,
+                                        one_hot_label)
+        assigned_scores_sum = assigned_scores.sum()
+        if paddle.distributed.get_world_size() > 1:
+            paddle.distributed.all_reduce(assigned_scores_sum)
+            assigned_scores_sum = paddle.clip(
+                assigned_scores_sum / paddle.distributed.get_world_size(),
+                min=1)
+        loss_cls /= assigned_scores_sum
+
+        # bbox loss
+        loss_l1, loss_iou, loss_dfl = \
+            self._bbox_loss(pred_distri, pred_bboxes, anchor_points_s,
+                            assigned_labels, assigned_bboxes, assigned_scores,
+                            assigned_scores_sum)
+
+        if self.use_dfl:
+            loss = self.loss_weight['cls'] * loss_cls + \
+                self.loss_weight['iou'] * loss_iou + \
+                self.loss_weight['dfl'] * loss_dfl
+            num_gpus = gt_meta.get('num_gpus', 8)
+            out_dict = {
+                'loss': loss * num_gpus,
+                'loss_cls': loss_cls,
+                'loss_iou': loss_iou,
+                'loss_dfl': loss_dfl,
+            }
+        else:
+            loss = self.loss_weight['cls'] * loss_cls + \
+                self.loss_weight['iou'] * loss_iou
+            num_gpus = gt_meta.get('num_gpus', 8)
+            out_dict = {
+                'loss': loss * num_gpus,
+                'loss_cls': loss_cls,
+                'loss_iou': loss_iou,
+            }
+
+        if self.print_l1_loss:
+            # just see convergence
+            out_dict.update({'loss_l1': loss_l1})
+        return out_dict
+
+    def post_process(self,
+                     head_outs,
+                     im_shape,
+                     scale_factor,
+                     infer_shape=[640, 640],
+                     rescale=True):
+        assert not self.exclude_post_process or not self.exclude_nms
+        pred_scores, pred_bboxes, seg_conf, seg_feats, anchor_points, stride_tensor = head_outs
+        # [1, 80, 8400]  [1, 4, 8400]  [1, 33, 8400]  [[1, 32, 160, 160]]  [8400, 2]  [8400, 1]
+
+        pred_bboxes = batch_distance2bbox(anchor_points,
+                                          pred_bboxes.transpose([0, 2, 1]))
+        pred_bboxes *= stride_tensor
+        # [1, 8400, 4]
+
+        bbox_pred, bbox_num, keep_idxs = self.nms(pred_bboxes, pred_scores)
+
+        if self.with_mask and bbox_num.sum() > 0:
+            mask_coeffs = paddle.gather(
+                seg_conf.reshape([-1, self.num_masks]), keep_idxs)
+
+            mask_logits = process_mask_upsample(seg_feats[0][0], mask_coeffs,
+                                                bbox_pred[:, 2:6], infer_shape)
+            if rescale:
+                ori_h, ori_w = im_shape[0] / scale_factor[0]
+                mask_logits = F.interpolate(
+                    mask_logits.unsqueeze(0),
+                    size=[
+                        custom_ceil(mask_logits.shape[-2] / scale_factor[0][0]),
+                        custom_ceil(mask_logits.shape[-1] / scale_factor[0][1])
+                    ],
+                    mode='bilinear',
+                    align_corners=False)[..., :int(ori_h), :int(ori_w)]
+            masks = mask_logits.squeeze(0)
+            mask_pred = masks > self.mask_thr_binary
+
+            # scale bbox to origin
+            scale_factor = scale_factor.flip(-1).tile([1, 2])
+            bbox_pred[:, 2:6] /= scale_factor
+        else:
+            ori_h, ori_w = im_shape[0] / scale_factor[0]
+            bbox_num = paddle.to_tensor([1])
+            bbox_pred = paddle.zeros([bbox_num, 6])
+            mask_pred = paddle.zeros([bbox_num, int(ori_h), int(ori_w)])
+
+        if self.with_mask:
+            return bbox_pred, bbox_num, mask_pred
+        else:
+            return bbox_pred, bbox_num
+
+
+def xyxy2xywh(x):
+    """
+    Convert bounding box coordinates from (x1, y1, x2, y2) format to (x, y, width, height) format where (x1, y1) is the
+    top-left corner and (x2, y2) is the bottom-right corner.
+    """
+    assert x.shape[
+        -1] == 4, f'input shape last dimension expected 4 but input shape is {x.shape}'
+    y = paddle.empty_like(x) if isinstance(x, paddle.Tensor) else np.empty_like(
+        x)  # faster than clone/copy
+    y[..., 0] = (x[..., 0] + x[..., 2]) / 2  # x center
+    y[..., 1] = (x[..., 1] + x[..., 3]) / 2  # y center
+    y[..., 2] = x[..., 2] - x[..., 0]  # width
+    y[..., 3] = x[..., 3] - x[..., 1]  # height
+    return y
+
+
+def crop_mask(masks, boxes):
+    """
+    It takes a mask and a bounding box, and returns a mask that is cropped to the bounding box
+
+    Args:
+      masks (paddle.Tensor): [h, w, n] tensor of masks
+      boxes (paddle.Tensor): [n, 4] tensor of bbox coordinates in relative point form
+
+    Returns:
+      (paddle.Tensor): The masks are being cropped to the bounding box.
+    """
+    _, h, w = masks.shape
+    x1, y1, x2, y2 = paddle.chunk(boxes[:, :, None], 4, axis=1)
+    r = paddle.arange(w, dtype=x1.dtype)[None, None, :]
+    c = paddle.arange(h, dtype=y1.dtype)[None, :, None]
+    return masks * ((r >= x1) * (r < x2) * (c >= y1) * (c < y2))
+
+
+def process_mask_upsample(protos, masks_in, bboxes, shape):
+    """
+    It takes the output of the mask head, and applies the mask to the bounding boxes. This produces masks of higher
+    quality but is slower.
+
+    Args:
+      protos (paddle.Tensor): [mask_dim, mask_h, mask_w]
+      masks_in (paddle.Tensor): [n, mask_dim], n is number of masks after nms
+      bboxes (paddle.Tensor): [n, 4], n is number of masks after nms
+      shape (tuple): the size of the input image (h,w)
+
+    Returns:
+      (paddle.Tensor): The upsampled masks.
+    """
+    c, mh, mw = protos.shape  # CHW
+    masks = F.sigmoid(masks_in @protos.reshape([c, -1])).reshape([-1, mh, mw])
+    masks = F.interpolate(
+        masks[None], shape, mode='bilinear', align_corners=False)[0]  # CHW
+    masks = crop_mask(masks, bboxes)  # CHW
+    return masks

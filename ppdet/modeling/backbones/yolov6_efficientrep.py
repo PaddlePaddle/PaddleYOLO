@@ -36,7 +36,7 @@ activation_table = {
 
 class SiLU(nn.Layer):
     @staticmethod
-    def forward(self, x):
+    def forward(x):
         return x * F.sigmoid(x)
 
 
@@ -536,6 +536,7 @@ class EfficientRep(nn.Layer):
             training_mode='repvgg',
             fuse_P2=True,  # add P2 and return 4 layers
             cspsppf=True,
+            sppf=False,
             act='relu'):
         super(EfficientRep, self).__init__()
         num_repeats, channels_list = self.arch_settings[arch]
@@ -577,6 +578,12 @@ class EfficientRep(nn.Layer):
                     simsppf_layer = self.add_sublayer(
                         'stage{}.simcspsppf'.format(i + 1),
                         SimCSPSPPF(
+                            out_ch, out_ch, kernel_size=5))
+                    stage.append(simsppf_layer)
+                elif sppf:
+                    simsppf_layer = self.add_sublayer(
+                        'stage{}.sppf'.format(i + 1),
+                        SPPF(
                             out_ch, out_ch, kernel_size=5))
                     stage.append(simsppf_layer)
                 else:
