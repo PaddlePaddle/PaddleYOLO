@@ -24,7 +24,6 @@ EvalReader:
 act: 'relu'
 training_mode: "repvgg"
 
-
 YOLOv6:
   backbone: CSPBepBackbone
   neck: CSPRepBiFPAN
@@ -32,18 +31,13 @@ YOLOv6:
   post_process: ~
 
 CSPBepBackbone:
-  cspsppf: False
-  sppf: True
-
-EffiDeInsHead:
-  reg_max: 16
-  use_dfl: True
-  static_assigner_epoch: 0
-  iou_type: 'giou'
-  loss_weight: {cls: 1.0, iou: 2.5, dfl: 0.5}
-
-CSPBepBackbone:
   csp_e: 0.67
 
 CSPRepBiFPAN:
   csp_e: 0.67
+
+EffiDeInsHead:
+  reg_max: 16
+  use_dfl: True
+  iou_type: 'giou'
+  loss_weight: {cls: 1.0, iou: 2.5, dfl: 0.5}

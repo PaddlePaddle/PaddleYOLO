@@ -34,4 +34,4 @@ EffiDeInsHead:
   reg_max: 0
   use_dfl: False # False in n/s
   loss_weight: {cls: 1.0, iou: 2.5}
-  iou_type: 'siou' # only in n/t version
+  iou_type: 'siou' # only in n version

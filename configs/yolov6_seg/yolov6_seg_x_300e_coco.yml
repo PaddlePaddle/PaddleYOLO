@@ -22,7 +22,7 @@ EvalReader:
 
 ### model config
 act: 'silu'
-training_mode: "conv_silu" # Note: L use silu
+training_mode: "conv_silu_nobias" # Note: X use silu, seg use conv_silu_nobias
 
 YOLOv6:
   backbone: CSPBepBackbone
@@ -30,14 +30,14 @@ YOLOv6:
   yolo_head: EffiDeInsHead
   post_process: ~
 
-EffiDeInsHead:
-  reg_max: 16
-  use_dfl: True
-  iou_type: 'giou'
-  loss_weight: {cls: 1.0, iou: 2.5, dfl: 0.5}
-
 CSPBepBackbone:
   csp_e: 0.50
 
 CSPRepBiFPAN:
   csp_e: 0.50
+
+EffiDeInsHead:
+  reg_max: 16
+  use_dfl: True
+  iou_type: 'giou'
+  loss_weight: {cls: 1.0, iou: 2.5, dfl: 0.5}

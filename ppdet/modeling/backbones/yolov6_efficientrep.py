@@ -351,7 +351,8 @@ class BepC3Layer(nn.Layer):
         self.cv1 = BaseConv_C3(in_channels, c_, 1, 1)
         self.cv2 = BaseConv_C3(in_channels, c_, 1, 1)
         self.cv3 = BaseConv_C3(2 * c_, out_channels, 1, 1)
-        if block == ConvBNSiLUBlock and act == 'silu':
+        if (block == ConvBNSiLUBlock or
+                block == ConvBNSiLUNoBiasBlock) and act == 'silu':
             self.cv1 = BaseConv_C3(in_channels, c_, 1, 1, act=nn.Silu())
             self.cv2 = BaseConv_C3(in_channels, c_, 1, 1, act=nn.Silu())
             self.cv3 = BaseConv_C3(2 * c_, out_channels, 1, 1, act=nn.Silu())
@@ -681,7 +682,7 @@ class CSPBepBackbone(nn.Layer):
             if i == len(channels_list) - 1:
                 if cspsppf:
                     # m/l never use cspsppf=True
-                    if training_mode == 'conv_silu':
+                    if training_mode in ['conv_silu', 'conv_silu_nobias']:
                         sppf_layer = self.add_sublayer(
                             'stage{}.cspsppf'.format(i + 1),
                             CSPSPPF(
@@ -694,7 +695,7 @@ class CSPBepBackbone(nn.Layer):
                                 out_ch, out_ch, kernel_size=5))
                         stage.append(simsppf_layer)
                 else:
-                    if training_mode == 'conv_silu':
+                    if training_mode in ['conv_silu', 'conv_silu_nobias']:
                         sppf_layer = self.add_sublayer(
                             'stage{}.sppf'.format(i + 1),
                             SPPF(
@@ -732,6 +733,8 @@ def get_block(mode):
         return RepConv
     elif mode == 'conv_silu':
         return ConvBNSiLUBlock
+    elif mode == 'conv_silu_nobias':
+        return ConvBNSiLUNoBiasBlock
     elif mode == 'conv_relu':
         return ConvBNReLUBlock
     else:
@@ -747,6 +750,23 @@ class ConvBNSiLUBlock(nn.Layer):
                  stride=1,
                  groups=1,
                  bias=True):
+        super().__init__()
+        self.base_block = BaseConv(in_channels, out_channels, kernel_size,
+                                   stride, groups, bias)
+
+    def forward(self, x):
+        return self.base_block(x)
+
+
+class ConvBNSiLUNoBiasBlock(nn.Layer):
+    # ConvWrapper
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size=3,
+                 stride=1,
+                 groups=1,
+                 bias=False):
         super().__init__()
         self.base_block = BaseConv(in_channels, out_channels, kernel_size,
                                    stride, groups, bias)

@@ -429,7 +429,7 @@ class MosaicPerspective(BaseOperator):
             sample4 = sample[4]
             s4_h, s4_w = sample4['image'].shape[:2]
             sample4['gt_bbox'] = self.xywhn2xyxy(sample4['gt_bbox'], s4_w, s4_h)
-            img4, gt_bboxes = self.letterbox_resize(
+            img4, gt_bboxes, ratio, dw, dh = self.letterbox_resize(
                 sample4['image'], sample4['gt_bbox'], self.target_size)
             if self.with_mask and 'gt_poly' in sample4:
                 gt_polys = sample4['gt_poly']

@@ -81,11 +81,25 @@ class YOLOv6(BaseArch):
             return yolo_losses
         else:
             yolo_head_outs = self.yolo_head(neck_feats)
-            post_outs = self.yolo_head.post_process(
-                yolo_head_outs,
-                im_shape=self.inputs['im_shape'],
-                scale_factor=self.inputs['scale_factor'],
-                infer_shape=self.inputs['image'].shape[2:])
+
+            if not self.with_mask:
+                post_outs = self.yolo_head.post_process(
+                    yolo_head_outs,
+                    im_shape=self.inputs['im_shape'],
+                    scale_factor=self.inputs['scale_factor'],
+                    infer_shape=self.inputs['image'].shape[2:])
+            else:
+                gt_labels = self.inputs.get('gt_class', None)
+                gt_bboxes = self.inputs.get('gt_bbox', None)
+                gt_masks = self.inputs.get('gt_segm', None)
+                post_outs = self.yolo_head.post_process(
+                    yolo_head_outs,
+                    im_shape=self.inputs['im_shape'],
+                    scale_factor=self.inputs['scale_factor'],
+                    infer_shape=self.inputs['image'].shape[2:],
+                    gt_labels=gt_labels,
+                    gt_bboxes=gt_bboxes,
+                    gt_masks=gt_masks)
 
             if not isinstance(post_outs, (tuple, list)):
                 # if set exclude_post_process, concat([pred_bboxes, pred_scores]) not scaled to origin

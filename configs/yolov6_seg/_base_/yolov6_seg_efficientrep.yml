@@ -36,7 +36,7 @@ EffiDeInsHead:
   use_dfl: True #
   static_assigner_epoch: 0 # warmup_epoch
   loss_weight: {cls: 1.0, iou: 2.5}
-  iou_type: 'siou' # 'siou' in n version, 'giou' in s/m/l version
+  iou_type: 'giou' # 'siou' in n version, 'giou' in s/m/l/x version
   static_assigner:
     name: ATSSAssigner
     topk: 9

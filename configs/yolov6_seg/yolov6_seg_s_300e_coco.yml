@@ -16,8 +16,39 @@ weights: output/yolov6_seg_s_300e_coco/model_final
 TrainReader:
   batch_size: 8 # default 8 gpus, total bs = 64
 
+input_height: &input_height 640
+input_width: &input_width 640
+input_size: &input_size [*input_height, *input_width]
+
 EvalReader:
+  sample_transforms:
+    - Decode: {}
+    - Resize: {target_size: *input_size, keep_ratio: True, interp: 1}
+    - Pad: {size: *input_size, fill_value: [114., 114., 114.]}
+    - NormalizeImage: {mean: [0., 0., 0.], std: [1., 1., 1.], norm_type: none}
+    - Poly2Mask: {del_poly: True}
+    - Permute: {}
   batch_size: 1
+
+# EvalReader:
+#   sample_transforms:
+#     - Decode: {}
+#     - Resize: {target_size: *input_size, keep_ratio: False, interp: 1}
+#     #- Pad: {size: *input_size, fill_value: [114., 114., 114.]}
+#     - NormalizeImage: {mean: [0., 0., 0.], std: [1., 1., 1.], norm_type: none}
+#     - Poly2Mask: {del_poly: True}
+#     - Permute: {}
+#   batch_size: 1
+
+# # rect
+# EvalReader:
+#   sample_transforms:
+#     - Decode: {}
+#     - YOLOv5KeepRatioResize: {target_size: *input_size, batch_shapes: True, size_divisor: 32, extra_pad_ratio: 0.5}
+#     - LetterResize: {scale: *input_size, pad_val: 144, allow_scale_up: False}
+#     - NormalizeImage: {mean: [0., 0., 0.], std: [1., 1., 1.], norm_type: none}
+#     - Permute: {}
+#   batch_size: 1 # only support bs=1
 
 
 ### model config
@@ -31,8 +62,6 @@ YOLOv6:
   post_process: ~
 
 EffiDeInsHead:
-  stack_protos: 3
   reg_max: 0
   use_dfl: False # False in n/s
   loss_weight: {cls: 1.0, iou: 2.5}
-  iou_type: 'giou'
