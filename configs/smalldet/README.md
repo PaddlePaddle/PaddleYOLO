@@ -262,7 +262,7 @@ python -m paddle.distributed.launch --gpus 0,1,2,3,4,5,6,7 tools/train.py -c con
 **注意:**
 - 使用默认配置训练需要设置`--amp`以避免显存溢出，`--eval`表示边训边验证，会自动保存最佳精度的模型权重。
 
-#### 1.2 原图训练
+#### 1.2 切图训练
 首先将待训数据集制作成COCO数据集格式，然后使用SAHI切图工具进行**离线切图**，对保存的子图按**常规检测模型的训练流程**走即可。
 也可直接下载PaddleDetection团队提供的切图后的VisDrone-DET、DOTA水平框、Xview数据集。
 
