@@ -70,8 +70,7 @@ class Trainer(object):
         self.custom_white_list = self.cfg.get('custom_white_list', None)
         self.custom_black_list = self.cfg.get('custom_black_list', None)
 
-        if self.cfg.architecture in ['RTMDet', 'YOLOv6'
-                                     ] and self.mode == 'train':
+        if self.cfg.architecture in ['RTMDet'] and self.mode == 'train':
             raise NotImplementedError('{} training not supported yet.'.format(
                 self.cfg.architecture))
         if 'slim' in cfg and cfg['slim_type'] == 'PTQ':
@@ -140,8 +139,7 @@ class Trainer(object):
                 p.numel() for n, p in self.model.named_parameters()
                 if all([x not in n for x in ['_mean', '_variance', 'aux_']])
             ])  # exclude BatchNorm running status
-            logger.info('Model Params : {} M.'.format((params / 1e6).numpy()[
-                0]))
+            logger.info('Model Params : {} M.'.format((params / 1e6).numpy()))
 
         # build optimizer in train mode
         if self.mode == 'train':
