@@ -35,7 +35,7 @@ activation_table = {
 
 
 class SiLU(nn.Layer):
-    @staticmethod
+
     def forward(self, x):
         return x * F.sigmoid(x)
 
