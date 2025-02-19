@@ -510,6 +510,7 @@ class Trainer(object):
 
                 self.status['data_time'].update(time.time() - iter_tic)
                 self.status['step_id'] = step_id
+                profiler.add_profiler_step(profiler_options)
                 self._compose_callback.on_step_begin(self.status)
                 data['epoch_id'] = epoch_id
                 data['num_gpus'] = self._nranks
