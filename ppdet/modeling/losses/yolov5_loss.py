@@ -213,15 +213,12 @@ class YOLOv5Loss(nn.Layer):
                 # loss_cls = self.BCEcls(ps[:, 5:], t)
 
                 t = paddle.full_like(ps[:, 5:], self.cls_neg_label)
-                if not self.to_static:
-                    t = paddle.put_along_axis(
-                        t,
-                        t_cls.unsqueeze(-1),
-                        values=self.cls_pos_label,
-                        axis=1)
-                else:
-                    for i in range(n):
-                        t[i, t_cls[i]] = self.cls_pos_label
+
+                t = paddle.put_along_axis(
+                    t,
+                    t_cls.unsqueeze(-1),
+                    values=self.cls_pos_label,
+                    axis=1)
 
                 loss_cls = self.BCEcls(ps[:, 5:], t)
 
