@@ -173,6 +173,13 @@ else
     device_num_list=($device_num)
 fi
 
+if [[ ${model_name} =~ "yolov5" ]];then 
+   echo "${model_name} run unset MosaicPerspective and RandomHSV"
+   eval "sed -i '10c 10c    - MosaicPerspective: {mosaic_prob: 0.0, target_size: *input_size, scale: 0.9, mixup_prob: 0.1, copy_paste_prob: 0.1}' configs/yolov5/_base_/yolov5_reader_high_aug.yml"
+   eval "sed -i 's/10c//' configs/yolov5/_base_/yolov5_reader_high_aug.yml"
+   eval "sed -i 's/^    - RandomHSV: /#&/' configs/yolov5/_base_/yolov5_reader_high_aug.yml"
+fi
+
 # for log name
 to_static=""
 # parse "to_static" options and modify trainer into "to_static_trainer"
