@@ -186,11 +186,6 @@ to_static=""
 if [[ ${model_type} = "dynamicTostatic" ]];then
     to_static="d2sT_"
     sed -i 's/trainer:norm_train/trainer:to_static_train/g' $FILENAME
-    #yolov5 and yolov7 static need MosaicPerspective
-    eval "sed -i '10c 10c    - MosaicPerspective: {mosaic_prob: 1.0, target_size: *input_size, scale: 0.9, mixup_prob: 0.1, copy_paste_prob: 0.1}' configs/yolov5/_base_/yolov5_reader_high_aug.yml"
-    eval "sed -i 's/10c//' configs/yolov5/_base_/yolov5_reader_high_aug.yml"
-    eval "sed -i '10c 10c    - MosaicPerspective: {mosaic_prob: 1.0, target_size: *input_size, scale: 0.9, mixup_prob: 0.1, copy_paste_prob: 0.1}' configs/yolov7/_base_/yolov7_reader.yml"
-    eval "sed -i 's/10c//' configs/yolov7/_base_/yolov7_reader.yml"
 fi
 
 
