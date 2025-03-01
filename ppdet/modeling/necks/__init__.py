@@ -21,6 +21,7 @@ from . import rtmdet_pafpn
 from . import yolov8_pafpn
 from . import dilated_encoder
 from . import yolov10_pafpn
+from . import yolo11_pafpn
 
 from .fpn import *
 from .yolo_fpn import *
@@ -31,3 +32,4 @@ from .rtmdet_pafpn import *
 from .yolov8_pafpn import *
 from .dilated_encoder import *
 from .yolov10_pafpn import *
+from .yolo11_pafpn import *

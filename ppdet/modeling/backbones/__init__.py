@@ -29,6 +29,7 @@ from . import vision_transformer
 from . import vit_mae
 from . import hgnet_v2
 from . import yolov10_csp_darknet
+from . import yolo11_csp_darknet
 
 from .resnet import *
 from .darknet import *
@@ -47,3 +48,5 @@ from .vision_transformer import *
 from .vit_mae import *
 from .hgnet_v2 import *
 from .yolov10_csp_darknet import *
+from .yolo11_csp_darknet import *
+

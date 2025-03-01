@@ -52,7 +52,7 @@ class TestYOLOv5(TestYOLOv3):
 
 class TestYOLOv6(TestYOLOv3):
     def set_config(self):
-        self.cfg_file = 'configs/yolov6/yolov6_s_400e_coco.yml'
+        self.cfg_file = 'configs/yolov6/yolov6_s_300e_coco.yml'
 
 
 class TestYOLOv7(TestYOLOv3):

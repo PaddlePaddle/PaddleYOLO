@@ -1,0 +1,18 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  '_base_/optimizer_100e.yml',
+  '_base_/yolo11_cspdarknet.yml',
+  '_base_/yolo11_reader.yml',
+]
+depth_mult: 0.5
+width_mult: 0.25
+max_channels: 1024
+
+log_iter: 50
+snapshot_epoch: 10
+weights: output/yolov8_n_500e_coco/model_final
+
+
+TrainReader:
+  batch_size: 16 # default 8 gpus, total bs = 128
