@@ -101,6 +101,7 @@ class YOLO11Head(nn.Layer):
         self.grid_cell_scale = grid_cell_scale
         self.grid_cell_offset = grid_cell_offset
         self.reg_max = reg_max
+        self.no = self.num_classes + self.reg_max * 4  # number of outputs per anchor
         if reg_range:
             self.reg_range = reg_range
         else:
@@ -237,10 +238,6 @@ class YOLO11Head(nn.Layer):
         outputs_cat = paddle.concat(
             [output.reshape([bs, self.no, -1]) for output in outputs], axis=2
         )
-
-        # Check if we need to regenerate anchors
-        if self.dynamic or self.shape != shape:
-            self.shape = shape
 
         # Split box and class predictions
         box_preds = outputs_cat[:, : self.reg_max * 4, :]
