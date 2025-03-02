@@ -16,7 +16,7 @@ import math
 import paddle
 from paddle import nn
 from ppdet.core.workspace import register, serializable
-from .csp_darknet import CSPLayer, SPPFLayer
+from .csp_darknet import SPPFLayer, get_activation
 from ..shape_spec import ShapeSpec
 
 __all__ = [
@@ -35,12 +35,12 @@ __all__ = [
 def autopad(k, p=None, d=1):  # kernel, padding, dilation
     """
     Calculate padding values to maintain output dimensions with different kernel sizes and dilations.
-    
+
     Args:
         k (int or list): Kernel size.
         p (int or list, optional): Padding value. If None, calculated automatically.
         d (int, optional): Dilation factor. Default is 1.
-        
+
     Returns:
         int or list: Appropriate padding value(s) to maintain output dimensions.
     """
@@ -49,14 +49,16 @@ def autopad(k, p=None, d=1):  # kernel, padding, dilation
             d * (k - 1) + 1 if isinstance(k, int) else [d * (x - 1) + 1 for x in k]
         )  # calculate effective kernel size with dilation
     if p is None:
-        p = k // 2 if isinstance(k, int) else [x // 2 for x in k]  # calculate padding to maintain spatial dimensions
+        p = (
+            k // 2 if isinstance(k, int) else [x // 2 for x in k]
+        )  # calculate padding to maintain spatial dimensions
     return p
 
 
 class Conv(nn.Layer):
     """
     Standard convolution module with batch normalization and activation.
-    
+
     This module combines Conv2D, BatchNorm2D, and activation in a single layer,
     which is a common pattern in modern neural networks.
     """
@@ -66,7 +68,7 @@ class Conv(nn.Layer):
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
         """
         Initialize Conv layer with customizable parameters.
-        
+
         Args:
             c1 (int): Number of input channels.
             c2 (int): Number of output channels.
@@ -81,7 +83,7 @@ class Conv(nn.Layer):
         self.conv = nn.Conv2D(
             c1, c2, k, s, autopad(k, p, d), groups=g, dilation=d, bias_attr=False
         )
-        self.bn = nn.BatchNorm2D(c2)
+        self.bn = nn.BatchNorm2D(c2, momentum=0.1)
         self.act = (
             self.default_act
             if act is True
@@ -93,12 +95,12 @@ class Conv(nn.Layer):
     def forward(self, x):
         """
         Forward pass through Conv layer.
-        
+
         Applies convolution, batch normalization, and activation in sequence.
-        
+
         Args:
             x (Tensor): Input tensor.
-            
+
         Returns:
             Tensor: Output after convolution, batch normalization, and activation.
         """
@@ -107,12 +109,12 @@ class Conv(nn.Layer):
     def forward_fuse(self, x):
         """
         Forward pass with fused operations (without batch normalization).
-        
+
         Used for model optimization when batch normalization can be fused with convolution.
-        
+
         Args:
             x (Tensor): Input tensor.
-            
+
         Returns:
             Tensor: Output after convolution and activation (without batch normalization).
         """
@@ -122,7 +124,7 @@ class Conv(nn.Layer):
 class DWConv(Conv):
     """
     Depth-wise convolution layer.
-    
+
     A special case of grouped convolution where the number of groups equals the number of input channels,
     which significantly reduces computation compared to standard convolution.
     """
@@ -130,7 +132,7 @@ class DWConv(Conv):
     def __init__(self, c1, c2, k=1, s=1, d=1, act=True):
         """
         Initialize Depth-wise convolution with specified parameters.
-        
+
         Args:
             c1 (int): Number of input channels.
             c2 (int): Number of output channels.
@@ -146,7 +148,7 @@ class DWConv(Conv):
 class BottleNeck(nn.Layer):
     """
     Standard bottleneck module with optional shortcut connection.
-    
+
     This module implements a bottleneck architecture that reduces channel dimensions,
     applies convolutions, and then expands back, which is efficient for deep networks.
     """
@@ -154,7 +156,7 @@ class BottleNeck(nn.Layer):
     def __init__(self, c1, c2, shortcut=True, g=1, k=(3, 3), e=0.5):
         """
         Initialize bottleneck module with configurable parameters.
-        
+
         Args:
             c1 (int): Number of input channels.
             c2 (int): Number of output channels.
@@ -167,15 +169,17 @@ class BottleNeck(nn.Layer):
         c_ = int(c2 * e)  # hidden channels calculated using expansion factor
         self.cv1 = Conv(c1, c_, k[0], 1)  # first convolution with kernel k[0]
         self.cv2 = Conv(c_, c2, k[1], 1, g=g)  # second convolution with kernel k[1]
-        self.add = shortcut and c1 == c2  # whether to use shortcut connection (only if input and output channels match)
+        self.add = (
+            shortcut and c1 == c2
+        )  # whether to use shortcut connection (only if input and output channels match)
 
     def forward(self, x):
         """
         Forward pass through the bottleneck module.
-        
+
         Args:
             x (Tensor): Input tensor.
-            
+
         Returns:
             Tensor: Output tensor after bottleneck operations, with optional residual connection.
         """
@@ -185,7 +189,7 @@ class BottleNeck(nn.Layer):
 class C2f(nn.Layer):
     """
     Faster implementation of CSP (Cross Stage Partial) Bottleneck with 2 convolutions.
-    
+
     This module improves efficiency by using a more optimized structure compared to
     standard CSP bottlenecks, making it suitable for real-time applications.
     """
@@ -193,7 +197,7 @@ class C2f(nn.Layer):
     def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5):
         """
         Initialize C2f module with specified parameters.
-        
+
         Args:
             c1 (int): Number of input channels.
             c2 (int): Number of output channels.
@@ -214,27 +218,33 @@ class C2f(nn.Layer):
     def forward(self, x):
         """
         Forward pass through C2f layer using chunk operation.
-        
+
         Args:
             x (Tensor): Input tensor.
-            
+
         Returns:
             Tensor: Output tensor after C2f operations.
         """
-        y = paddle.chunk(self.cv1(x), chunks=2, axis=1)  # split input into two parts along channel dimension
+        y = paddle.chunk(
+            self.cv1(x), chunks=2, axis=1
+        )  # split input into two parts along channel dimension
         y = list(y)
-        y.extend(m(y[-1]) for m in self.m)  # apply bottleneck modules to the second part
-        return self.cv2(paddle.concat(y, axis=1))  # concatenate all parts and apply output convolution
+        y.extend(
+            m(y[-1]) for m in self.m
+        )  # apply bottleneck modules to the second part
+        return self.cv2(
+            paddle.concat(y, axis=1)
+        )  # concatenate all parts and apply output convolution
 
     def forward_split(self, x):
         """
         Alternative forward pass using split operation instead of chunk.
-        
+
         This implementation may be more efficient on some hardware.
-        
+
         Args:
             x (Tensor): Input tensor.
-            
+
         Returns:
             Tensor: Output tensor after C2f operations.
         """
@@ -247,7 +257,7 @@ class C2f(nn.Layer):
 class C3k2(C2f):
     """
     Enhanced implementation of CSP Bottleneck with 2 convolutions.
-    
+
     This module extends C2f by optionally using C3k blocks instead of standard bottlenecks,
     providing more flexibility in feature extraction.
     """
@@ -255,7 +265,7 @@ class C3k2(C2f):
     def __init__(self, c1, c2, n=1, c3k=False, e=0.5, g=1, shortcut=True):
         """
         Initialize C3k2 module with specified parameters.
-        
+
         Args:
             c1 (int): Number of input channels.
             c2 (int): Number of output channels.
@@ -275,30 +285,36 @@ class C3k2(C2f):
         )
 
 
-class C3k(CSPLayer):
-    """
-    CSP bottleneck module with customizable kernel sizes.
-    
-    This module extends the standard CSP bottleneck by allowing custom kernel sizes,
-    which can be useful for capturing different scales of features.
-    """
+class C3(nn.Layer):
+    """CSP Bottleneck with 3 convolutions."""
+
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
+        """Initialize the CSP Bottleneck with given channels, number, shortcut, groups, and expansion values."""
+        super().__init__()
+        c_ = int(c2 * e)  # hidden channels
+        self.cv1 = Conv(c1, c_, 1, 1)
+        self.cv2 = Conv(c1, c_, 1, 1)
+        self.cv3 = Conv(2 * c_, c2, 1)  # optional act=FReLU(c2)
+        self.m = nn.Sequential(
+            *(
+                BottleNeck(c_, c_, shortcut, g, k=((1, 1), (3, 3)), e=1.0)
+                for _ in range(n)
+            )
+        )
+
+    def forward(self, x):
+        """Forward pass through the CSP bottleneck with 2 convolutions."""
+        return self.cv3(paddle.concat((self.m(self.cv1(x)), self.cv2(x)), 1))
+
+
+class C3k(C3):
+    """C3k is a CSP bottleneck module with customizable kernel sizes for feature extraction in neural networks."""
 
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, k=3):
-        """
-        Initialize C3k module with specified parameters.
-        
-        Args:
-            c1 (int): Number of input channels.
-            c2 (int): Number of output channels.
-            n (int): Number of bottleneck blocks. Default is 1.
-            shortcut (bool): Whether to use shortcut connections. Default is True.
-            g (int): Number of groups for grouped convolution. Default is 1.
-            e (float): Channel expansion factor. Default is 0.5.
-            k (int): Kernel size for bottleneck convolutions. Default is 3.
-        """
+        """Initializes the C3k module with specified channels, number of layers, and configurations."""
         super().__init__(c1, c2, n, shortcut, g, e)
         c_ = int(c2 * e)  # hidden channels
-        # Create sequential bottleneck modules with specified kernel size
+        # self.m = nn.Sequential(*(RepBottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))
         self.m = nn.Sequential(
             *(BottleNeck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n))
         )
@@ -307,15 +323,15 @@ class C3k(CSPLayer):
 class Attention(nn.Layer):
     """
     Multi-head self-attention module for spatial feature processing.
-    
+
     This module implements a variant of self-attention mechanism that operates on
     spatial features, allowing the network to capture long-range dependencies.
-    
+
     Args:
         dim (int): Input feature dimension (number of channels).
         num_heads (int): Number of attention heads. Default is 8.
         attn_ratio (float): Ratio determining the key dimension relative to head dimension. Default is 0.5.
-    
+
     Attributes:
         num_heads (int): Number of attention heads.
         head_dim (int): Dimension of each attention head.
@@ -329,7 +345,7 @@ class Attention(nn.Layer):
     def __init__(self, dim, num_heads=8, attn_ratio=0.5):
         """
         Initialize multi-head attention module with specified parameters.
-        
+
         Args:
             dim (int): Input feature dimension (number of channels).
             num_heads (int): Number of attention heads. Default is 8.
@@ -338,27 +354,31 @@ class Attention(nn.Layer):
         super().__init__()
         self.num_heads = num_heads
         self.head_dim = dim // num_heads  # dimension per head
-        self.key_dim = int(self.head_dim * attn_ratio)  # key dimension (reduced by attn_ratio)
+        self.key_dim = int(
+            self.head_dim * attn_ratio
+        )  # key dimension (reduced by attn_ratio)
         self.scale = self.key_dim**-0.5  # scaling factor for attention scores
         nh_kd = self.key_dim * num_heads
         h = dim + nh_kd * 2  # total dimension for query, key, and value
         self.qkv = Conv(dim, h, 1, act=False)  # projection for query, key, value
         self.proj = Conv(dim, dim, 1, act=False)  # final projection
-        self.pe = Conv(dim, dim, 3, 1, g=dim, act=False)  # positional encoding using depthwise convolution
+        self.pe = Conv(
+            dim, dim, 3, 1, g=dim, act=False
+        )  # positional encoding using depthwise convolution
 
     def forward(self, x):
         """
         Forward pass of the Attention module.
-        
+
         Args:
             x (Tensor): Input tensor of shape [B, C, H, W].
-            
+
         Returns:
             Tensor: Output tensor after self-attention of shape [B, C, H, W].
         """
         B, C, H, W = x.shape
         N = H * W  # number of spatial locations
-        
+
         # Compute query, key, value projections
         qkv = self.qkv(x)
         qkv = paddle.reshape(
@@ -367,12 +387,18 @@ class Attention(nn.Layer):
         q, k, v = paddle.split(qkv, [self.key_dim, self.key_dim, self.head_dim], axis=2)
 
         # Compute attention scores and apply attention
-        attn = paddle.matmul(q.transpose([0, 1, 3, 2]), k) * self.scale  # [B, num_heads, N, N]
+        attn = (
+            paddle.matmul(q.transpose([0, 1, 3, 2]), k) * self.scale
+        )  # [B, num_heads, N, N]
         attn = nn.functional.softmax(attn, axis=-1)  # normalize attention weights
-        
+
         # Apply attention to values and reshape
-        x = paddle.matmul(v, attn.transpose([0, 1, 3, 2]))  # [B, num_heads, head_dim, N]
-        x = paddle.reshape(x, [B, C, H, W]) + self.pe(paddle.reshape(v, [B, C, H, W]))  # add positional encoding
+        x = paddle.matmul(
+            v, attn.transpose([0, 1, 3, 2])
+        )  # [B, num_heads, head_dim, N]
+        x = paddle.reshape(x, [B, C, H, W]) + self.pe(
+            paddle.reshape(v, [B, C, H, W])
+        )  # add positional encoding
         x = self.proj(x)  # final projection
         return x
 
@@ -380,11 +406,11 @@ class Attention(nn.Layer):
 class PSABlock(nn.Layer):
     """
     Position-Sensitive Attention block combining self-attention with feed-forward networks.
-    
+
     This block implements a transformer-like architecture with self-attention and feed-forward
     network components, adapted for convolutional neural networks. It enhances the model's
     ability to capture long-range dependencies while maintaining spatial information.
-    
+
     Attributes:
         attn (Attention): Multi-head self-attention module.
         ffn (nn.Sequential): Feed-forward neural network module.
@@ -394,7 +420,7 @@ class PSABlock(nn.Layer):
     def __init__(self, c, attn_ratio=0.5, num_heads=4, shortcut=True) -> None:
         """
         Initialize PSABlock with specified parameters.
-        
+
         Args:
             c (int): Number of input/output channels.
             attn_ratio (float): Ratio for attention key dimension. Default is 0.5.
@@ -403,36 +429,44 @@ class PSABlock(nn.Layer):
         """
         super().__init__()
 
-        self.attn = Attention(c, attn_ratio=attn_ratio, num_heads=num_heads)  # self-attention module
-        self.ffn = nn.Sequential(Conv(c, c * 2, 1), Conv(c * 2, c, 1, act=False))  # feed-forward network
+        self.attn = Attention(
+            c, attn_ratio=attn_ratio, num_heads=num_heads
+        )  # self-attention module
+        self.ffn = nn.Sequential(
+            Conv(c, c * 2, 1), Conv(c * 2, c, 1, act=False)
+        )  # feed-forward network
         self.add = shortcut  # whether to use residual connections
 
     def forward(self, x):
         """
         Forward pass through PSABlock.
-        
+
         Applies self-attention followed by feed-forward network, with optional residual connections.
-        
+
         Args:
             x (Tensor): Input tensor.
-            
+
         Returns:
             Tensor: Output tensor after attention and feed-forward processing.
         """
-        x = x + self.attn(x) if self.add else self.attn(x)  # attention with optional residual
-        x = x + self.ffn(x) if self.add else self.ffn(x)  # feed-forward with optional residual
+        x = (
+            x + self.attn(x) if self.add else self.attn(x)
+        )  # attention with optional residual
+        x = (
+            x + self.ffn(x) if self.add else self.ffn(x)
+        )  # feed-forward with optional residual
         return x
 
 
 class C2PSA(nn.Layer):
     """
     C2PSA module combining CSP (Cross Stage Partial) architecture with Position-Sensitive Attention.
-    
+
     This module enhances feature extraction by combining the efficiency of CSP architecture
     with the long-range dependency modeling capability of position-sensitive attention.
     It splits the input into two branches, processes one branch with PSA blocks,
     and then combines them back.
-    
+
     Attributes:
         c (int): Number of hidden channels.
         cv1 (Conv): Input convolution layer.
@@ -443,7 +477,7 @@ class C2PSA(nn.Layer):
     def __init__(self, c1, c2, n=1, e=0.5):
         """
         Initialize C2PSA module with specified parameters.
-        
+
         Args:
             c1 (int): Number of input channels.
             c2 (int): Number of output channels (must equal c1).
@@ -467,19 +501,23 @@ class C2PSA(nn.Layer):
     def forward(self, x):
         """
         Forward pass through C2PSA module.
-        
+
         Splits the input into two branches, processes one branch with PSA blocks,
         and then combines them back.
-        
+
         Args:
             x (Tensor): Input tensor.
-            
+
         Returns:
             Tensor: Output tensor after C2PSA processing.
         """
-        a, b = paddle.split(self.cv1(x), num_or_sections=[self.c, self.c], axis=1)  # split along channel dimension
+        a, b = paddle.split(
+            self.cv1(x), num_or_sections=[self.c, self.c], axis=1
+        )  # split along channel dimension
         b = self.m(b)  # apply PSA blocks to second branch
-        return self.cv2(paddle.concat([a, b], axis=1))  # concatenate branches and apply output convolution
+        return self.cv2(
+            paddle.concat([a, b], axis=1)
+        )  # concatenate branches and apply output convolution
 
 
 @register
@@ -487,19 +525,19 @@ class C2PSA(nn.Layer):
 class YOLO11CSPDarkNet(nn.Layer):
     """
     YOLO11 CSPDarkNet backbone network architecture.
-    
+
     This backbone is designed for YOLO11 object detection model, implementing an
     enhanced version of CSPDarkNet with various advanced modules like C3k2, SPPF, and C2PSA.
     The network follows a hierarchical structure with increasing receptive field and
     decreasing spatial resolution.
-    
+
     Structure follows:
     [from, repeats, module, args]
     [[-1, 1, Conv, [64, 3, 2]],      # P1/2  - Initial stem convolution
      [-1, 1, Conv, [128, 3, 2]],     # P2/4  - Downsampling to 1/4 resolution
-     [-1, 2, C3k2, [256, False]],    # C3k2  - Feature extraction with C3k2 blocks
+     [-1, 2, C3k2, [256, False, 0.25]],    # C3k2  - Feature extraction with C3k2 blocks
      [-1, 1, Conv, [256, 3, 2]],     # P3/8  - Downsampling to 1/8 resolution
-     [-1, 2, C3k2, [512, False]],    # C3k2  - Feature extraction with C3k2 blocks
+     [-1, 2, C3k2, [512, False, 0.25]],    # C3k2  - Feature extraction with C3k2 blocks
      [-1, 1, Conv, [512, 3, 2]],     # P4/16 - Downsampling to 1/16 resolution
      [-1, 2, C3k2, [512, True]],     # C3k2  - Feature extraction with C3k2 blocks (with C3k)
      [-1, 1, Conv, [1024, 3, 2]],    # P5/32 - Downsampling to 1/32 resolution
@@ -510,18 +548,12 @@ class YOLO11CSPDarkNet(nn.Layer):
 
     __shared__ = ["depth_mult", "width_mult", "max_channels", "act", "trt"]
 
-    # in_channels, out_channels, num_blocks, use_c3k, use_sppf, use_c2psa
+    # in_channels, mid_channels, out_channels, num_blocks, use_c3k, use_sppf, use_c2psa
     arch_settings = [
-        [64, 128, 0, False, False, False],  # P2/4  - First downsampling layer
-        [128, 256, 2, False, False, False],  # C3k2  - First feature extraction block
-        [256, 256, 0, False, False, False],  # P3/8  - Second downsampling layer
-        [256, 512, 2, False, False, False],  # C3k2  - Second feature extraction block
-        [512, 512, 0, False, False, False],  # P4/16 - Third downsampling layer
-        [512, 512, 2, True, False, False],   # C3k2  - Third feature extraction block (with C3k)
-        [512, 1024, 0, False, False, False], # P5/32 - Fourth downsampling layer
-        [1024, 1024, 2, True, False, False], # C3k2  - Fourth feature extraction block (with C3k)
-        [1024, 1024, 0, False, True, False], # SPPF  - Spatial Pyramid Pooling - Fast
-        [1024, 1024, 2, False, False, True], # C2PSA - Position-Sensitive Attention blocks
+        [64, 128, 256, 2, False, False, False],
+        [256, 256, 512, 2, False, False, False],
+        [512, 512, 512, 2, True, False, False],
+        [512, 1024, 1024, 2, True, True, True],
     ]
 
     def __init__(
@@ -536,7 +568,7 @@ class YOLO11CSPDarkNet(nn.Layer):
     ):
         """
         Initialize YOLO11CSPDarkNet backbone with specified parameters.
-        
+
         Args:
             depth_mult (float): Depth multiplier to scale number of layers. Default is 1.0.
             width_mult (float): Width multiplier to scale number of channels. Default is 1.0.
@@ -546,14 +578,14 @@ class YOLO11CSPDarkNet(nn.Layer):
             trt (bool): Whether to use TensorRT. Default is False.
             return_idx (list): Indices of stages to return for feature pyramid. Default is [2, 3, 4].
         """
-        super(YOLO11CSPDarkNet, self).__init__()
-        self.return_idx = return_idx  # indices of stages to return for feature pyramid
-        self.Conv = DWConv if depthwise else Conv  # convolution type based on depthwise flag
-        self.max_channels = max_channels  # maximum number of channels
+        super().__init__()
+        self.return_idx = return_idx
+        self.Conv = DWConv if depthwise else Conv
+        self.max_channels = max_channels
 
         # Initial stem convolution
         base_channels = int(64 * width_mult)
-        self.stem = self.Conv(3, base_channels, k=3, s=2, act=act)
+        self.stem = self.Conv(3, base_channels, k=3, s=2, act=get_activation(act))
 
         _out_channels = [base_channels]
         layers_num = 1
@@ -562,6 +594,7 @@ class YOLO11CSPDarkNet(nn.Layer):
         # Build network stages according to arch_settings
         for i, (
             in_channels,
+            mid_channels,
             out_channels,
             num_blocks,
             use_c3k,
@@ -570,49 +603,48 @@ class YOLO11CSPDarkNet(nn.Layer):
         ) in enumerate(self.arch_settings):
             # Scale channels according to width_mult
             in_channels = int(in_channels * width_mult)
-            out_channels = int(min(out_channels * width_mult, self.max_channels))  # Apply max_channels constraint
+            mid_channels = int(min(mid_channels * width_mult, self.max_channels))
+            out_channels = int(min(out_channels * width_mult, self.max_channels))
             _out_channels.append(out_channels)
-            
+
             # Scale number of blocks according to depth_mult
             num_blocks = max(round(num_blocks * depth_mult), 1) if num_blocks > 0 else 0
             stage = []
 
-            # Add Conv layer for downsampling
             conv_layer = self.add_sublayer(
                 "layers{}.stage{}.conv_layer".format(layers_num, i + 1),
-                self.Conv(in_channels, out_channels, 3, 2, act=act),
+                self.Conv(in_channels, mid_channels, 3, 2, act=get_activation(act)),
             )
             stage.append(conv_layer)
             layers_num += 1
 
-            # Add C3k2 or C2PSA layer if num_blocks > 0
-            if num_blocks > 0:
-                if use_c2psa:
-                    block = self.add_sublayer(
-                        "layers{}.stage{}.c2psa".format(layers_num, i + 1),
-                        C2PSA(out_channels, out_channels, n=num_blocks),
-                    )
-                else:
-                    block = self.add_sublayer(
-                        "layers{}.stage{}.c3k2".format(layers_num, i + 1),
-                        C3k2(
-                            out_channels,
-                            out_channels,
-                            n=num_blocks,
-                            c3k=use_c3k,
-                            e=0.25 if not use_c3k else 0.5,
-                        ),
-                    )
-                stage.append(block)
-                layers_num += 1
+            block = self.add_sublayer(
+                "layers{}.stage{}.c3k2".format(layers_num, i + 1),
+                C3k2(
+                    mid_channels,
+                    out_channels,
+                    n=num_blocks,
+                    c3k=use_c3k,
+                    e=0.25 if not use_c3k else 0.5,
+                ),
+            )
+            stage.append(block)
+            layers_num += 1
 
-            # Add SPPF layer if specified
             if use_sppf:
                 sppf = self.add_sublayer(
                     "layers{}.stage{}.sppf".format(layers_num, i + 1),
                     SPPFLayer(out_channels, out_channels, ksize=5, bias=False, act=act),
                 )
                 stage.append(sppf)
+                layers_num += 1
+
+            if use_c2psa:
+                block = self.add_sublayer(
+                    "layers{}.stage{}.c2psa".format(layers_num, i + 1),
+                    C2PSA(out_channels, out_channels, n=num_blocks),
+                )
+                stage.append(block)
                 layers_num += 1
 
             self.csp_dark_blocks.append(nn.Sequential(*stage))
@@ -624,32 +656,32 @@ class YOLO11CSPDarkNet(nn.Layer):
     def forward(self, inputs):
         """
         Forward pass through YOLO11CSPDarkNet backbone.
-        
+
         Args:
             inputs (dict): Input dictionary containing 'image' key with input tensor.
-            
+
         Returns:
             list: List of feature maps at different scales for feature pyramid.
         """
         x = inputs["image"]  # extract image from input dictionary
         outputs = []
-        
+
         # Apply stem convolution
         x = self.stem(x)
-        
+
         # Apply each stage and collect outputs at specified return_idx
         for i, layer in enumerate(self.csp_dark_blocks):
             x = layer(x)
             if i + 1 in self.return_idx:
                 outputs.append(x)
-                
+
         return outputs
 
     @property
     def out_shape(self):
         """
         Return output shapes for each returned feature map.
-        
+
         Returns:
             list: List of ShapeSpec objects containing channel and stride information.
         """

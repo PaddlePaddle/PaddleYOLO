@@ -13,13 +13,13 @@ max_channels: 1024
 YOLO11:
   backbone: YOLO11CSPDarkNet
   neck: YOLO11CSPPAN
-  yolo_head: YOLOv8Head
+  yolo_head: YOLO11Head
   post_process: ~
 
 YOLO11CSPDarkNet:
   return_idx: [2, 3, 4]
 
-YOLOv8Head:
+YOLO11Head:
   fpn_strides: [8, 16, 32]
   loss_weight: {class: 0.5, iou: 7.5, dfl: 1.5}
   assigner:

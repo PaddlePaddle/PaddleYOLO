@@ -16,8 +16,9 @@ import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
 from ppdet.core.workspace import register, serializable
-from ..shape_spec import ShapeSpec
-from ..backbones.yolo11_csp_darknet import Conv, C3k2
+from ppdet.modeling.backbones.csp_darknet import get_activation
+from ppdet.modeling.shape_spec import ShapeSpec
+from ppdet.modeling.backbones.yolo11_csp_darknet import Conv, C3k2
 
 __all__ = ["YOLO11CSPPAN"]
 
@@ -33,12 +34,15 @@ class YOLO11CSPPAN(nn.Layer):
     It enhances multi-scale feature fusion for better object detection across various scales.
     """
 
-    __shared__ = ["depth_mult", "act", "trt"]
+    __shared__ = ["depth_mult", "width_mult", "max_channels", "act", "trt"]
 
     def __init__(
         self,
         depth_mult=1.0,
+        width_mult=1.0,
+        max_channels=1024,
         in_channels=[256, 512, 1024],
+        in0_channels=[128, 256, 512],
         depthwise=False,
         act="silu",
         trt=False,
@@ -48,6 +52,8 @@ class YOLO11CSPPAN(nn.Layer):
 
         Args:
             depth_mult (float): Depth multiplier for controlling the model's capacity.
+            width_mult (float): Width multiplier for controlling the model's capacity.
+            max_channels (int): Maximum number of channels in any layer.
             in_channels (list): List of input channel dimensions from the backbone
                                 (typically [256, 512, 1024] for small, medium, and large feature maps).
             depthwise (bool): Whether to use depthwise separable convolutions for reduced computation.
@@ -55,63 +61,44 @@ class YOLO11CSPPAN(nn.Layer):
             trt (bool): Whether to use TensorRT compatibility mode.
         """
         super(YOLO11CSPPAN, self).__init__()
-        self.in_channels = in_channels
+
+        in_channels = [int(min(c * width_mult, max_channels)) for c in in_channels]
         self._out_channels = in_channels
 
-        # Top-down pathway (FPN: Feature Pyramid Network)
-        # Process features from higher levels (larger receptive field, lower resolution)
-        # to lower levels (smaller receptive field, higher resolution)
         self.fpn_p4 = C3k2(
-            int(
-                in_channels[2] + in_channels[1]
-            ),  # Concatenated channels from P5 and P4
-            int(in_channels[1]),  # Output channels matching P4
-            round(
-                2 * depth_mult
-            ),  # Number of bottleneck blocks scaled by depth multiplier
-            shortcut=False,  # No shortcut connection in this C3k2 block
+            int(in0_channels[1] + in_channels[2]),
+            int(in_channels[1]),
+            round(2 * depth_mult),
+            c3k=False,
         )
 
         self.fpn_p3 = C3k2(
-            int(
-                in_channels[1] + in_channels[0]
-            ),  # Concatenated channels from P4 and P3
-            int(in_channels[0]),  # Output channels matching P3
-            round(
-                2 * depth_mult
-            ),  # Number of bottleneck blocks scaled by depth multiplier
-            shortcut=False,  # No shortcut connection in this C3k2 block
+            int(in0_channels[0] + in_channels[1]),
+            int(in_channels[0]),
+            round(2 * depth_mult),
+            c3k=False,
         )
 
-        # Bottom-up pathway (PAN: Path Aggregation Network)
-        # Process features from lower levels (higher resolution, smaller receptive field)
-        # back to higher levels (lower resolution, larger receptive field)
         self.down_conv2 = Conv(
-            int(in_channels[0]), int(in_channels[0]), 3, s=2, act=act
-        )  # Downsample P3 features
+            int(in_channels[0]), int(in_channels[0]), 3, s=2, act=get_activation(act)
+        )
+
         self.pan_n3 = C3k2(
-            int(
-                in_channels[0] + in_channels[1]
-            ),  # Concatenated channels from downsampled P3 and processed P4
-            int(in_channels[1]),  # Output channels matching P4
-            round(
-                2 * depth_mult
-            ),  # Number of bottleneck blocks scaled by depth multiplier
-            shortcut=False,  # No shortcut connection in this C3k2 block
+            int(in_channels[0] + in_channels[1]),
+            int(in_channels[1]),
+            round(2 * depth_mult),
+            c3k=False,
         )
 
         self.down_conv1 = Conv(
-            int(in_channels[1]), int(in_channels[1]), 3, s=2, act=act
-        )  # Downsample processed P4 features
+            int(in_channels[1]), int(in_channels[1]), 3, s=2, act=get_activation(act)
+        )
+
         self.pan_n4 = C3k2(
-            int(
-                in_channels[1] + in_channels[2]
-            ),  # Concatenated channels from downsampled processed P4 and P5
-            int(in_channels[2]),  # Output channels matching P5
-            round(
-                2 * depth_mult
-            ),  # Number of bottleneck blocks scaled by depth multiplier
-            shortcut=True,  # Use shortcut connection in this final C3k2 block
+            int(in_channels[1] + in_channels[2]),
+            int(in_channels[2]),
+            round(2 * depth_mult),
+            c3k=True,
         )
 
     def forward(self, feats, for_mot=False):
@@ -131,45 +118,22 @@ class YOLO11CSPPAN(nn.Layer):
         """
         [c3, c4, c5] = feats
 
-        # Top-down pathway (FPN): from larger scale to smaller scale
-        # Upsample C5 and fuse with C4
-        up_feat1 = F.interpolate(
-            c5, scale_factor=2.0, mode="nearest"
-        )  # Upsample C5 to match C4's spatial dimensions
-        f_concat1 = paddle.concat([up_feat1, c4], 1)  # Concatenate upsampled C5 with C4
-        f_out1 = self.fpn_p4(f_concat1)  # Process concatenated features
+        up_feat1 = F.interpolate(c5, scale_factor=2.0, mode="nearest")
+        f_concat1 = paddle.concat([up_feat1, c4], 1)
+        f_out1 = self.fpn_p4(f_concat1)
 
-        # Upsample processed features and fuse with C3
-        up_feat2 = F.interpolate(
-            f_out1, scale_factor=2.0, mode="nearest"
-        )  # Upsample processed features to match C3's spatial dimensions
-        f_concat2 = paddle.concat(
-            [up_feat2, c3], 1
-        )  # Concatenate upsampled features with C3
-        f_out0 = self.fpn_p3(
-            f_concat2
-        )  # P3/8-small: highest resolution feature map (1/8 of input)
+        up_feat2 = F.interpolate(f_out1, scale_factor=2.0, mode="nearest")
+        f_concat2 = paddle.concat([up_feat2, c3], 1)
+        f_out0 = self.fpn_p3(f_concat2)
 
-        # Bottom-up pathway (PAN): from smaller scale back to larger scale
-        # Downsample P3 and fuse with processed P4
-        down_feat1 = self.down_conv2(f_out0)  # Downsample P3 features
-        p_concat1 = paddle.concat(
-            [down_feat1, f_out1], 1
-        )  # Concatenate downsampled P3 with processed P4
-        pan_out1 = self.pan_n3(
-            p_concat1
-        )  # P4/16-medium: medium resolution feature map (1/16 of input)
+        down_feat1 = self.down_conv2(f_out0)
+        p_concat1 = paddle.concat([down_feat1, f_out1], 1)
+        pan_out1 = self.pan_n3(p_concat1)
 
-        # Downsample processed P4 and fuse with C5
-        down_feat2 = self.down_conv1(pan_out1)  # Downsample processed P4 features
-        p_concat2 = paddle.concat(
-            [down_feat2, c5], 1
-        )  # Concatenate downsampled processed P4 with C5
-        pan_out0 = self.pan_n4(
-            p_concat2
-        )  # P5/32-large: lowest resolution feature map (1/32 of input)
+        down_feat2 = self.down_conv1(pan_out1)
+        p_concat2 = paddle.concat([down_feat2, c5], 1)
+        pan_out0 = self.pan_n4(p_concat2)
 
-        # Return multi-scale feature maps for detection heads
         return [f_out0, pan_out1, pan_out0]
 
     @classmethod
@@ -185,7 +149,7 @@ class YOLO11CSPPAN(nn.Layer):
             dict: Configuration dictionary with input channel dimensions.
         """
         return {
-            "in_channels": [i.channels for i in input_shape],
+            "in0_channels": [i.channels for i in input_shape],
         }
 
     @property
