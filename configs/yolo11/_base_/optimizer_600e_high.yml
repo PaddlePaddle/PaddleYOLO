@@ -1,13 +1,13 @@
-epoch: 100
+epoch: 600
 
 LearningRate:
   base_lr: 0.01
   schedulers:
   - !YOLOv5LRDecay
-    max_epochs: 100
-    min_lr_ratio: 0.1 #
+    max_epochs: 600
+    min_lr_ratio: 0.1
   - !ExpWarmup
-    epochs: 5 #3
+    epochs: 3
 
 OptimizerBuilder:
   optimizer:
