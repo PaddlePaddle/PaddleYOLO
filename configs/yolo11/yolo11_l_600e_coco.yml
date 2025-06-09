@@ -1,0 +1,26 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  '_base_/optimizer_600e_high.yml',
+  '_base_/yolo11_cspdarknet.yml',
+  '_base_/yolo11_reader_high_aug.yml',
+]
+
+depth_mult: 1.0
+width_mult: 1.0
+
+log_iter: 50
+snapshot_epoch: 10
+weights: output/yolo11_l_600e_coco/model_final
+
+
+YOLO11CSPDarkNet:
+  last_stage_ch: 512 # The actual channel is int(512 * width_mult), not int(1024 * width_mult) as in YOLOv8
+  force_use_c3k: True
+
+YOLO11CSPPAN:
+  force_use_c3k: True
+
+
+TrainReader:
+  batch_size: 16 # default 8 gpus, total bs = 128

@@ -267,6 +267,8 @@ class MultiClassNMS(object):
         if isinstance(bboxes, tuple):
             bboxes, bbox_num = bboxes
             kwargs.update({'rois_num': bbox_num})
+        if bboxes.shape[1] < self.nms_top_k:
+            kwargs['nms_top_k'] = bboxes.shape[1]
         if background_label > -1:
             kwargs.update({'background_label': background_label})
         kwargs.pop('trt')

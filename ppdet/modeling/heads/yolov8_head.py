@@ -24,7 +24,7 @@ from ppdet.core.workspace import register
 from ppdet.utils.check import _IS_NPU
 from ..bbox_utils import batch_distance2bbox, bbox_iou, custom_ceil
 from ..assigners.utils import generate_anchors_for_grid_cell
-from ppdet.modeling.backbones.csp_darknet import BaseConv
+from ppdet.modeling.backbones.csp_darknet import BaseConv, DWConv
 from ppdet.modeling.layers import MultiClassNMS
 
 __all__ = ['YOLOv8Head', 'YOLOv8InsHead']
@@ -60,7 +60,8 @@ class YOLOv8Head(nn.Layer):
                  exclude_nms=False,
                  exclude_post_process=False,
                  customized_c3=-1,
-                 print_l1_loss=True):
+                 print_l1_loss=True,
+                 use_dwconv=False):
         super(YOLOv8Head, self).__init__()
         assert len(in_channels) > 0, "len(in_channels) should > 0"
         self.in_channels = in_channels
@@ -112,9 +113,9 @@ class YOLOv8Head(nn.Layer):
                 ]))
             self.conv_cls.append(
                 nn.Sequential(* [
-                    BaseConv(
+                    (DWConv if use_dwconv else BaseConv)(
                         in_c, c3, 3, 1, act=act),
-                    BaseConv(
+                    (DWConv if use_dwconv else BaseConv)(
                         c3, c3, 3, 1, act=act),
                     nn.Conv2D(
                         c3,
@@ -366,7 +367,8 @@ class YOLOv8Head(nn.Layer):
                      head_outs,
                      im_shape,
                      scale_factor,
-                     infer_shape=[640, 640]):
+                     infer_shape=[640, 640],
+                     pad_param=None):
         pred_scores, pred_bboxes, anchor_points, stride_tensor = head_outs
 
         pred_bboxes = batch_distance2bbox(anchor_points, pred_bboxes)
@@ -376,6 +378,13 @@ class YOLOv8Head(nn.Layer):
             return paddle.concat(
                 [pred_bboxes, pred_scores], axis=-1), None
         else:
+            if pad_param is not None:
+                pad_h = pad_param[:, 0]
+                pad_w = pad_param[:, 2]
+                pad_offset = paddle.stack([pad_w, pad_h, pad_w, pad_h],
+                                          axis=-1).unsqueeze(1)
+                pred_bboxes -= pad_offset
+
             pred_scores = pred_scores.transpose([0, 2, 1])
             # scale bbox to origin
             scale_factor = scale_factor.flip(-1).tile([1, 2]).unsqueeze(1)
@@ -437,7 +446,8 @@ class YOLOv8InsHead(nn.Layer):
                  exclude_post_process=False,
                  customized_c3=-1,
                  mask_thr_binary=0.5,
-                 print_l1_loss=True):
+                 print_l1_loss=True,
+                 use_dwconv=False):
         super(YOLOv8InsHead, self).__init__()
         assert len(in_channels) > 0, "len(in_channels) should > 0"
         self.with_mask = with_mask
@@ -494,9 +504,9 @@ class YOLOv8InsHead(nn.Layer):
                 ]))
             self.conv_cls.append(
                 nn.Sequential(* [
-                    BaseConv(
+                    (DWConv if use_dwconv else BaseConv)(
                         in_c, c3, 3, 1, act=act),
-                    BaseConv(
+                    (DWConv if use_dwconv else BaseConv)(
                         c3, c3, 3, 1, act=act),
                     nn.Conv2D(
                         c3,
@@ -916,7 +926,9 @@ class YOLOv8InsHead(nn.Layer):
                      im_shape,
                      scale_factor,
                      infer_shape=[640, 640],
-                     rescale=True):
+                     rescale=True,
+                     pad_param=None):
+        assert pad_param is None
         assert not self.exclude_post_process or not self.exclude_nms
         pred_scores, pred_bboxes, pred_mask_coeffs, mask_feat, anchor_points, stride_tensor = head_outs
 
