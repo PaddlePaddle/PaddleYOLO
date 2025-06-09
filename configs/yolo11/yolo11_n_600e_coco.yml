@@ -16,3 +16,6 @@ weights: output/yolo11_n_600e_coco/model_final
 
 TrainReader:
   batch_size: 16 # default 8 gpus, total bs = 128
+
+TrainDataset:
+  refine_bbox: True

@@ -24,3 +24,6 @@ YOLO11CSPPAN:
 
 TrainReader:
   batch_size: 16 # default 8 gpus, total bs = 128
+
+TrainDataset:
+  refine_bbox: True
