@@ -8,6 +8,7 @@ TrainReader:
   sample_transforms:
     - Decode: {}
     - MosaicPerspective: {mosaic_prob: 1.0, boxes_normed: False, target_size: *input_size, scale: 0.9, mixup_prob: 0.1, copy_paste_prob: 0.1}
+    - Albumentations: {}
     - RandomHSV: {hgain: 0.015, sgain: 0.7, vgain: 0.4}
     - RandomFlip: {}
   batch_transforms:
