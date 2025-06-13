@@ -3,7 +3,7 @@ _BASE_: [
   '../runtime.yml',
   '_base_/optimizer_600e.yml',
   '_base_/yolo11_cspdarknet.yml',
-  '_base_/yolo11_reader.yml',
+  '_base_/yolo11_reader_high_aug.yml',
 ]
 
 depth_mult: 0.5
