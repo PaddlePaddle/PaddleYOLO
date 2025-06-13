@@ -16,7 +16,7 @@ import paddle
 import paddle.nn as nn
 from ppdet.core.workspace import register, serializable
 from ..shape_spec import ShapeSpec
-from .csp_darknet import DWConv, BaseConv, BottleNeck, SPPFLayer, get_activation
+from .csp_darknet import BaseConv, BottleNeck, CSPLayer, DWConv, SPPFLayer
 from .yolov8_csp_darknet import C2fLayer
 from .yolov10_csp_darknet import AttnLayer
 
@@ -24,59 +24,31 @@ from .yolov10_csp_darknet import AttnLayer
 __all__ = ['C3k2', 'YOLO11CSPDarkNet']
 
 
-class C3(nn.Layer):
+class C3k(CSPLayer):
     def __init__(self,
                  in_channels,
                  out_channels,
                  num_blocks=1,
                  shortcut=True,
-                 depthwise=False,
                  expansion=0.5,
-                 bias=False,
-                 act="silu"):
-        super(C3, self).__init__()
-        self.c = int(out_channels * expansion)  # hidden channels
-        self.conv1 = BaseConv(
-            in_channels, self.c, ksize=1, stride=1, bias=bias, act=act)
-        self.conv2 = BaseConv(
-            in_channels, self.c, ksize=1, stride=1, bias=bias, act=act)
-        self.conv3 = BaseConv(
-            2 * self.c, out_channels, ksize=1, stride=1, bias=bias, act=act)
-        self.bottlenecks = nn.Sequential(*[BottleNeck(
-            self.c,
-            self.c,
-            shortcut=shortcut,
-            kernel_sizes=(1, 3),
-            expansion=1.0,
-            depthwise=depthwise,
-            bias=bias,
-            act=act) for _ in range(num_blocks)])
-
-    def forward(self, x):
-        return self.conv3(paddle.concat((self.bottlenecks(self.conv1(x)), self.conv2(x)), 1))
-
-
-class C3k(C3):
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 num_blocks=1,
-                 shortcut=True,
                  depthwise=False,
-                 expansion=0.5,
                  kernel_sizes=3,
                  bias=False,
                  act="silu"):
-        super(C3k, self).__init__(in_channels, out_channels, num_blocks, shortcut, depthwise, expansion, bias, act)
-        self.bottlenecks = nn.Sequential(*[BottleNeck(
-            self.c,
-            self.c,
-            shortcut=shortcut,
-            kernel_sizes=(kernel_sizes, kernel_sizes),
-            expansion=1.0,
-            depthwise=depthwise,
-            bias=bias,
-            act=act) for _ in range(num_blocks)])
+        super(C3k, self).__init__(
+            in_channels, out_channels, num_blocks, shortcut, expansion, depthwise, bias, act)
+        hidden_channels = int(out_channels * expansion)
+        self.bottlenecks = nn.Sequential(* [
+            BottleNeck(
+                hidden_channels,
+                hidden_channels,
+                shortcut=shortcut,
+                kernel_sizes=(kernel_sizes, kernel_sizes),
+                expansion=1.0,
+                depthwise=depthwise,
+                bias=bias,
+                act=act) for _ in range(num_blocks)
+        ])
 
 
 class C3k2(C2fLayer):
@@ -113,11 +85,11 @@ class C3k2(C2fLayer):
 
 
 class PSABlock(nn.Layer):
-    def __init__(self, embed_dim, expansion=1.0, act='silu'):
+    def __init__(self, embed_dim, num_heads, expansion=1.0, act='silu'):
         super(PSABlock, self).__init__()
         hidden_dim = int(embed_dim * expansion)
         self.attn = AttnLayer(hidden_dim,
-                              num_heads=hidden_dim // 64,
+                              num_heads=num_heads,
                               attn_ratio=0.5)
         self.ffn = nn.Sequential(*[
             BaseConv(hidden_dim,
@@ -153,7 +125,8 @@ class C2PSA(nn.Layer):
         self.c = int(in_channels * expansion)  # hidden channels
         self.conv1 = BaseConv(in_channels, 2 * self.c, 1, 1)
         self.conv2 = BaseConv(2 * self.c, in_channels, 1, 1)
-        self.bottlenecks = nn.Sequential(*[PSABlock(self.c) for _ in range(num_blocks)])
+        self.bottlenecks = nn.Sequential(*[
+            PSABlock(self.c, self.c // 64) for _ in range(num_blocks)])
 
     def forward(self, x):
         a, b = self.conv1(x).split((self.c, self.c), 1)
