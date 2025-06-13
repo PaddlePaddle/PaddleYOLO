@@ -31,6 +31,8 @@ YOLOv8Head:
     topk: 10
     alpha: 0.5
     beta: 6.0
+    eps: 0.000000001
+    use_ciou: True
   nms:
     name: MultiClassNMS
     nms_top_k: 3000
