@@ -47,6 +47,7 @@ class COCODataSet(DetDataset):
             record's, if empty_ratio is out of [0. ,1.), do not sample the 
             records and use all the empty entries. 1. as default
         repeat (int): repeat times for dataset, use in benchmark.
+        refine_bbox (bool): refine bbox with segmentation. False as default
     """
 
     def __init__(self,
@@ -59,7 +60,7 @@ class COCODataSet(DetDataset):
                  allow_empty=False,
                  empty_ratio=1.,
                  repeat=1,
-                 refine_bbox=True):
+                 refine_bbox=False):
         super(COCODataSet, self).__init__(
             dataset_dir,
             image_dir,
