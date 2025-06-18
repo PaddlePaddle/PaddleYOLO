@@ -4837,28 +4837,3 @@ class LetterResize(BaseOperator):
             sample['pad_param'] += pad_param_origin
 
         return sample
-
-
-@register_op
-class Albumentations(BaseOperator):
-    def __init__(self, prob=1.0):
-        self.prob = prob
-
-        import albumentations as A
-        self.transform = A.Compose([
-            A.Blur(p=0.01),
-            A.MedianBlur(p=0.01),
-            A.ToGray(p=0.01),
-            A.CLAHE(p=0.01),
-        ])
-
-    def apply(self, sample, context=None):
-        if random.random() > self.prob:
-            return sample
-
-        im = sample['image']
-        if im.shape[2] != 3:  # Only apply Albumentation on 3-channel images
-            return sample
-
-        sample["image"] = self.transform(image=sample["image"])["image"]  # transformed
-        return sample
