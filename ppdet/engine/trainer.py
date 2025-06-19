@@ -206,13 +206,13 @@ class Trainer(object):
             self.model = self.cfg.model
             self.is_loaded_weights = True
 
-        if self.cfg.architecture in ['YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'YOLOv10']:
+        if self.cfg.architecture in ['YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'YOLOv10', 'YOLO11']:
             reset_initialized_parameter(self.model)
-            if self.model.yolo_head.__class__.__name__ in ['YOLOv5Head', 'YOLOv10Head']:
+            if self.model.yolo_head.__class__.__name__ in ['YOLOv5Head', 'YOLOv8Head', 'YOLOv10Head']:
                 self.model.yolo_head._initialize_biases()
 
         if cfg.architecture in [
-                'YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'YOLOv10'
+                'YOLOX', 'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'YOLOv10', 'YOLO11'
         ]:
             for k, m in self.model.named_sublayers():
                 if isinstance(m, nn.BatchNorm2D):
@@ -489,13 +489,15 @@ class Trainer(object):
             self.status['epoch_id'] = epoch_id
             self._compose_callback.on_epoch_begin(self.status)
             self.loader.dataset.set_epoch(epoch_id)
+            if hasattr(self.loader._batch_sampler, 'set_epoch'):
+                self.loader._batch_sampler.set_epoch(epoch_id)
             model.train()
             iter_tic = time.time()
             for step_id, data in enumerate(self.loader):
                 if self.cfg.architecture =='YOLOv5' and self.cfg.use_gpu:
                     data["image"] = data["image"].cuda(blocking=False)
                 if self.cfg.architecture in [
-                        'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'YOLOv10'
+                        'YOLOv5', 'YOLOv6', 'YOLOv7', 'YOLOv8', 'YOLOv10', 'YOLO11'
                 ]:
                     # TODO: YOLOv5 Warmup, always 3 epoch
                     nw = 3 * len(self.loader)

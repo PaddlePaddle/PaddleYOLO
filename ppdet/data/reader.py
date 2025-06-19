@@ -199,7 +199,6 @@ class BaseDataLoader(object):
             num_workers=worker_num,
             return_list=return_list,
             use_shared_memory=use_shared_memory)
-        self.loader = iter(self.dataloader)
 
         return self
 
@@ -207,18 +206,7 @@ class BaseDataLoader(object):
         return len(self._batch_sampler)
 
     def __iter__(self):
-        return self
-
-    def __next__(self):
-        try:
-            return next(self.loader)
-        except StopIteration:
-            self.loader = iter(self.dataloader)
-            six.reraise(*sys.exc_info())
-
-    def next(self):
-        # python2 compatibility
-        return self.__next__()
+        return iter(self.dataloader)
 
 
 @register
@@ -248,7 +236,7 @@ class EvalReader(BaseDataLoader):
                  batch_transforms=[],
                  batch_size=1,
                  shuffle=False,
-                 drop_last=True,
+                 drop_last=False,
                  num_classes=80,
                  **kwargs):
         super(EvalReader, self).__init__(sample_transforms, batch_transforms,
@@ -571,21 +559,14 @@ class BaseSemiDataLoader(object):
 
         self.dataloader = CombineSSODLoader(self.dataloader_label,
                                             self.dataloader_unlabel)
-        self.loader = iter(self.dataloader)
+
         return self
 
     def __len__(self):
         return len(self._batch_sampler_label)
 
     def __iter__(self):
-        return self
-
-    def __next__(self):
-        return next(self.loader)
-
-    def next(self):
-        # python2 compatibility
-        return self.__next__()
+        return iter(self.dataloader)
 
 
 @register

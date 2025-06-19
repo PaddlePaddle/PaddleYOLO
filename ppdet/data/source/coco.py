@@ -47,6 +47,7 @@ class COCODataSet(DetDataset):
             record's, if empty_ratio is out of [0. ,1.), do not sample the 
             records and use all the empty entries. 1. as default
         repeat (int): repeat times for dataset, use in benchmark.
+        refine_bbox (bool): refine bbox with segmentation. False as default
     """
 
     def __init__(self,
@@ -58,7 +59,8 @@ class COCODataSet(DetDataset):
                  load_crowd=False,
                  allow_empty=False,
                  empty_ratio=1.,
-                 repeat=1):
+                 repeat=1,
+                 refine_bbox=False):
         super(COCODataSet, self).__init__(
             dataset_dir,
             image_dir,
@@ -71,6 +73,7 @@ class COCODataSet(DetDataset):
         self.load_crowd = load_crowd
         self.allow_empty = allow_empty
         self.empty_ratio = empty_ratio
+        self.refine_bbox = refine_bbox
 
     def _sample_empty(self, records, num):
         # if empty_ratio is out of [0. ,1.), do not sample the records
@@ -210,6 +213,9 @@ class COCODataSet(DetDataset):
                         gt_poly) and not self.allow_empty:
                     continue
 
+                if has_segmentation and self.refine_bbox:
+                    gt_bbox = self._refine_bbox(gt_poly, im_h, im_w)
+
                 gt_rec = {
                     'is_crowd': is_crowd,
                     'gt_class': gt_class,
@@ -245,6 +251,39 @@ class COCODataSet(DetDataset):
             empty_records = self._sample_empty(empty_records, len(records))
             records += empty_records
         self.roidbs = records
+
+    def _refine_bbox(self, segms, height, width):
+        num_segms = len(segms)
+        boxes = np.zeros((num_segms, 4), dtype=np.float32)
+        for idx, segm in enumerate(segms):
+            assert isinstance(segm, (list, dict)), \
+                "Invalid segm type: {}".format(type(segm))
+            if isinstance(segm, list):
+                # simply use a number that is big enough for comparison with
+                # coordinates
+                xy_min = np.array([width * 2, height * 2],
+                                dtype=np.float32)
+                xy_max = np.zeros(2, dtype=np.float32)
+                for p in segm:
+                    xy = np.array(p).reshape(-1, 2).astype(np.float32)
+                    xy_min = np.minimum(xy_min, np.min(xy, axis=0))
+                    xy_max = np.maximum(xy_max, np.max(xy, axis=0))
+                boxes[idx, :2] = xy_min
+                boxes[idx, 2:] = xy_max
+            else:
+                import pycocotools.mask as mask_util
+
+                if 'counts' in rle and type(rle['counts']) == list:
+                    rle = mask_util.frPyObjects(rle, height, width)
+                segm = mask_util.decode(rle)
+                x = np.where(segm.any(axis=0))[0]
+                y = np.where(segm.any(axis=1))[0]
+                if len(x) > 0 and len(y) > 0:
+                    # use +1 for x_max and y_max so that the right and bottom
+                    # boundary of instance masks are fully included by the box
+                    boxes[idx, :] = np.array(
+                        [x[0], y[0], x[-1] + 1, y[-1] + 1], dtype=np.float32)
+        return boxes
 
 
 @register

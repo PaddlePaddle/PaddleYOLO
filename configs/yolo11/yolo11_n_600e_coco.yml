@@ -1,0 +1,21 @@
+_BASE_: [
+  '../datasets/coco_detection.yml',
+  '../runtime.yml',
+  '_base_/optimizer_600e.yml',
+  '_base_/yolo11_cspdarknet.yml',
+  '_base_/yolo11_reader.yml',
+]
+
+depth_mult: 0.5
+width_mult: 0.25
+
+log_iter: 50
+snapshot_epoch: 10
+weights: output/yolo11_n_600e_coco/model_final
+
+
+TrainReader:
+  batch_size: 16 # default 8 gpus, total bs = 128
+
+TrainDataset:
+  refine_bbox: True
