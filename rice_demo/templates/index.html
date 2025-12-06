@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水稻稻瘟病智能检测系统 | Rice Blast Disease Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Animated background -->
+    <div class="rice-field-background">
+        <div class="rice-plant" style="left: 10%; animation-delay: 0s;"></div>
+        <div class="rice-plant" style="left: 25%; animation-delay: 0.5s;"></div>
+        <div class="rice-plant" style="left: 40%; animation-delay: 1s;"></div>
+        <div class="rice-plant" style="left: 55%; animation-delay: 1.5s;"></div>
+        <div class="rice-plant" style="left: 70%; animation-delay: 2s;"></div>
+        <div class="rice-plant" style="left: 85%; animation-delay: 2.5s;"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-seedling"></i>
+                    <h1>水稻稻瘟病智能检测系统</h1>
+                </div>
+                <div class="subtitle">
+                    <p>🌾 Rice Blast Disease Detection System 🌾</p>
+                    <p class="small-text">小学生科技创新竞赛作品</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container main-content">
+        <!-- Control Panel -->
+        <div class="card control-panel">
+            <h2><i class="fas fa-sliders-h"></i> 控制面板</h2>
+            
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <h3><i class="fas fa-cloud-upload-alt"></i> 上传图片</h3>
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-image"></i>
+                    <p>点击或拖拽图片到这里</p>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                </div>
+            </div>
+
+            <!-- Folder Section -->
+            <div class="folder-section">
+                <h3><i class="fas fa-folder-open"></i> 加载文件夹</h3>
+                <div class="folder-input-group">
+                    <input type="text" id="folderPath" placeholder="输入文件夹路径..." class="folder-input">
+                    <button id="loadFolderBtn" class="btn btn-primary">
+                        <i class="fas fa-folder"></i> 加载
+                    </button>
+                </div>
+                <div id="folderInfo" class="folder-info" style="display: none;">
+                    <p>已加载 <span id="imageCount">0</span> 张图片</p>
+                </div>
+            </div>
+
+            <!-- Navigation Controls -->
+            <div class="navigation-controls" id="navigationControls" style="display: none;">
+                <h3><i class="fas fa-arrows-alt-h"></i> 图片导航</h3>
+                <div class="nav-buttons">
+                    <button id="prevBtn" class="btn btn-secondary">
+                        <i class="fas fa-chevron-left"></i> 上一张
+                    </button>
+                    <span id="imagePosition" class="image-position">1 / 0</span>
+                    <button id="nextBtn" class="btn btn-secondary">
+                        下一张 <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Detection Settings -->
+            <div class="settings-section">
+                <h3><i class="fas fa-cog"></i> 检测设置</h3>
+                <div class="threshold-control">
+                    <label for="threshold">置信度阈值: <span id="thresholdValue">0.50</span></label>
+                    <input type="range" id="threshold" min="0" max="1" step="0.05" value="0.5">
+                </div>
+            </div>
+
+            <!-- Predict Button -->
+            <div class="predict-section">
+                <button id="predictBtn" class="btn btn-predict" disabled>
+                    <i class="fas fa-microscope"></i> 开始检测
+                </button>
+            </div>
+        </div>
+
+        <!-- Display Area -->
+        <div class="display-area">
+            <!-- Image Display -->
+            <div class="card image-display">
+                <h2><i class="fas fa-image"></i> 图片预览</h2>
+                <div id="imageContainer" class="image-container">
+                    <div class="placeholder">
+                        <i class="fas fa-leaf"></i>
+                        <p>请上传图片或加载文件夹</p>
+                    </div>
+                    <img id="displayImage" alt="预览图片" style="display: none;">
+                    <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>检测中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Display -->
+            <div class="card results-display">
+                <h2><i class="fas fa-chart-bar"></i> 检测结果</h2>
+                <div id="resultsContainer" class="results-container">
+                    <div class="placeholder">
+                        <i class="fas fa-clipboard-list"></i>
+                        <p>等待检测结果...</p>
+                    </div>
+                    <div id="resultsContent" style="display: none;">
+                        <div class="result-summary">
+                            <div class="result-item">
+                                <i class="fas fa-bug"></i>
+                                <span>检测到病斑数量</span>
+                                <strong id="detectionCount">0</strong>
+                            </div>
+                            <div class="result-item">
+                                <i class="fas fa-file-image"></i>
+                                <span>当前图片</span>
+                                <strong id="currentImageName">-</strong>
+                            </div>
+                        </div>
+                        <div class="detection-details">
+                            <h3><i class="fas fa-list"></i> 详细信息</h3>
+                            <div id="detectionList" class="detection-list">
+                                <!-- Detection items will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>🌾 助力农业智能化，守护粮食安全 🌾</p>
+            <p class="small-text">Powered by PaddlePaddle & YOLOv10</p>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
