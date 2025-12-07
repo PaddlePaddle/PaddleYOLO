@@ -80,18 +80,26 @@ def draw_bboxes_on_image(image_path, bboxes, scores, class_ids, class_names, thr
     # Color for rice blast disease (red-ish for disease detection)
     color = (255, 69, 0)  # Red-orange for disease
     
+    # 动态调整线宽
+    w, h = image.size
+    if max(w, h) < 800:
+        box_width = 3
+    elif max(w, h) < 1600:
+        box_width = 8
+    elif max(w, h) < 2400:
+        box_width = 12
+    else:
+        box_width = 18
+
     # Draw each bbox
     for bbox, score, class_id in zip(bboxes, scores, class_ids):
         if score >= threshold:
             x1, y1, x2, y2 = bbox
-            
             # Draw rectangle
-            draw.rectangle([x1, y1, x2, y2], outline=color, width=3)
-            
+            draw.rectangle([x1, y1, x2, y2], outline=color, width=box_width)
             # Draw label
             class_name = class_names[int(class_id)] if int(class_id) < len(class_names) else str(int(class_id))
             label = f"{class_name}: {score:.2f}"
-            
             # Draw label background
             text_bbox = draw.textbbox((x1, y1 - 20), label, font=font)
             draw.rectangle(text_bbox, fill=color)
@@ -153,6 +161,9 @@ def predict_image(image_path, threshold=0.5):
         bboxes = []
         scores = []
         class_ids = []
+        # 分类计数
+        rice_nesk_blast_count = 0
+        rice_blast_count = 0
         
         for outs in results:
             if 'bbox' in outs and len(outs['bbox']) > 0:
@@ -185,6 +196,14 @@ def predict_image(image_path, threshold=0.5):
                             bboxes.append([x1, y1, x2, y2])
                             scores.append(score)
                             class_ids.append(int(class_id))
+                        # 分类统计
+                        # 假设 class_names 中 Rice_Nesk_Blast 和 Rice_Blast 名称存在
+                        if score >= threshold and int(class_id) < len(class_names):
+                            cname = class_names[int(class_id)]
+                            if 'Rice_Nesk_Blast' in cname:
+                                rice_nesk_blast_count += 1
+                            elif 'Rice_Blast' in cname:
+                                rice_blast_count += 1
         
         logger.info(f"Detected {len(bboxes)} objects with threshold {threshold}")
         
@@ -193,7 +212,9 @@ def predict_image(image_path, threshold=0.5):
             'scores': scores,
             'class_ids': class_ids,
             'class_names': class_names,
-            'num_detections': len(bboxes)
+            'num_detections': len(bboxes),
+            'rice_nesk_blast_count': rice_nesk_blast_count,
+            'rice_blast_count': rice_blast_count
         }
         
     except Exception as e:
@@ -207,7 +228,9 @@ def predict_image(image_path, threshold=0.5):
             'scores': [],
             'class_ids': [],
             'class_names': ['rice_blast'],
-            'num_detections': 0
+            'num_detections': 0,
+            'rice_nesk_blast_count': 0,
+            'rice_blast_count': 0
         }
 
 
@@ -227,14 +250,17 @@ def upload_file():
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
     
+    # 只取文件名，忽略路径（处理文件夹上传时的相对路径）
+    safe_filename = os.path.basename(file.filename)
+    
     # Save file
-    filename = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    filename = os.path.join(app.config['UPLOAD_FOLDER'], safe_filename)
     file.save(filename)
     
     # Return file info
     return jsonify({
         'success': True,
-        'filename': file.filename,
+        'filename': safe_filename,
         'path': filename
     })
 
@@ -298,12 +324,14 @@ def predict():
             'success': True,
             'image': f"data:image/jpeg;base64,{img_str}",
             'detections': results['num_detections'],
-            'results': {
-                'bboxes': results['bboxes'],
-                'scores': results['scores'],
-                'class_ids': results['class_ids'],
-                'class_names': results['class_names']
-            }
+                'results': {
+                    'bboxes': results['bboxes'],
+                    'scores': results['scores'],
+                    'class_ids': results['class_ids'],
+                    'class_names': results['class_names'],
+                    'rice_nesk_blast_count': results.get('rice_nesk_blast_count', 0),
+                    'rice_blast_count': results.get('rice_blast_count', 0)
+                }
         })
     
     except Exception as e:

@@ -28,16 +28,15 @@
                 </div>
                 <div class="subtitle">
                     <p>🌾 Rice Blast Disease Detection System 🌾</p>
-                    <p class="small-text">小学生科技创新竞赛作品</p>
                 </div>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="container main-content">
+    <main class="container main-content compact-main three-column-layout">
         <!-- Control Panel -->
-        <div class="card control-panel">
+    <div class="card control-panel compact-card">
             <h2><i class="fas fa-sliders-h"></i> 控制面板</h2>
             
             <!-- Upload Section -->
@@ -54,9 +53,9 @@
             <div class="folder-section">
                 <h3><i class="fas fa-folder-open"></i> 加载文件夹</h3>
                 <div class="folder-input-group">
-                    <input type="text" id="folderPath" placeholder="输入文件夹路径..." class="folder-input">
-                    <button id="loadFolderBtn" class="btn btn-primary">
-                        <i class="fas fa-folder"></i> 加载
+                    <input type="file" id="folderPicker" webkitdirectory directory multiple style="display:none;">
+                    <button id="openFolderBtn" class="btn btn-primary">
+                        <i class="fas fa-folder-open"></i> 选择本地文件夹
                     </button>
                 </div>
                 <div id="folderInfo" class="folder-info" style="display: none;">
@@ -95,50 +94,70 @@
             </div>
         </div>
 
-        <!-- Display Area -->
-        <div class="display-area">
-            <!-- Image Display -->
-            <div class="card image-display">
-                <h2><i class="fas fa-image"></i> 图片预览</h2>
-                <div id="imageContainer" class="image-container">
-                    <div class="placeholder">
-                        <i class="fas fa-leaf"></i>
-                        <p>请上传图片或加载文件夹</p>
+        <!-- Image Display Area (Center) -->
+        <div class="card image-display compact-card center-panel">
+            <h2><i class="fas fa-image"></i> 图片对比预览</h2>
+            <div class="dual-image-container">
+                <div class="image-side">
+                    <div class="side-title">原图</div>
+                    <div id="imageContainerOriginal" class="image-container compact-image-container">
+                        <div class="placeholder">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <img id="displayImageOriginal" alt="原图" style="display: none;">
                     </div>
-                    <img id="displayImage" alt="预览图片" style="display: none;">
-                    <div id="loadingSpinner" class="loading-spinner" style="display: none;">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <p>检测中...</p>
+                </div>
+                <div class="image-side">
+                    <div class="side-title">检测结果</div>
+                    <div id="imageContainerResult" class="image-container compact-image-container">
+                        <div class="placeholder">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <img id="displayImageResult" alt="检测结果" style="display: none;">
+                        <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>检测中...</p>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Results Display -->
-            <div class="card results-display">
-                <h2><i class="fas fa-chart-bar"></i> 检测结果</h2>
-                <div id="resultsContainer" class="results-container">
-                    <div class="placeholder">
-                        <i class="fas fa-clipboard-list"></i>
-                        <p>等待检测结果...</p>
-                    </div>
-                    <div id="resultsContent" style="display: none;">
-                        <div class="result-summary">
-                            <div class="result-item">
-                                <i class="fas fa-bug"></i>
-                                <span>检测到病斑数量</span>
-                                <strong id="detectionCount">0</strong>
-                            </div>
-                            <div class="result-item">
-                                <i class="fas fa-file-image"></i>
-                                <span>当前图片</span>
-                                <strong id="currentImageName">-</strong>
-                            </div>
+        <!-- Results Display (Right) -->
+        <div class="card results-display compact-card right-panel">
+            <h2><i class="fas fa-chart-bar"></i> 检测结果</h2>
+            <div id="resultsContainer" class="results-container">
+                <div class="placeholder">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>等待检测结果...</p>
+                </div>
+                <div id="resultsContent" style="display: none;">
+                    <div class="result-summary">
+                        <div class="result-item">
+                            <i class="fas fa-bug"></i>
+                            <span>检测到病斑数量</span>
+                            <strong id="detectionCount">0</strong>
                         </div>
-                        <div class="detection-details">
-                            <h3><i class="fas fa-list"></i> 详细信息</h3>
-                            <div id="detectionList" class="detection-list">
-                                <!-- Detection items will be inserted here -->
-                            </div>
+                        <div class="result-item">
+                            <i class="fas fa-bacteria"></i>
+                            <span>Rice_Nesk_Blast</span>
+                            <strong id="riceNeskBlastCount">0</strong>
+                        </div>
+                        <div class="result-item">
+                            <i class="fas fa-bacteria"></i>
+                            <span>Rice_Blast</span>
+                            <strong id="riceBlastCount">0</strong>
+                        </div>
+                        <div class="result-item">
+                            <i class="fas fa-file-image"></i>
+                            <span>当前图片</span>
+                            <strong id="currentImageName">-</strong>
+                        </div>
+                    </div>
+                    <div class="detection-details">
+                        <h3><i class="fas fa-list"></i> 详细信息</h3>
+                        <div id="detectionList" class="detection-list">
+                            <!-- Detection items will be inserted here -->
                         </div>
                     </div>
                 </div>
@@ -147,10 +166,9 @@
     </main>
 
     <!-- Footer -->
-    <footer class="footer">
+    <footer class="footer compact-footer">
         <div class="container">
             <p>🌾 助力农业智能化，守护粮食安全 🌾</p>
-            <p class="small-text">Powered by PaddlePaddle & YOLOv10</p>
         </div>
     </footer>
 

@@ -12,8 +12,8 @@ let currentImagePath = '';
 // DOM elements
 const uploadArea = document.getElementById('uploadArea');
 const fileInput = document.getElementById('fileInput');
-const folderPath = document.getElementById('folderPath');
-const loadFolderBtn = document.getElementById('loadFolderBtn');
+const folderPicker = document.getElementById('folderPicker');
+const openFolderBtn = document.getElementById('openFolderBtn');
 const folderInfo = document.getElementById('folderInfo');
 const imageCount = document.getElementById('imageCount');
 const navigationControls = document.getElementById('navigationControls');
@@ -23,8 +23,10 @@ const imagePosition = document.getElementById('imagePosition');
 const thresholdInput = document.getElementById('threshold');
 const thresholdValue = document.getElementById('thresholdValue');
 const predictBtn = document.getElementById('predictBtn');
-const displayImage = document.getElementById('displayImage');
-const imageContainer = document.getElementById('imageContainer');
+const displayImageOriginal = document.getElementById('displayImageOriginal');
+const displayImageResult = document.getElementById('displayImageResult');
+const imageContainerOriginal = document.getElementById('imageContainerOriginal');
+const imageContainerResult = document.getElementById('imageContainerResult');
 const loadingSpinner = document.getElementById('loadingSpinner');
 const resultsContent = document.getElementById('resultsContent');
 const detectionCount = document.getElementById('detectionCount');
@@ -40,20 +42,16 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupEventListeners() {
     // Upload area click
     uploadArea.addEventListener('click', () => fileInput.click());
-    
     // File input change
     fileInput.addEventListener('change', handleFileUpload);
-    
     // Drag and drop
     uploadArea.addEventListener('dragover', (e) => {
         e.preventDefault();
         uploadArea.style.borderColor = 'var(--rice-gold)';
     });
-    
     uploadArea.addEventListener('dragleave', () => {
         uploadArea.style.borderColor = 'var(--rice-green)';
     });
-    
     uploadArea.addEventListener('drop', (e) => {
         e.preventDefault();
         uploadArea.style.borderColor = 'var(--rice-green)';
@@ -62,22 +60,20 @@ function setupEventListeners() {
             handleFile(files[0]);
         }
     });
-    
-    // Load folder button
-    loadFolderBtn.addEventListener('click', handleLoadFolder);
-    
+
+    // Open folder button (local folder picker)
+    openFolderBtn.addEventListener('click', () => folderPicker.click());
+    folderPicker.addEventListener('change', handleLocalFolderSelect);
+
     // Navigation buttons
     prevBtn.addEventListener('click', showPreviousImage);
     nextBtn.addEventListener('click', showNextImage);
-    
     // Threshold slider
     thresholdInput.addEventListener('input', (e) => {
         thresholdValue.textContent = parseFloat(e.target.value).toFixed(2);
     });
-    
     // Predict button
     predictBtn.addEventListener('click', handlePredict);
-    
     // Keyboard navigation
     document.addEventListener('keydown', (e) => {
         if (imageList.length > 0) {
@@ -92,38 +88,39 @@ function setupEventListeners() {
 function handleFileUpload(e) {
     const file = e.target.files[0];
     if (file) {
-        handleFile(file);
+        handleFile(file, true);
     }
 }
 
 // Handle single file
-async function handleFile(file) {
+async function handleFile(file, isSingle = false) {
     if (!file.type.startsWith('image/')) {
         showToast('请选择图片文件！', 'error');
         return;
     }
-    
     // Reset folder mode
-    imageList = [];
-    currentFolderPath = '';
-    navigationControls.style.display = 'none';
-    folderInfo.style.display = 'none';
-    
-    // Display image
+    if (isSingle) {
+        imageList = [];
+        currentFolderPath = '';
+        navigationControls.style.display = 'none';
+        folderInfo.style.display = 'none';
+    }
+    // Display original image (left)
     const reader = new FileReader();
     reader.onload = (e) => {
-        displayImage.src = e.target.result;
-        displayImage.style.display = 'block';
-        imageContainer.querySelector('.placeholder').style.display = 'none';
+        displayImageOriginal.src = e.target.result;
+        displayImageOriginal.style.display = 'block';
+        imageContainerOriginal.querySelector('.placeholder').style.display = 'none';
+        // Clear result image
+        displayImageResult.style.display = 'none';
+        imageContainerResult.querySelector('.placeholder').style.display = 'block';
         currentImageName.textContent = file.name;
         predictBtn.disabled = false;
     };
     reader.readAsDataURL(file);
-    
     // Upload to server
     const formData = new FormData();
     formData.append('file', file);
-    
     try {
         const response = await fetch('/api/upload', {
             method: 'POST',
@@ -135,6 +132,68 @@ async function handleFile(file) {
             showToast('图片上传成功！', 'success');
         } else {
             showToast('图片上传失败：' + data.error, 'error');
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        showToast('图片上传失败！', 'error');
+    }
+}
+// Handle local folder selection (HTML5 directory picker)
+function handleLocalFolderSelect(e) {
+    const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+    if (!files.length) {
+        showToast('文件夹中没有图片！', 'error');
+        return;
+    }
+    // Sort by name
+    files.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN', {numeric: true}));
+    imageList = files;
+    currentFolderPath = '';
+    currentImageIndex = 0;
+    imageCount.textContent = files.length;
+    folderInfo.style.display = 'block';
+    navigationControls.style.display = 'block';
+    showImageAtIndexLocal(0);
+    showToast(`成功加载 ${files.length} 张图片！`, 'success');
+}
+
+// Show image at index for local folder
+async function showImageAtIndexLocal(index) {
+    if (index < 0 || index >= imageList.length) return;
+    currentImageIndex = index;
+    const file = imageList[index];
+    imagePosition.textContent = `${index + 1} / ${imageList.length}`;
+    prevBtn.disabled = (index === 0);
+    nextBtn.disabled = (index === imageList.length - 1);
+    
+    // 禁用预测按钮直到上传完成
+    predictBtn.disabled = true;
+    
+    // Show original image
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        displayImageOriginal.src = e.target.result;
+        displayImageOriginal.style.display = 'block';
+        imageContainerOriginal.querySelector('.placeholder').style.display = 'none';
+        // Clear result image
+        displayImageResult.style.display = 'none';
+        imageContainerResult.querySelector('.placeholder').style.display = 'flex';
+        currentImageName.textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+    
+    // Upload to server for prediction - 等待上传完成
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        if (data.success) {
+            currentImagePath = data.path;
+            predictBtn.disabled = false;
         }
     } catch (error) {
         console.error('Upload error:', error);
@@ -185,34 +244,31 @@ async function handleLoadFolder() {
     }
 }
 
-// Show image at index
+// Show image at index (server folder mode, fallback)
 async function showImageAtIndex(index) {
+    if (Array.isArray(imageList) && imageList.length && imageList[0] instanceof File) {
+        showImageAtIndexLocal(index);
+        return;
+    }
     if (index < 0 || index >= imageList.length) return;
-    
     currentImageIndex = index;
     const imageName = imageList[index];
     currentImagePath = `${currentFolderPath}\\${imageName}`;
-    
-    // Update position
     imagePosition.textContent = `${index + 1} / ${imageList.length}`;
-    
-    // Update buttons
     prevBtn.disabled = (index === 0);
     nextBtn.disabled = (index === imageList.length - 1);
-    
-    // Load image
     try {
         const response = await fetch(`/api/get_image?path=${encodeURIComponent(currentImagePath)}`);
         const data = await response.json();
-        
         if (data.success) {
-            displayImage.src = data.image;
-            displayImage.style.display = 'block';
-            imageContainer.querySelector('.placeholder').style.display = 'none';
+            displayImageOriginal.src = data.image;
+            displayImageOriginal.style.display = 'block';
+            imageContainerOriginal.querySelector('.placeholder').style.display = 'none';
+            // Clear result image
+            displayImageResult.style.display = 'none';
+            imageContainerResult.querySelector('.placeholder').style.display = 'block';
             currentImageName.textContent = imageName;
             predictBtn.disabled = false;
-            
-            // Hide previous results
             resultsContent.style.display = 'none';
             resultsContent.previousElementSibling.style.display = 'block';
         } else {
@@ -244,13 +300,10 @@ async function handlePredict() {
         showToast('请先选择图片！', 'error');
         return;
     }
-    
     // Show loading
     loadingSpinner.style.display = 'flex';
     predictBtn.disabled = true;
-    
     const threshold = parseFloat(thresholdInput.value);
-    
     try {
         const response = await fetch('/api/predict', {
             method: 'POST',
@@ -262,16 +315,14 @@ async function handlePredict() {
                 threshold: threshold
             })
         });
-        
         const data = await response.json();
-        
         if (data.success) {
-            // Update image with bboxes
-            displayImage.src = data.image;
-            
+            // Show result image (right)
+            displayImageResult.src = data.image;
+            displayImageResult.style.display = 'block';
+            imageContainerResult.querySelector('.placeholder').style.display = 'none';
             // Update results
             updateResults(data);
-            
             showToast(`检测完成！发现 ${data.detections} 个病斑`, 'success');
         } else {
             showToast('检测失败：' + data.error, 'error');
@@ -293,6 +344,11 @@ function updateResults(data) {
     
     // Update detection count
     detectionCount.textContent = data.detections;
+    // 分类数量
+    const riceNeskBlastCount = document.getElementById('riceNeskBlastCount');
+    const riceBlastCount = document.getElementById('riceBlastCount');
+    riceNeskBlastCount.textContent = data.results ? (data.results.rice_nesk_blast_count || 0) : 0;
+    riceBlastCount.textContent = data.results ? (data.results.rice_blast_count || 0) : 0;
     
     // Clear previous detection list
     detectionList.innerHTML = '';
