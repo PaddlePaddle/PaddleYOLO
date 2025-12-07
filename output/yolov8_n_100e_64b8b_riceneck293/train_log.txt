@@ -1,0 +1,1065 @@
+(paddle) E:\projects\myPaddleYOLO>python tools/train.py -c configs/yolov8/yolov8_n_100e_64b8b_riceneck293.yml --eval --amp
+W1206 15:12:10.842669  3424 gpu_resources.cc:119] Please NOTE: device: 0, GPU Compute Capability: 8.9, Driver API Version: 12.9, Runtime API Version: 12.0
+W1206 15:12:10.845679  3424 gpu_resources.cc:164] device: 0, cuDNN Version: 8.9.
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: ['yolo_head.dfl_conv.weight'] in pretrained weight is not used in the model, and itswill not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.0.0.bn._mean is unmatched with the shape [64] in model yolo_head.conv_cls.0.0.bn._mean. And the weight yolo_head.conv_cls.0.0.bn._mean will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.0.0.bn._variance is unmatchedwith the shape [64] in model yolo_head.conv_cls.0.0.bn._variance. And the weight yolo_head.conv_cls.0.0.bn._variance will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.0.0.bn.bias is unmatched withthe shape [64] in model yolo_head.conv_cls.0.0.bn.bias. And the weight yolo_head.conv_cls.0.0.bn.bias will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.0.0.bn.weight is unmatched with the shape [64] in model yolo_head.conv_cls.0.0.bn.weight. And the weight yolo_head.conv_cls.0.0.bn.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80, 64, 3, 3] in pretrained weight yolo_head.conv_cls.0.0.conv.weight is unmatched with the shape [64, 64, 3, 3] in model yolo_head.conv_cls.0.0.conv.weight. And the weight yolo_head.conv_cls.0.0.conv.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.0.1.bn._mean is unmatched with the shape [64] in model yolo_head.conv_cls.0.1.bn._mean. And the weight yolo_head.conv_cls.0.1.bn._mean will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.0.1.bn._variance is unmatchedwith the shape [64] in model yolo_head.conv_cls.0.1.bn._variance. And the weight yolo_head.conv_cls.0.1.bn._variance will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.0.1.bn.bias is unmatched withthe shape [64] in model yolo_head.conv_cls.0.1.bn.bias. And the weight yolo_head.conv_cls.0.1.bn.bias will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.0.1.bn.weight is unmatched with the shape [64] in model yolo_head.conv_cls.0.1.bn.weight. And the weight yolo_head.conv_cls.0.1.bn.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80, 80, 3, 3] in pretrained weight yolo_head.conv_cls.0.1.conv.weight is unmatched with the shape [64, 64, 3, 3] in model yolo_head.conv_cls.0.1.conv.weight. And the weight yolo_head.conv_cls.0.1.conv.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.0.2.bias is unmatched with the shape [2] in model yolo_head.conv_cls.0.2.bias. And the weight yolo_head.conv_cls.0.2.bias will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80, 80, 1, 1] in pretrained weight yolo_head.conv_cls.0.2.weight is unmatched with the shape [2, 64, 1, 1] in model yolo_head.conv_cls.0.2.weight. And the weight yolo_head.conv_cls.0.2.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.1.0.bn._mean is unmatched with the shape [64] in model yolo_head.conv_cls.1.0.bn._mean. And the weight yolo_head.conv_cls.1.0.bn._mean will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.1.0.bn._variance is unmatchedwith the shape [64] in model yolo_head.conv_cls.1.0.bn._variance. And the weight yolo_head.conv_cls.1.0.bn._variance will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.1.0.bn.bias is unmatched withthe shape [64] in model yolo_head.conv_cls.1.0.bn.bias. And the weight yolo_head.conv_cls.1.0.bn.bias will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.1.0.bn.weight is unmatched with the shape [64] in model yolo_head.conv_cls.1.0.bn.weight. And the weight yolo_head.conv_cls.1.0.bn.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80, 128, 3, 3] in pretrained weight yolo_head.conv_cls.1.0.conv.weight isunmatched with the shape [64, 128, 3, 3] in model yolo_head.conv_cls.1.0.conv.weight. And the weight yolo_head.conv_cls.1.0.conv.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.1.1.bn._mean is unmatched with the shape [64] in model yolo_head.conv_cls.1.1.bn._mean. And the weight yolo_head.conv_cls.1.1.bn._mean will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.1.1.bn._variance is unmatchedwith the shape [64] in model yolo_head.conv_cls.1.1.bn._variance. And the weight yolo_head.conv_cls.1.1.bn._variance will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.1.1.bn.bias is unmatched withthe shape [64] in model yolo_head.conv_cls.1.1.bn.bias. And the weight yolo_head.conv_cls.1.1.bn.bias will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.1.1.bn.weight is unmatched with the shape [64] in model yolo_head.conv_cls.1.1.bn.weight. And the weight yolo_head.conv_cls.1.1.bn.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80, 80, 3, 3] in pretrained weight yolo_head.conv_cls.1.1.conv.weight is unmatched with the shape [64, 64, 3, 3] in model yolo_head.conv_cls.1.1.conv.weight. And the weight yolo_head.conv_cls.1.1.conv.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.1.2.bias is unmatched with the shape [2] in model yolo_head.conv_cls.1.2.bias. And the weight yolo_head.conv_cls.1.2.bias will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80, 80, 1, 1] in pretrained weight yolo_head.conv_cls.1.2.weight is unmatched with the shape [2, 64, 1, 1] in model yolo_head.conv_cls.1.2.weight. And the weight yolo_head.conv_cls.1.2.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.2.0.bn._mean is unmatched with the shape [64] in model yolo_head.conv_cls.2.0.bn._mean. And the weight yolo_head.conv_cls.2.0.bn._mean will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.2.0.bn._variance is unmatchedwith the shape [64] in model yolo_head.conv_cls.2.0.bn._variance. And the weight yolo_head.conv_cls.2.0.bn._variance will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.2.0.bn.bias is unmatched withthe shape [64] in model yolo_head.conv_cls.2.0.bn.bias. And the weight yolo_head.conv_cls.2.0.bn.bias will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.2.0.bn.weight is unmatched with the shape [64] in model yolo_head.conv_cls.2.0.bn.weight. And the weight yolo_head.conv_cls.2.0.bn.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80, 256, 3, 3] in pretrained weight yolo_head.conv_cls.2.0.conv.weight isunmatched with the shape [64, 256, 3, 3] in model yolo_head.conv_cls.2.0.conv.weight. And the weight yolo_head.conv_cls.2.0.conv.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.2.1.bn._mean is unmatched with the shape [64] in model yolo_head.conv_cls.2.1.bn._mean. And the weight yolo_head.conv_cls.2.1.bn._mean will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.2.1.bn._variance is unmatchedwith the shape [64] in model yolo_head.conv_cls.2.1.bn._variance. And the weight yolo_head.conv_cls.2.1.bn._variance will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.2.1.bn.bias is unmatched withthe shape [64] in model yolo_head.conv_cls.2.1.bn.bias. And the weight yolo_head.conv_cls.2.1.bn.bias will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.2.1.bn.weight is unmatched with the shape [64] in model yolo_head.conv_cls.2.1.bn.weight. And the weight yolo_head.conv_cls.2.1.bn.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80, 80, 3, 3] in pretrained weight yolo_head.conv_cls.2.1.conv.weight is unmatched with the shape [64, 64, 3, 3] in model yolo_head.conv_cls.2.1.conv.weight. And the weight yolo_head.conv_cls.2.1.conv.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80] in pretrained weight yolo_head.conv_cls.2.2.bias is unmatched with the shape [2] in model yolo_head.conv_cls.2.2.bias. And the weight yolo_head.conv_cls.2.2.bias will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: The shape [80, 80, 1, 1] in pretrained weight yolo_head.conv_cls.2.2.weight is unmatched with the shape [2, 64, 1, 1] in model yolo_head.conv_cls.2.2.weight. And the weight yolo_head.conv_cls.2.2.weight will not be loaded
+[12/06 15:12:11] ppdet.utils.checkpoint INFO: Finish loading model weights: C:\Users\zuosh/.cache/paddle/weights\yolov8_n_500e_coco.pdparams
+[12/06 15:13:06] ppdet.engine INFO: Epoch: [0] [0/4] eta: 6:05:17 lr: 0.000000 loss: 497.637604 loss_cls: 232.602432 loss_iou: 137.280762 loss_dfl: 127.754425 loss_l1: 51.505150 batch_cost: 54.7948 data_cost: 48.2610 ips: 1.1680 images/s max_mem_reserved: 7855 MB d max_mem_allocated: 7545 MB
+[12/06 15:14:44] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:14:45] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:14:45] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:14:46] ppdet.engine INFO: Eval iter: 0
+[12/06 15:14:52] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:14:52] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 3.78%
+[12/06 15:14:52] ppdet.engine INFO: Total sample number: 59, average FPS: 8.397188218456574
+[12/06 15:14:52] ppdet.engine INFO: Best test bbox ap is 0.038.
+[12/06 15:14:52] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:15:38] ppdet.engine INFO: Epoch: [1] [0/4] eta: 4:21:56 lr: 0.000020 loss: 486.753082 loss_cls: 229.601822 loss_iou: 135.913269 loss_dfl: 120.697052 loss_l1: 50.070530 batch_cost: 39.6887 data_cost: 35.7390 ips: 1.6125 images/s max_mem_reserved: 9003 MB d max_mem_allocated: 8678 MB
+[12/06 15:17:30] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:17:30] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:17:30] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:17:32] ppdet.engine INFO: Eval iter: 0
+[12/06 15:17:37] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:17:37] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 6.37%
+[12/06 15:17:37] ppdet.engine INFO: Total sample number: 59, average FPS: 8.370779091800136
+[12/06 15:17:37] ppdet.engine INFO: Best test bbox ap is 0.064.
+[12/06 15:17:38] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:18:23] ppdet.engine INFO: Epoch: [2] [0/4] eta: 4:17:28 lr: 0.000040 loss: 476.069061 loss_cls: 228.511932 loss_iou: 127.477310 loss_dfl: 119.555298 loss_l1: 48.645744 batch_cost: 39.4102 data_cost: 34.9661 ips: 1.6239 images/s max_mem_reserved: 9844 MB d max_mem_allocated: 8809 MB
+[12/06 15:20:10] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:20:10] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:20:10] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:20:12] ppdet.engine INFO: Eval iter: 0
+[12/06 15:20:18] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:20:18] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 6.41%
+[12/06 15:20:18] ppdet.engine INFO: Total sample number: 59, average FPS: 7.465120468705335
+[12/06 15:20:18] ppdet.engine INFO: Best test bbox ap is 0.064.
+[12/06 15:20:19] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:21:07] ppdet.engine INFO: Epoch: [3] [0/4] eta: 4:13:29 lr: 0.000060 loss: 451.460556 loss_cls: 225.588829 loss_iou: 117.423126 loss_dfl: 109.523067 loss_l1: 40.833326 batch_cost: 37.9521 data_cost: 33.2615 ips: 1.6863 images/s max_mem_reserved: 9844 MB d max_mem_allocated: 8809 MB
+[12/06 15:22:52] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:22:52] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:22:52] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:22:53] ppdet.engine INFO: Eval iter: 0
+[12/06 15:22:59] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:22:59] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 2.99%
+[12/06 15:22:59] ppdet.engine INFO: Total sample number: 59, average FPS: 7.92477495162781
+[12/06 15:22:59] ppdet.engine INFO: Best test bbox ap is 0.064.
+[12/06 15:23:42] ppdet.engine INFO: Epoch: [4] [0/4] eta: 4:06:57 lr: 0.000080 loss: 443.501221 loss_cls: 220.796562 loss_iou: 116.061512 loss_dfl: 105.930248 loss_l1: 37.712631 batch_cost: 36.9035 data_cost: 32.2503 ips: 1.7343 images/s max_mem_reserved: 10398MB d max_mem_allocated: 9006 MB
+[12/06 15:25:28] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:25:28] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:25:28] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:25:29] ppdet.engine INFO: Eval iter: 0
+[12/06 15:25:35] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:25:35] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 4.03%
+[12/06 15:25:35] ppdet.engine INFO: Total sample number: 59, average FPS: 9.036008941657945
+[12/06 15:25:35] ppdet.engine INFO: Best test bbox ap is 0.064.
+[12/06 15:26:21] ppdet.engine INFO: Epoch: [5] [0/4] eta: 4:03:38 lr: 0.000100 loss: 433.708908 loss_cls: 213.569672 loss_iou: 115.615681 loss_dfl: 104.964188 loss_l1: 37.273640 batch_cost: 37.3363 data_cost: 32.5655 ips: 1.7141 images/s max_mem_reserved: 10398MB d max_mem_allocated: 9006 MB
+[12/06 15:28:12] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:28:12] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:28:12] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:28:13] ppdet.engine INFO: Eval iter: 0
+[12/06 15:28:19] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:28:20] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 3.34%
+[12/06 15:28:20] ppdet.engine INFO: Total sample number: 59, average FPS: 7.922459100387159
+[12/06 15:28:20] ppdet.engine INFO: Best test bbox ap is 0.064.
+[12/06 15:29:02] ppdet.engine INFO: Epoch: [6] [0/4] eta: 4:00:53 lr: 0.000100 loss: 413.626877 loss_cls: 186.199463 loss_iou: 116.719738 loss_dfl: 105.122295 loss_l1: 35.897249 batch_cost: 37.2121 data_cost: 32.4178 ips: 1.7199 images/s max_mem_reserved: 10398MB d max_mem_allocated: 9006 MB
+[12/06 15:30:41] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:30:41] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:30:41] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:30:42] ppdet.engine INFO: Eval iter: 0
+[12/06 15:30:47] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:30:47] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 4.88%
+[12/06 15:30:47] ppdet.engine INFO: Total sample number: 59, average FPS: 9.237122563759804
+[12/06 15:30:47] ppdet.engine INFO: Best test bbox ap is 0.064.
+[12/06 15:31:38] ppdet.engine INFO: Epoch: [7] [0/4] eta: 3:57:12 lr: 0.000100 loss: 406.135193 loss_cls: 173.548553 loss_iou: 119.622879 loss_dfl: 107.018951 loss_l1: 36.588318 batch_cost: 36.9264 data_cost: 32.1669 ips: 1.7332 images/s max_mem_reserved: 10398MB d max_mem_allocated: 9006 MB
+[12/06 15:33:24] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:33:24] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:33:24] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:33:25] ppdet.engine INFO: Eval iter: 0
+[12/06 15:33:31] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:33:31] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 3.81%
+[12/06 15:33:31] ppdet.engine INFO: Total sample number: 59, average FPS: 8.548831061120165
+[12/06 15:33:31] ppdet.engine INFO: Best test bbox ap is 0.064.
+[12/06 15:34:15] ppdet.engine INFO: Epoch: [8] [0/4] eta: 3:53:59 lr: 0.000100 loss: 396.842575 loss_cls: 164.892418 loss_iou: 121.283310 loss_dfl: 108.341217 loss_l1: 36.836472 batch_cost: 36.7226 data_cost: 32.0056 ips: 1.7428 images/s max_mem_reserved: 10398MB d max_mem_allocated: 9006 MB
+[12/06 15:36:06] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:36:06] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:36:06] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:36:08] ppdet.engine INFO: Eval iter: 0
+[12/06 15:36:14] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:36:14] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 8.85%
+[12/06 15:36:14] ppdet.engine INFO: Total sample number: 59, average FPS: 7.821257185306233
+[12/06 15:36:14] ppdet.engine INFO: Best test bbox ap is 0.088.
+[12/06 15:36:14] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:37:05] ppdet.engine INFO: Epoch: [9] [0/4] eta: 3:52:50 lr: 0.000100 loss: 386.372238 loss_cls: 159.422295 loss_iou: 118.998371 loss_dfl: 108.574436 loss_l1: 36.918930 batch_cost: 38.4471 data_cost: 33.7384 ips: 1.6646 images/s max_mem_reserved: 10972MB d max_mem_allocated: 9039 MB
+[12/06 15:38:47] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:38:47] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:38:47] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:38:48] ppdet.engine INFO: Eval iter: 0
+[12/06 15:38:54] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:38:54] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 10.12%
+[12/06 15:38:54] ppdet.engine INFO: Total sample number: 59, average FPS: 8.717459226200237
+[12/06 15:38:54] ppdet.engine INFO: Best test bbox ap is 0.101.
+[12/06 15:38:54] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:39:43] ppdet.engine INFO: Epoch: [10] [0/4] eta: 3:49:44 lr: 0.000099 loss: 380.786835 loss_cls: 155.943802 loss_iou: 117.348049 loss_dfl: 106.869999 loss_l1: 36.878323 batch_cost: 37.6495 data_cost: 32.9245 ips: 1.6999 images/s max_mem_reserved: 10972 MB d max_mem_allocated: 9039 MB
+[12/06 15:41:31] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:41:31] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:41:31] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:41:32] ppdet.engine INFO: Eval iter: 0
+[12/06 15:41:37] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:41:37] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 11.86%
+[12/06 15:41:37] ppdet.engine INFO: Total sample number: 59, average FPS: 8.872535325545446
+[12/06 15:41:37] ppdet.engine INFO: Best test bbox ap is 0.119.
+[12/06 15:41:38] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:42:25] ppdet.engine INFO: Epoch: [11] [0/4] eta: 3:47:24 lr: 0.000099 loss: 374.662186 loss_cls: 151.289764 loss_iou: 116.566792 loss_dfl: 105.255230 loss_l1: 35.923143 batch_cost: 38.0068 data_cost: 33.3049 ips: 1.6839 images/s max_mem_reserved: 10972 MB d max_mem_allocated: 9039 MB
+[12/06 15:44:12] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:44:12] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:44:12] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:44:14] ppdet.engine INFO: Eval iter: 0
+[12/06 15:44:20] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:44:20] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 10.23%
+[12/06 15:44:20] ppdet.engine INFO: Total sample number: 59, average FPS: 7.824616783741574
+[12/06 15:44:20] ppdet.engine INFO: Best test bbox ap is 0.119.
+[12/06 15:45:08] ppdet.engine INFO: Epoch: [12] [0/4] eta: 3:45:02 lr: 0.000099 loss: 363.088654 loss_cls: 145.471863 loss_iou: 113.161449 loss_dfl: 102.948223 loss_l1: 33.358980 batch_cost: 38.1823 data_cost: 33.4349 ips: 1.6762 images/s max_mem_reserved: 10972 MB d max_mem_allocated: 9039 MB
+[12/06 15:46:47] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:46:47] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:46:47] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:46:48] ppdet.engine INFO: Eval iter: 0
+[12/06 15:46:53] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:46:53] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 7.37%
+[12/06 15:46:53] ppdet.engine INFO: Total sample number: 59, average FPS: 9.604905511216904
+[12/06 15:46:53] ppdet.engine INFO: Best test bbox ap is 0.119.
+[12/06 15:47:32] ppdet.engine INFO: Epoch: [13] [0/4] eta: 3:40:40 lr: 0.000098 loss: 363.088654 loss_cls: 144.002380 loss_iou: 113.161449 loss_dfl: 102.948223 loss_l1: 33.358980 batch_cost: 35.9268 data_cost: 31.2421 ips: 1.7814 images/s max_mem_reserved: 10972 MB d max_mem_allocated: 9039 MB
+[12/06 15:49:12] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:49:12] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:49:12] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:49:13] ppdet.engine INFO: Eval iter: 0
+[12/06 15:49:19] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:49:19] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 16.66%
+[12/06 15:49:19] ppdet.engine INFO: Total sample number: 59, average FPS: 8.889116483434378
+[12/06 15:49:19] ppdet.engine INFO: Best test bbox ap is 0.167.
+[12/06 15:49:19] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:50:06] ppdet.engine INFO: Epoch: [14] [0/4] eta: 3:37:29 lr: 0.000098 loss: 366.426895 loss_cls: 144.362190 loss_iou: 114.090065 loss_dfl: 105.815453 loss_l1: 35.773573 batch_cost: 35.3741 data_cost: 30.6939 ips: 1.8092 images/s max_mem_reserved: 10972 MB d max_mem_allocated: 9039 MB
+[12/06 15:51:52] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:51:52] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:51:52] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:51:54] ppdet.engine INFO: Eval iter: 0
+[12/06 15:52:00] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:52:00] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 14.81%
+[12/06 15:52:00] ppdet.engine INFO: Total sample number: 59, average FPS: 7.479787906983942
+[12/06 15:52:00] ppdet.engine INFO: Best test bbox ap is 0.167.
+[12/06 15:52:45] ppdet.engine INFO: Epoch: [15] [0/4] eta: 3:34:54 lr: 0.000097 loss: 357.808502 loss_cls: 139.055199 loss_iou: 112.021358 loss_dfl: 105.019020 loss_l1: 34.992184 batch_cost: 35.8314 data_cost: 31.0398 ips: 1.7861 images/s max_mem_reserved: 10972 MB d max_mem_allocated: 9039 MB
+[12/06 15:54:27] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:54:27] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:54:27] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:54:28] ppdet.engine INFO: Eval iter: 0
+[12/06 15:54:34] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:54:34] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 21.86%
+[12/06 15:54:34] ppdet.engine INFO: Total sample number: 59, average FPS: 8.583242479333483
+[12/06 15:54:34] ppdet.engine INFO: Best test bbox ap is 0.219.
+[12/06 15:54:34] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:55:21] ppdet.engine INFO: Epoch: [16] [0/4] eta: 3:31:59 lr: 0.000097 loss: 342.471375 loss_cls: 130.881035 loss_iou: 109.074333 loss_dfl: 102.278915 loss_l1: 32.997286 batch_cost: 36.8485 data_cost: 31.8894 ips: 1.7368 images/s max_mem_reserved: 10972 MB d max_mem_allocated: 9039 MB
+[12/06 15:57:12] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:57:12] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:57:12] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:57:13] ppdet.engine INFO: Eval iter: 0
+[12/06 15:57:19] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:57:19] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 20.13%
+[12/06 15:57:19] ppdet.engine INFO: Total sample number: 59, average FPS: 8.361543243452735
+[12/06 15:57:19] ppdet.engine INFO: Best test bbox ap is 0.219.
+[12/06 15:58:02] ppdet.engine INFO: Epoch: [17] [0/4] eta: 3:29:38 lr: 0.000096 loss: 335.808060 loss_cls: 129.070457 loss_iou: 107.183704 loss_dfl: 99.956276 loss_l1: 31.520174 batch_cost: 36.9700 data_cost: 31.7952 ips: 1.7311 images/s max_mem_reserved: 10972MB d max_mem_allocated: 9039 MB
+[12/06 15:59:46] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 15:59:46] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 15:59:46] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 15:59:48] ppdet.engine INFO: Eval iter: 0
+[12/06 15:59:54] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 15:59:54] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 26.12%
+[12/06 15:59:54] ppdet.engine INFO: Total sample number: 59, average FPS: 7.313539292714036
+[12/06 15:59:54] ppdet.engine INFO: Best test bbox ap is 0.261.
+[12/06 15:59:55] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:00:48] ppdet.engine INFO: Epoch: [18] [0/4] eta: 3:27:32 lr: 0.000095 loss: 339.363876 loss_cls: 128.190372 loss_iou: 107.590405 loss_dfl: 101.453686 loss_l1: 31.442892 batch_cost: 37.5127 data_cost: 32.1578 ips: 1.7061 images/s max_mem_reserved: 10972 MB d max_mem_allocated: 9039 MB
+[12/06 16:02:27] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:02:27] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:02:27] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:02:29] ppdet.engine INFO: Eval iter: 0
+[12/06 16:02:34] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:02:34] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 31.08%
+[12/06 16:02:34] ppdet.engine INFO: Total sample number: 59, average FPS: 8.631972567604736
+[12/06 16:02:34] ppdet.engine INFO: Best test bbox ap is 0.311.
+[12/06 16:02:34] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:03:18] ppdet.engine INFO: Epoch: [19] [0/4] eta: 3:24:18 lr: 0.000095 loss: 340.403931 loss_cls: 127.250244 loss_iou: 108.485748 loss_dfl: 102.805824 loss_l1: 32.234503 batch_cost: 36.6850 data_cost: 31.3357 ips: 1.7446 images/s max_mem_reserved: 10972 MB d max_mem_allocated: 9039 MB
+[12/06 16:05:08] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:05:08] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:05:08] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:05:09] ppdet.engine INFO: Eval iter: 0
+[12/06 16:05:15] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:05:15] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 32.33%
+[12/06 16:05:15] ppdet.engine INFO: Total sample number: 59, average FPS: 7.842443984350729
+[12/06 16:05:15] ppdet.engine INFO: Best test bbox ap is 0.323.
+[12/06 16:05:16] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:06:02] ppdet.engine INFO: Epoch: [20] [0/4] eta: 3:22:01 lr: 0.000094 loss: 333.552719 loss_cls: 125.321194 loss_iou: 107.420929 loss_dfl: 100.697865 loss_l1: 32.234503 batch_cost: 37.1357 data_cost: 31.8164 ips: 1.7234 images/s max_mem_reserved: 10972 MB d max_mem_allocated: 9039 MB
+[12/06 16:07:34] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:07:34] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:07:34] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:07:35] ppdet.engine INFO: Eval iter: 0
+[12/06 16:07:41] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:07:41] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 28.96%
+[12/06 16:07:41] ppdet.engine INFO: Total sample number: 59, average FPS: 8.209475300922776
+[12/06 16:07:41] ppdet.engine INFO: Best test bbox ap is 0.323.
+[12/06 16:08:31] ppdet.engine INFO: Epoch: [21] [0/4] eta: 3:18:52 lr: 0.000093 loss: 331.129700 loss_cls: 123.433678 loss_iou: 106.844318 loss_dfl: 99.607765 loss_l1: 32.311413 batch_cost: 36.3601 data_cost: 31.0523 ips: 1.7602 images/s max_mem_reserved: 10972MB d max_mem_allocated: 9039 MB
+[12/06 16:10:18] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:10:18] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:10:18] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:10:19] ppdet.engine INFO: Eval iter: 0
+[12/06 16:10:25] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:10:25] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 37.93%
+[12/06 16:10:25] ppdet.engine INFO: Total sample number: 59, average FPS: 8.113303268098441
+[12/06 16:10:25] ppdet.engine INFO: Best test bbox ap is 0.379.
+[12/06 16:10:25] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:11:13] ppdet.engine INFO: Epoch: [22] [0/4] eta: 3:16:29 lr: 0.000092 loss: 326.466431 loss_cls: 121.290699 loss_iou: 105.993263 loss_dfl: 99.607765 loss_l1: 30.895552 batch_cost: 36.5798 data_cost: 31.2297 ips: 1.7496 images/s max_mem_reserved: 10972MB d max_mem_allocated: 9039 MB
+[12/06 16:13:08] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:13:08] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:13:08] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:13:09] ppdet.engine INFO: Eval iter: 0
+[12/06 16:13:15] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:13:15] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 43.12%
+[12/06 16:13:15] ppdet.engine INFO: Total sample number: 59, average FPS: 8.21935777100249
+[12/06 16:13:15] ppdet.engine INFO: Best test bbox ap is 0.431.
+[12/06 16:13:15] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:14:03] ppdet.engine INFO: Epoch: [23] [0/4] eta: 3:14:31 lr: 0.000091 loss: 323.997742 loss_cls: 118.795853 loss_iou: 105.180244 loss_dfl: 99.735565 loss_l1: 30.895552 batch_cost: 38.2220 data_cost: 32.9255 ips: 1.6744 images/s max_mem_reserved: 10972MB d max_mem_allocated: 9039 MB
+[12/06 16:15:52] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:15:52] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:15:52] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:15:54] ppdet.engine INFO: Eval iter: 0
+[12/06 16:16:00] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:16:00] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 44.91%
+[12/06 16:16:00] ppdet.engine INFO: Total sample number: 59, average FPS: 7.324598791019402
+[12/06 16:16:00] ppdet.engine INFO: Best test bbox ap is 0.449.
+[12/06 16:16:01] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:16:51] ppdet.engine INFO: Epoch: [24] [0/4] eta: 3:12:21 lr: 0.000090 loss: 323.124847 loss_cls: 117.758606 loss_iou: 103.959888 loss_dfl: 99.681667 loss_l1: 31.173660 batch_cost: 38.7704 data_cost: 33.6085 ips: 1.6507 images/s max_mem_reserved: 10972MB d max_mem_allocated: 9039 MB
+[12/06 16:18:37] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:18:37] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:18:37] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:18:38] ppdet.engine INFO: Eval iter: 0
+[12/06 16:18:44] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:18:44] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 44.38%
+[12/06 16:18:44] ppdet.engine INFO: Total sample number: 59, average FPS: 7.788787409017639
+[12/06 16:18:44] ppdet.engine INFO: Best test bbox ap is 0.449.
+[12/06 16:19:41] ppdet.engine INFO: Epoch: [25] [0/4] eta: 3:10:19 lr: 0.000089 loss: 318.970367 loss_cls: 115.999397 loss_iou: 103.959888 loss_dfl: 97.633381 loss_l1: 31.178570 batch_cost: 38.7142 data_cost: 33.5521 ips: 1.6531 images/s max_mem_reserved: 10972MB d max_mem_allocated: 9039 MB
+[12/06 16:21:32] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:21:32] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:21:32] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:21:33] ppdet.engine INFO: Eval iter: 0
+[12/06 16:21:39] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:21:39] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 38.33%
+[12/06 16:21:39] ppdet.engine INFO: Total sample number: 59, average FPS: 8.138686056247733
+[12/06 16:21:39] ppdet.engine INFO: Best test bbox ap is 0.449.
+[12/06 16:22:25] ppdet.engine INFO: Epoch: [26] [0/4] eta: 3:07:57 lr: 0.000088 loss: 310.404755 loss_cls: 111.710606 loss_iou: 104.029507 loss_dfl: 94.881874 loss_l1: 29.528847 batch_cost: 38.9359 data_cost: 33.7257 ips: 1.6437 images/s max_mem_reserved: 10972MB d max_mem_allocated: 9039 MB
+[12/06 16:24:17] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:24:17] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:24:17] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:24:18] ppdet.engine INFO: Eval iter: 0
+[12/06 16:24:24] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:24:24] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 41.77%
+[12/06 16:24:24] ppdet.engine INFO: Total sample number: 59, average FPS: 8.001397069690944
+[12/06 16:24:24] ppdet.engine INFO: Best test bbox ap is 0.449.
+[12/06 16:25:07] ppdet.engine INFO: Epoch: [27] [0/4] eta: 3:05:28 lr: 0.000087 loss: 306.428558 loss_cls: 108.017937 loss_iou: 102.626583 loss_dfl: 93.660492 loss_l1: 28.772512 batch_cost: 38.8076 data_cost: 33.4811 ips: 1.6492 images/s max_mem_reserved: 10972MB d max_mem_allocated: 9039 MB
+[12/06 16:26:47] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:26:47] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:26:47] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:26:48] ppdet.engine INFO: Eval iter: 0
+[12/06 16:26:54] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:26:54] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 46.34%
+[12/06 16:26:54] ppdet.engine INFO: Total sample number: 59, average FPS: 8.972025353744192
+[12/06 16:26:54] ppdet.engine INFO: Best test bbox ap is 0.463.
+[12/06 16:26:54] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:27:44] ppdet.engine INFO: Epoch: [28] [0/4] eta: 3:02:48 lr: 0.000086 loss: 305.034561 loss_cls: 108.344379 loss_iou: 101.405785 loss_dfl: 95.676468 loss_l1: 29.234415 batch_cost: 36.8218 data_cost: 28.5608 ips: 1.7381 images/s max_mem_reserved: 11628MB d max_mem_allocated: 9170 MB
+[12/06 16:29:26] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:29:26] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:29:26] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:29:27] ppdet.engine INFO: Eval iter: 0
+[12/06 16:29:33] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:29:33] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 40.79%
+[12/06 16:29:33] ppdet.engine INFO: Total sample number: 59, average FPS: 9.327181747870831
+[12/06 16:29:33] ppdet.engine INFO: Best test bbox ap is 0.463.
+[12/06 16:30:15] ppdet.engine INFO: Epoch: [29] [0/4] eta: 2:59:55 lr: 0.000085 loss: 305.032318 loss_cls: 107.321949 loss_iou: 100.627171 loss_dfl: 95.148113 loss_l1: 28.817636 batch_cost: 36.3196 data_cost: 27.9074 ips: 1.7621 images/s max_mem_reserved: 11628MB d max_mem_allocated: 9170 MB
+[12/06 16:32:03] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:32:03] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:32:03] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:32:04] ppdet.engine INFO: Eval iter: 0
+[12/06 16:32:10] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:32:10] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 44.43%
+[12/06 16:32:10] ppdet.engine INFO: Total sample number: 59, average FPS: 8.450145973215724
+[12/06 16:32:10] ppdet.engine INFO: Best test bbox ap is 0.463.
+[12/06 16:32:59] ppdet.engine INFO: Epoch: [30] [0/4] eta: 2:57:32 lr: 0.000084 loss: 303.497650 loss_cls: 105.669514 loss_iou: 99.626263 loss_dfl: 94.820618 loss_l1: 28.576426 batch_cost: 37.1040 data_cost: 31.2071 ips: 1.7249 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 16:34:37] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:34:37] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:34:37] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:34:39] ppdet.engine INFO: Eval iter: 0
+[12/06 16:34:44] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:34:44] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 33.12%
+[12/06 16:34:44] ppdet.engine INFO: Total sample number: 59, average FPS: 9.248195133888348
+[12/06 16:34:44] ppdet.engine INFO: Best test bbox ap is 0.463.
+[12/06 16:35:27] ppdet.engine INFO: Epoch: [31] [0/4] eta: 2:54:34 lr: 0.000083 loss: 297.885910 loss_cls: 104.755116 loss_iou: 97.526062 loss_dfl: 93.737621 loss_l1: 28.374934 batch_cost: 35.9124 data_cost: 29.9512 ips: 1.7821 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 16:37:12] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:37:12] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:37:12] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:37:13] ppdet.engine INFO: Eval iter: 0
+[12/06 16:37:19] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:37:19] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 50.46%
+[12/06 16:37:19] ppdet.engine INFO: Total sample number: 59, average FPS: 8.442679786626654
+[12/06 16:37:19] ppdet.engine INFO: Best test bbox ap is 0.505.
+[12/06 16:37:19] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:38:04] ppdet.engine INFO: Epoch: [32] [0/4] eta: 2:51:56 lr: 0.000081 loss: 298.189926 loss_cls: 106.542328 loss_iou: 96.721630 loss_dfl: 94.223961 loss_l1: 28.841391 batch_cost: 36.3265 data_cost: 30.4832 ips: 1.7618 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 16:39:44] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:39:44] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:39:44] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:39:46] ppdet.engine INFO: Eval iter: 0
+[12/06 16:39:52] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:39:52] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 59.50%
+[12/06 16:39:52] ppdet.engine INFO: Total sample number: 59, average FPS: 7.437290998571622
+[12/06 16:39:52] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 16:39:53] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:40:41] ppdet.engine INFO: Epoch: [33] [0/4] eta: 2:49:17 lr: 0.000080 loss: 294.812225 loss_cls: 104.655727 loss_iou: 96.947163 loss_dfl: 93.879955 loss_l1: 28.025431 batch_cost: 35.9847 data_cost: 30.3959 ips: 1.7785 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 16:42:13] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:42:13] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:42:13] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:42:14] ppdet.engine INFO: Eval iter: 0
+[12/06 16:42:20] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:42:20] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 49.55%
+[12/06 16:42:20] ppdet.engine INFO: Total sample number: 59, average FPS: 8.720952564072926
+[12/06 16:42:20] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 16:43:07] ppdet.engine INFO: Epoch: [34] [0/4] eta: 2:46:20 lr: 0.000079 loss: 288.985596 loss_cls: 101.134296 loss_iou: 96.607006 loss_dfl: 92.761005 loss_l1: 28.025431 batch_cost: 35.4366 data_cost: 30.0196 ips: 1.8060 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 16:44:57] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:44:57] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:44:57] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:44:58] ppdet.engine INFO: Eval iter: 0
+[12/06 16:45:04] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:45:04] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 46.01%
+[12/06 16:45:04] ppdet.engine INFO: Total sample number: 59, average FPS: 8.384644479075908
+[12/06 16:45:04] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 16:45:49] ppdet.engine INFO: Epoch: [35] [0/4] eta: 2:43:54 lr: 0.000077 loss: 282.678009 loss_cls: 97.697422 loss_iou: 94.154404 loss_dfl: 92.252110 loss_l1: 26.611780 batch_cost: 36.3777 data_cost: 30.8097 ips: 1.7593 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 16:47:24] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:47:24] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:47:24] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:47:25] ppdet.engine INFO: Eval iter: 0
+[12/06 16:47:32] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:47:32] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 54.06%
+[12/06 16:47:32] ppdet.engine INFO: Total sample number: 59, average FPS: 7.5867662730957575
+[12/06 16:47:32] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 16:48:16] ppdet.engine INFO: Epoch: [36] [0/4] eta: 2:41:00 lr: 0.000076 loss: 288.572556 loss_cls: 98.415684 loss_iou: 96.618206 loss_dfl: 93.043205 loss_l1: 28.235339 batch_cost: 36.0807 data_cost: 30.6336 ips: 1.7738 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 16:49:53] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:49:53] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:49:53] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:49:54] ppdet.engine INFO: Eval iter: 0
+[12/06 16:49:59] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:49:59] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 49.47%
+[12/06 16:49:59] ppdet.engine INFO: Total sample number: 59, average FPS: 8.755430564429707
+[12/06 16:49:59] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 16:50:47] ppdet.engine INFO: Epoch: [37] [0/4] eta: 2:38:17 lr: 0.000075 loss: 286.280228 loss_cls: 98.307152 loss_iou: 97.700459 loss_dfl: 90.966469 loss_l1: 26.400788 batch_cost: 34.8107 data_cost: 29.2318 ips: 1.8385 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 16:52:32] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:52:32] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:52:32] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:52:33] ppdet.engine INFO: Eval iter: 0
+[12/06 16:52:40] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:52:40] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 49.81%
+[12/06 16:52:40] ppdet.engine INFO: Total sample number: 59, average FPS: 7.8250497721977865
+[12/06 16:52:40] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 16:53:26] ppdet.engine INFO: Epoch: [38] [0/4] eta: 2:35:45 lr: 0.000073 loss: 286.280228 loss_cls: 97.096310 loss_iou: 97.361885 loss_dfl: 91.078022 loss_l1: 26.400788 batch_cost: 35.8496 data_cost: 30.2012 ips: 1.7852 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 16:55:02] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:55:02] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:55:02] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:55:03] ppdet.engine INFO: Eval iter: 0
+[12/06 16:55:09] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:55:09] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 46.98%
+[12/06 16:55:09] ppdet.engine INFO: Total sample number: 59, average FPS: 7.6426496428061625
+[12/06 16:55:09] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 16:55:57] ppdet.engine INFO: Epoch: [39] [0/4] eta: 2:33:02 lr: 0.000072 loss: 282.489655 loss_cls: 96.903080 loss_iou: 93.379337 loss_dfl: 91.502342 loss_l1: 26.306652 batch_cost: 35.8623 data_cost: 30.1797 ips: 1.7846 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 16:57:34] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 16:57:34] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 16:57:34] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 16:57:35] ppdet.engine INFO: Eval iter: 0
+[12/06 16:57:40] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 16:57:40] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 50.94%
+[12/06 16:57:40] ppdet.engine INFO: Total sample number: 59, average FPS: 9.222863527233383
+[12/06 16:57:40] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 16:58:23] ppdet.engine INFO: Epoch: [40] [0/4] eta: 2:30:13 lr: 0.000070 loss: 282.489655 loss_cls: 96.529705 loss_iou: 92.505272 loss_dfl: 92.267262 loss_l1: 26.457998 batch_cost: 34.9878 data_cost: 29.3944 ips: 1.8292 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:00:01] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:00:01] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:00:01] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:00:03] ppdet.engine INFO: Eval iter: 0
+[12/06 17:00:09] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:00:09] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 51.08%
+[12/06 17:00:09] ppdet.engine INFO: Total sample number: 59, average FPS: 7.928349315477092
+[12/06 17:00:09] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 17:00:54] ppdet.engine INFO: Epoch: [41] [0/4] eta: 2:27:33 lr: 0.000069 loss: 278.474960 loss_cls: 95.152485 loss_iou: 90.344753 loss_dfl: 91.444557 loss_l1: 26.348728 batch_cost: 34.6858 data_cost: 29.1582 ips: 1.8451 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:02:18] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:02:18] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:02:18] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:02:19] ppdet.engine INFO: Eval iter: 0
+[12/06 17:02:24] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:02:24] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 49.72%
+[12/06 17:02:24] ppdet.engine INFO: Total sample number: 59, average FPS: 9.874699376330835
+[12/06 17:02:24] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 17:03:04] ppdet.engine INFO: Epoch: [42] [0/4] eta: 2:24:26 lr: 0.000067 loss: 281.795837 loss_cls: 94.451958 loss_iou: 92.129383 loss_dfl: 91.444557 loss_l1: 26.328094 batch_cost: 32.6843 data_cost: 26.4999 ips: 1.9581 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:04:36] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:04:36] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:04:36] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:04:37] ppdet.engine INFO: Eval iter: 0
+[12/06 17:04:42] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:04:42] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 52.77%
+[12/06 17:04:42] ppdet.engine INFO: Total sample number: 59, average FPS: 9.640372455432686
+[12/06 17:04:42] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 17:05:22] ppdet.engine INFO: Epoch: [43] [0/4] eta: 2:21:32 lr: 0.000065 loss: 278.915787 loss_cls: 93.572670 loss_iou: 94.062881 loss_dfl: 90.327419 loss_l1: 26.052290 batch_cost: 32.3223 data_cost: 25.5462 ips: 1.9801 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:06:53] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:06:53] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:06:53] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:06:54] ppdet.engine INFO: Eval iter: 0
+[12/06 17:06:59] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:06:59] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 59.24%
+[12/06 17:06:59] ppdet.engine INFO: Total sample number: 59, average FPS: 8.991507800206977
+[12/06 17:06:59] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 17:07:43] ppdet.engine INFO: Epoch: [44] [0/4] eta: 2:18:44 lr: 0.000064 loss: 277.747498 loss_cls: 93.454250 loss_iou: 92.111565 loss_dfl: 89.468109 loss_l1: 25.850840 batch_cost: 32.0421 data_cost: 25.4220 ips: 1.9974 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:09:20] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:09:20] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:09:20] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:09:21] ppdet.engine INFO: Eval iter: 0
+[12/06 17:09:26] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:09:26] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 54.85%
+[12/06 17:09:26] ppdet.engine INFO: Total sample number: 59, average FPS: 9.151260053292132
+[12/06 17:09:26] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 17:10:08] ppdet.engine INFO: Epoch: [45] [0/4] eta: 2:16:02 lr: 0.000062 loss: 276.633896 loss_cls: 93.067444 loss_iou: 90.944202 loss_dfl: 87.972614 loss_l1: 25.643936 batch_cost: 32.9279 data_cost: 26.6232 ips: 1.9436 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:11:40] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:11:40] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:11:40] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:11:42] ppdet.engine INFO: Eval iter: 0
+[12/06 17:11:48] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:11:48] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 56.55%
+[12/06 17:11:48] ppdet.engine INFO: Total sample number: 59, average FPS: 8.293234954641793
+[12/06 17:11:48] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 17:12:32] ppdet.engine INFO: Epoch: [46] [0/4] eta: 2:13:19 lr: 0.000061 loss: 273.104492 loss_cls: 90.572559 loss_iou: 93.128738 loss_dfl: 87.842529 loss_l1: 25.655077 batch_cost: 33.4922 data_cost: 27.5233 ips: 1.9109 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:14:05] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:14:05] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:14:05] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:14:07] ppdet.engine INFO: Eval iter: 0
+[12/06 17:14:11] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:14:11] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 52.12%
+[12/06 17:14:11] ppdet.engine INFO: Total sample number: 59, average FPS: 9.668463856496118
+[12/06 17:14:11] ppdet.engine INFO: Best test bbox ap is 0.595.
+[12/06 17:14:55] ppdet.engine INFO: Epoch: [47] [0/4] eta: 2:10:38 lr: 0.000059 loss: 269.502411 loss_cls: 88.994976 loss_iou: 91.400463 loss_dfl: 87.842529 loss_l1: 25.511754 batch_cost: 33.3102 data_cost: 27.4756 ips: 1.9213 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:16:45] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:16:45] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:16:45] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:16:46] ppdet.engine INFO: Eval iter: 0
+[12/06 17:16:52] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:16:52] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 61.63%
+[12/06 17:16:52] ppdet.engine INFO: Total sample number: 59, average FPS: 8.123239659003994
+[12/06 17:16:52] ppdet.engine INFO: Best test bbox ap is 0.616.
+[12/06 17:16:52] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:17:35] ppdet.engine INFO: Epoch: [48] [0/4] eta: 2:08:13 lr: 0.000057 loss: 268.305527 loss_cls: 89.215328 loss_iou: 88.436420 loss_dfl: 87.873665 loss_l1: 25.661433 batch_cost: 35.3294 data_cost: 29.6821 ips: 1.8115 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:19:09] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:19:09] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:19:09] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:19:11] ppdet.engine INFO: Eval iter: 0
+[12/06 17:19:16] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:19:16] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 60.74%
+[12/06 17:19:16] ppdet.engine INFO: Total sample number: 59, average FPS: 8.292565474402867
+[12/06 17:19:16] ppdet.engine INFO: Best test bbox ap is 0.616.
+[12/06 17:20:06] ppdet.engine INFO: Epoch: [49] [0/4] eta: 2:05:40 lr: 0.000056 loss: 265.969025 loss_cls: 88.995499 loss_iou: 88.306732 loss_dfl: 87.283043 loss_l1: 24.997316 batch_cost: 35.7836 data_cost: 30.2388 ips: 1.7885 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:21:37] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:21:37] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:21:37] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:21:38] ppdet.engine INFO: Eval iter: 0
+[12/06 17:21:43] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:21:43] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 62.24%
+[12/06 17:21:43] ppdet.engine INFO: Total sample number: 59, average FPS: 9.457352646061818
+[12/06 17:21:43] ppdet.engine INFO: Best test bbox ap is 0.622.
+[12/06 17:21:44] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:22:26] ppdet.engine INFO: Epoch: [50] [0/4] eta: 2:02:58 lr: 0.000054 loss: 268.911621 loss_cls: 88.163040 loss_iou: 91.336369 loss_dfl: 87.746693 loss_l1: 24.997316 batch_cost: 34.3246 data_cost: 28.9731 ips: 1.8646 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:24:02] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:24:02] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:24:02] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:24:03] ppdet.engine INFO: Eval iter: 0
+[12/06 17:24:09] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:24:09] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 61.50%
+[12/06 17:24:09] ppdet.engine INFO: Total sample number: 59, average FPS: 7.817028962159181
+[12/06 17:24:09] ppdet.engine INFO: Best test bbox ap is 0.622.
+[12/06 17:24:58] ppdet.engine INFO: Epoch: [51] [0/4] eta: 2:00:26 lr: 0.000052 loss: 267.363495 loss_cls: 86.728825 loss_iou: 91.640068 loss_dfl: 87.460476 loss_l1: 24.708446 batch_cost: 34.7981 data_cost: 29.4680 ips: 1.8392 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:26:31] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:26:31] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:26:31] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:26:33] ppdet.engine INFO: Eval iter: 0
+[12/06 17:26:38] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:26:38] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 68.64%
+[12/06 17:26:38] ppdet.engine INFO: Total sample number: 59, average FPS: 9.15884514373525
+[12/06 17:26:38] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:26:38] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:27:21] ppdet.engine INFO: Epoch: [52] [0/4] eta: 1:57:48 lr: 0.000051 loss: 263.246902 loss_cls: 86.040497 loss_iou: 89.904110 loss_dfl: 86.768768 loss_l1: 24.544549 batch_cost: 33.8594 data_cost: 28.5578 ips: 1.8902 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:29:00] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:29:00] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:29:00] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:29:01] ppdet.engine INFO: Eval iter: 0
+[12/06 17:29:07] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:29:07] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 62.81%
+[12/06 17:29:07] ppdet.engine INFO: Total sample number: 59, average FPS: 8.67616188634556
+[12/06 17:29:07] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:29:49] ppdet.engine INFO: Epoch: [53] [0/4] eta: 1:55:15 lr: 0.000049 loss: 259.567825 loss_cls: 85.193108 loss_iou: 89.015514 loss_dfl: 86.138096 loss_l1: 24.399502 batch_cost: 34.6804 data_cost: 29.4893 ips: 1.8454 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:31:26] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:31:26] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:31:26] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:31:28] ppdet.engine INFO: Eval iter: 0
+[12/06 17:31:33] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:31:33] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 64.42%
+[12/06 17:31:33] ppdet.engine INFO: Total sample number: 59, average FPS: 8.474274295218597
+[12/06 17:31:33] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:32:19] ppdet.engine INFO: Epoch: [54] [0/4] eta: 1:52:43 lr: 0.000048 loss: 257.624954 loss_cls: 83.973335 loss_iou: 88.276421 loss_dfl: 85.970898 loss_l1: 24.124358 batch_cost: 34.4189 data_cost: 29.1623 ips: 1.8594 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:33:53] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:33:53] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:33:53] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:33:54] ppdet.engine INFO: Eval iter: 0
+[12/06 17:33:59] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:33:59] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 63.17%
+[12/06 17:33:59] ppdet.engine INFO: Total sample number: 59, average FPS: 9.326816500159673
+[12/06 17:33:59] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:34:42] ppdet.engine INFO: Epoch: [55] [0/4] eta: 1:50:07 lr: 0.000046 loss: 250.285156 loss_cls: 79.628166 loss_iou: 85.656837 loss_dfl: 85.602322 loss_l1: 23.645140 batch_cost: 33.9765 data_cost: 28.6951 ips: 1.8837 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:36:15] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:36:15] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:36:15] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:36:17] ppdet.engine INFO: Eval iter: 0
+[12/06 17:36:22] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:36:22] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 65.77%
+[12/06 17:36:22] ppdet.engine INFO: Total sample number: 59, average FPS: 8.64894505763431
+[12/06 17:36:22] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:37:06] ppdet.engine INFO: Epoch: [56] [0/4] eta: 1:47:32 lr: 0.000044 loss: 250.285156 loss_cls: 79.628166 loss_iou: 85.339458 loss_dfl: 84.889732 loss_l1: 23.620093 batch_cost: 34.0624 data_cost: 28.7373 ips: 1.8789 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:38:40] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:38:40] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:38:40] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:38:41] ppdet.engine INFO: Eval iter: 0
+[12/06 17:38:46] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:38:47] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 65.31%
+[12/06 17:38:47] ppdet.engine INFO: Total sample number: 59, average FPS: 8.940560632807918
+[12/06 17:38:47] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:39:32] ppdet.engine INFO: Epoch: [57] [0/4] eta: 1:44:59 lr: 0.000043 loss: 253.704239 loss_cls: 82.106159 loss_iou: 85.697372 loss_dfl: 85.544468 loss_l1: 23.233460 batch_cost: 34.0049 data_cost: 28.7874 ips: 1.8821 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:41:15] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:41:15] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:41:15] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:41:16] ppdet.engine INFO: Eval iter: 0
+[12/06 17:41:21] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:41:21] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 61.62%
+[12/06 17:41:21] ppdet.engine INFO: Total sample number: 59, average FPS: 9.137237679676272
+[12/06 17:41:21] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:42:03] ppdet.engine INFO: Epoch: [58] [0/4] eta: 1:42:31 lr: 0.000041 loss: 256.000824 loss_cls: 83.159550 loss_iou: 85.935318 loss_dfl: 85.807308 loss_l1: 23.233460 batch_cost: 34.7381 data_cost: 29.6370 ips: 1.8424 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:43:36] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:43:36] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:43:36] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:43:37] ppdet.engine INFO: Eval iter: 0
+[12/06 17:43:42] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:43:42] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 63.53%
+[12/06 17:43:42] ppdet.engine INFO: Total sample number: 59, average FPS: 8.507389030806324
+[12/06 17:43:42] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:44:26] ppdet.engine INFO: Epoch: [59] [0/4] eta: 1:39:57 lr: 0.000039 loss: 256.610809 loss_cls: 81.757240 loss_iou: 88.338703 loss_dfl: 86.607822 loss_l1: 24.860275 batch_cost: 34.5844 data_cost: 29.4200 ips: 1.8505 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:46:04] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:46:04] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:46:04] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:46:05] ppdet.engine INFO: Eval iter: 0
+[12/06 17:46:11] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:46:11] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 65.03%
+[12/06 17:46:11] ppdet.engine INFO: Total sample number: 59, average FPS: 8.44425247510664
+[12/06 17:46:11] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:46:52] ppdet.engine INFO: Epoch: [60] [0/4] eta: 1:37:25 lr: 0.000038 loss: 248.134636 loss_cls: 80.030365 loss_iou: 85.083172 loss_dfl: 84.023415 loss_l1: 23.182111 batch_cost: 33.6908 data_cost: 28.5035 ips: 1.8996 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:48:38] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:48:38] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:48:38] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:48:39] ppdet.engine INFO: Eval iter: 0
+[12/06 17:48:44] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:48:44] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 61.46%
+[12/06 17:48:44] ppdet.engine INFO: Total sample number: 59, average FPS: 8.547774220349245
+[12/06 17:48:44] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:49:29] ppdet.engine INFO: Epoch: [61] [0/4] eta: 1:35:01 lr: 0.000036 loss: 249.395645 loss_cls: 80.814140 loss_iou: 84.370998 loss_dfl: 84.773159 loss_l1: 23.175946 batch_cost: 35.4230 data_cost: 30.2458 ips: 1.8067 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:50:52] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:50:52] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:50:52] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:50:53] ppdet.engine INFO: Eval iter: 0
+[12/06 17:50:59] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:50:59] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 63.38%
+[12/06 17:50:59] ppdet.engine INFO: Total sample number: 59, average FPS: 8.397198476366722
+[12/06 17:50:59] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:51:47] ppdet.engine INFO: Epoch: [62] [0/4] eta: 1:32:25 lr: 0.000035 loss: 250.211082 loss_cls: 80.814140 loss_iou: 85.363575 loss_dfl: 84.773159 loss_l1: 23.493914 batch_cost: 33.9062 data_cost: 28.7622 ips: 1.8876 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:53:21] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:53:21] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:53:21] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:53:23] ppdet.engine INFO: Eval iter: 0
+[12/06 17:53:27] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:53:27] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 65.95%
+[12/06 17:53:27] ppdet.engine INFO: Total sample number: 59, average FPS: 9.820636581110834
+[12/06 17:53:27] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:54:10] ppdet.engine INFO: Epoch: [63] [0/4] eta: 1:29:53 lr: 0.000033 loss: 249.109596 loss_cls: 78.453220 loss_iou: 84.760853 loss_dfl: 84.934265 loss_l1: 22.998587 batch_cost: 33.0232 data_cost: 27.9080 ips: 1.9380 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:55:46] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:55:46] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:55:46] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:55:47] ppdet.engine INFO: Eval iter: 0
+[12/06 17:55:53] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:55:53] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 60.90%
+[12/06 17:55:53] ppdet.engine INFO: Total sample number: 59, average FPS: 8.105545321973304
+[12/06 17:55:53] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:56:40] ppdet.engine INFO: Epoch: [64] [0/4] eta: 1:27:25 lr: 0.000031 loss: 246.984177 loss_cls: 78.090343 loss_iou: 83.904999 loss_dfl: 84.468182 loss_l1: 22.702289 batch_cost: 34.1921 data_cost: 29.1008 ips: 1.8718 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 17:58:08] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 17:58:08] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 17:58:08] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 17:58:09] ppdet.engine INFO: Eval iter: 0
+[12/06 17:58:15] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 17:58:15] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 64.59%
+[12/06 17:58:15] ppdet.engine INFO: Total sample number: 59, average FPS: 9.24934136026546
+[12/06 17:58:15] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 17:58:56] ppdet.engine INFO: Epoch: [65] [0/4] eta: 1:24:50 lr: 0.000030 loss: 248.484650 loss_cls: 79.064068 loss_iou: 84.437111 loss_dfl: 84.167522 loss_l1: 23.229515 batch_cost: 33.2877 data_cost: 28.1766 ips: 1.9226 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:00:36] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:00:36] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:00:36] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:00:37] ppdet.engine INFO: Eval iter: 0
+[12/06 18:00:43] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:00:44] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 65.74%
+[12/06 18:00:44] ppdet.engine INFO: Total sample number: 59, average FPS: 7.630554330634561
+[12/06 18:00:44] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 18:01:24] ppdet.engine INFO: Epoch: [66] [0/4] eta: 1:22:22 lr: 0.000028 loss: 251.106934 loss_cls: 82.182388 loss_iou: 85.226978 loss_dfl: 85.285027 loss_l1: 23.631438 batch_cost: 33.5783 data_cost: 28.3408 ips: 1.9060 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:02:55] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:02:55] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:02:55] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:02:56] ppdet.engine INFO: Eval iter: 0
+[12/06 18:03:02] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:03:02] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.68%
+[12/06 18:03:02] ppdet.engine INFO: Total sample number: 59, average FPS: 8.113502507847475
+[12/06 18:03:02] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 18:03:50] ppdet.engine INFO: Epoch: [67] [0/4] eta: 1:19:53 lr: 0.000027 loss: 247.266922 loss_cls: 78.009224 loss_iou: 85.045368 loss_dfl: 83.693745 loss_l1: 23.195882 batch_cost: 33.7834 data_cost: 28.5402 ips: 1.8944 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:05:27] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:05:27] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:05:27] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:05:29] ppdet.engine INFO: Eval iter: 0
+[12/06 18:05:34] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:05:34] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 68.30%
+[12/06 18:05:34] ppdet.engine INFO: Total sample number: 59, average FPS: 9.10298897439793
+[12/06 18:05:34] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 18:06:17] ppdet.engine INFO: Epoch: [68] [0/4] eta: 1:17:25 lr: 0.000025 loss: 245.386063 loss_cls: 77.555485 loss_iou: 84.325253 loss_dfl: 82.385792 loss_l1: 22.423091 batch_cost: 33.9679 data_cost: 28.7723 ips: 1.8841 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:07:50] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:07:50] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:07:50] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:07:51] ppdet.engine INFO: Eval iter: 0
+[12/06 18:07:57] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:07:57] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 68.30%
+[12/06 18:07:57] ppdet.engine INFO: Total sample number: 59, average FPS: 8.431256726184795
+[12/06 18:07:57] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 18:08:43] ppdet.engine INFO: Epoch: [69] [0/4] eta: 1:14:57 lr: 0.000024 loss: 239.730003 loss_cls: 76.261105 loss_iou: 81.912056 loss_dfl: 81.946590 loss_l1: 21.860631 batch_cost: 34.6813 data_cost: 29.5960 ips: 1.8454 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:10:13] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:10:13] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:10:13] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:10:14] ppdet.engine INFO: Eval iter: 0
+[12/06 18:10:19] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:10:19] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 64.60%
+[12/06 18:10:19] ppdet.engine INFO: Total sample number: 59, average FPS: 9.604496568560387
+[12/06 18:10:19] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 18:10:57] ppdet.engine INFO: Epoch: [70] [0/4] eta: 1:12:24 lr: 0.000023 loss: 236.996826 loss_cls: 75.064861 loss_iou: 80.873558 loss_dfl: 81.623451 loss_l1: 22.775159 batch_cost: 32.7164 data_cost: 27.6049 ips: 1.9562 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:12:38] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:12:38] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:12:38] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:12:40] ppdet.engine INFO: Eval iter: 0
+[12/06 18:12:46] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:12:46] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 62.42%
+[12/06 18:12:46] ppdet.engine INFO: Total sample number: 59, average FPS: 7.983841318370434
+[12/06 18:12:46] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 18:13:31] ppdet.engine INFO: Epoch: [71] [0/4] eta: 1:10:00 lr: 0.000021 loss: 235.905678 loss_cls: 75.064861 loss_iou: 80.921272 loss_dfl: 81.060940 loss_l1: 22.775159 batch_cost: 34.1687 data_cost: 28.9174 ips: 1.8731 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:15:05] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:15:05] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:15:05] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:15:06] ppdet.engine INFO: Eval iter: 0
+[12/06 18:15:12] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:15:12] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 62.58%
+[12/06 18:15:12] ppdet.engine INFO: Total sample number: 59, average FPS: 8.227245226588082
+[12/06 18:15:12] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 18:15:57] ppdet.engine INFO: Epoch: [72] [0/4] eta: 1:07:32 lr: 0.000020 loss: 237.958252 loss_cls: 74.680099 loss_iou: 80.714401 loss_dfl: 81.964714 loss_l1: 22.387297 batch_cost: 33.9829 data_cost: 28.7233 ips: 1.8833 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:17:33] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:17:33] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:17:33] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:17:34] ppdet.engine INFO: Eval iter: 0
+[12/06 18:17:39] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:17:39] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 65.69%
+[12/06 18:17:39] ppdet.engine INFO: Total sample number: 59, average FPS: 8.920348459763005
+[12/06 18:17:39] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 18:18:20] ppdet.engine INFO: Epoch: [73] [0/4] eta: 1:05:04 lr: 0.000019 loss: 235.931656 loss_cls: 73.572521 loss_iou: 80.714401 loss_dfl: 81.197212 loss_l1: 21.485082 batch_cost: 33.9620 data_cost: 28.7660 ips: 1.8845 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:19:54] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:19:54] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:19:54] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:19:55] ppdet.engine INFO: Eval iter: 0
+[12/06 18:20:02] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:20:02] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 66.22%
+[12/06 18:20:02] ppdet.engine INFO: Total sample number: 59, average FPS: 7.782212709592165
+[12/06 18:20:02] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 18:20:49] ppdet.engine INFO: Epoch: [74] [0/4] eta: 1:02:38 lr: 0.000017 loss: 233.005333 loss_cls: 72.566967 loss_iou: 78.842480 loss_dfl: 79.826588 loss_l1: 21.348559 batch_cost: 34.2523 data_cost: 29.1108 ips: 1.8685 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:22:16] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:22:16] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:22:16] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:22:18] ppdet.engine INFO: Eval iter: 0
+[12/06 18:22:23] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:22:23] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 66.15%
+[12/06 18:22:23] ppdet.engine INFO: Total sample number: 59, average FPS: 8.898999401720285
+[12/06 18:22:23] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 18:23:03] ppdet.engine INFO: Epoch: [75] [0/4] eta: 1:00:08 lr: 0.000016 loss: 232.262863 loss_cls: 71.791306 loss_iou: 78.670216 loss_dfl: 79.826588 loss_l1: 21.408731 batch_cost: 32.5505 data_cost: 27.4740 ips: 1.9662 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:24:39] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:24:39] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:24:39] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:24:40] ppdet.engine INFO: Eval iter: 0
+[12/06 18:24:46] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:24:46] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 65.88%
+[12/06 18:24:46] ppdet.engine INFO: Total sample number: 59, average FPS: 8.580552635527216
+[12/06 18:24:46] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 18:25:31] ppdet.engine INFO: Epoch: [76] [0/4] eta: 0:57:42 lr: 0.000015 loss: 228.903320 loss_cls: 71.500866 loss_iou: 77.581287 loss_dfl: 80.025486 loss_l1: 21.375492 batch_cost: 33.6720 data_cost: 28.4980 ips: 1.9007 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:27:03] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:27:03] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:27:03] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:27:05] ppdet.engine INFO: Eval iter: 0
+[12/06 18:27:11] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:27:11] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 64.75%
+[12/06 18:27:11] ppdet.engine INFO: Total sample number: 59, average FPS: 7.8447970922532955
+[12/06 18:27:11] ppdet.engine INFO: Best test bbox ap is 0.686.
+[12/06 18:27:57] ppdet.engine INFO: Epoch: [77] [0/4] eta: 0:55:16 lr: 0.000014 loss: 230.602234 loss_cls: 71.500866 loss_iou: 77.848713 loss_dfl: 80.652817 loss_l1: 21.305968 batch_cost: 33.6170 data_cost: 28.4869 ips: 1.9038 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:29:37] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:29:37] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:29:37] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:29:39] ppdet.engine INFO: Eval iter: 0
+[12/06 18:29:44] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:29:44] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 68.79%
+[12/06 18:29:44] ppdet.engine INFO: Total sample number: 59, average FPS: 9.555981245922428
+[12/06 18:29:44] ppdet.engine INFO: Best test bbox ap is 0.688.
+[12/06 18:29:44] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:30:25] ppdet.engine INFO: Epoch: [78] [0/4] eta: 0:52:51 lr: 0.000013 loss: 231.911377 loss_cls: 71.630192 loss_iou: 78.722160 loss_dfl: 80.728146 loss_l1: 21.495640 batch_cost: 34.4407 data_cost: 29.2009 ips: 1.8583 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:32:01] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:32:01] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:32:01] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:32:02] ppdet.engine INFO: Eval iter: 0
+[12/06 18:32:07] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:32:07] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 68.54%
+[12/06 18:32:07] ppdet.engine INFO: Total sample number: 59, average FPS: 8.877740504967004
+[12/06 18:32:07] ppdet.engine INFO: Best test bbox ap is 0.688.
+[12/06 18:32:56] ppdet.engine INFO: Epoch: [79] [0/4] eta: 0:50:26 lr: 0.000012 loss: 230.534935 loss_cls: 71.357136 loss_iou: 78.073620 loss_dfl: 80.690815 loss_l1: 21.187007 batch_cost: 35.0896 data_cost: 29.7577 ips: 1.8239 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:34:29] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:34:29] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:34:29] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:34:30] ppdet.engine INFO: Eval iter: 0
+[12/06 18:34:35] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:34:35] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.88%
+[12/06 18:34:35] ppdet.engine INFO: Total sample number: 59, average FPS: 9.40238565118312
+[12/06 18:34:35] ppdet.engine INFO: Best test bbox ap is 0.688.
+[12/06 18:35:20] ppdet.engine INFO: Epoch: [80] [0/4] eta: 0:48:00 lr: 0.000011 loss: 229.640404 loss_cls: 71.857365 loss_iou: 77.297062 loss_dfl: 80.599815 loss_l1: 21.178915 batch_cost: 34.1249 data_cost: 28.8494 ips: 1.8755 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:37:01] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:37:01] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:37:01] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:37:02] ppdet.engine INFO: Eval iter: 0
+[12/06 18:37:07] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:37:07] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 68.20%
+[12/06 18:37:07] ppdet.engine INFO: Total sample number: 59, average FPS: 9.066141664838215
+[12/06 18:37:07] ppdet.engine INFO: Best test bbox ap is 0.688.
+[12/06 18:37:49] ppdet.engine INFO: Epoch: [81] [0/4] eta: 0:45:36 lr: 0.000010 loss: 229.602356 loss_cls: 72.453766 loss_iou: 76.520218 loss_dfl: 79.784370 loss_l1: 21.086933 batch_cost: 34.8699 data_cost: 29.5562 ips: 1.8354 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:39:19] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:39:19] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:39:19] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:39:21] ppdet.engine INFO: Eval iter: 0
+[12/06 18:39:26] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:39:26] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.90%
+[12/06 18:39:26] ppdet.engine INFO: Total sample number: 59, average FPS: 8.701805752454057
+[12/06 18:39:26] ppdet.engine INFO: Best test bbox ap is 0.688.
+[12/06 18:40:11] ppdet.engine INFO: Epoch: [82] [0/4] eta: 0:43:10 lr: 0.000009 loss: 230.306351 loss_cls: 72.016254 loss_iou: 80.433319 loss_dfl: 79.772667 loss_l1: 21.700056 batch_cost: 34.1834 data_cost: 29.0186 ips: 1.8723 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:41:51] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:41:51] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:41:51] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:41:52] ppdet.engine INFO: Eval iter: 0
+[12/06 18:41:57] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:41:57] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 69.46%
+[12/06 18:41:57] ppdet.engine INFO: Total sample number: 59, average FPS: 9.424285547425708
+[12/06 18:41:57] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 18:41:57] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:42:37] ppdet.engine INFO: Epoch: [83] [0/4] eta: 0:40:45 lr: 0.000008 loss: 228.696762 loss_cls: 70.482792 loss_iou: 78.546932 loss_dfl: 79.013077 loss_l1: 20.317921 batch_cost: 33.7067 data_cost: 28.6106 ips: 1.8987 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:44:10] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:44:10] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:44:10] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:44:12] ppdet.engine INFO: Eval iter: 0
+[12/06 18:44:17] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:44:17] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 68.15%
+[12/06 18:44:17] ppdet.engine INFO: Total sample number: 59, average FPS: 9.005815948301777
+[12/06 18:44:17] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 18:45:03] ppdet.engine INFO: Epoch: [84] [0/4] eta: 0:38:20 lr: 0.000007 loss: 224.179138 loss_cls: 68.532341 loss_iou: 76.383430 loss_dfl: 77.936398 loss_l1: 20.317921 batch_cost: 34.3164 data_cost: 29.0321 ips: 1.8650 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:46:35] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:46:35] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:46:35] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:46:37] ppdet.engine INFO: Eval iter: 0
+[12/06 18:46:42] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:46:42] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.85%
+[12/06 18:46:42] ppdet.engine INFO: Total sample number: 59, average FPS: 9.181123174907
+[12/06 18:46:42] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 18:47:23] ppdet.engine INFO: Epoch: [85] [0/4] eta: 0:35:54 lr: 0.000006 loss: 229.642471 loss_cls: 71.027805 loss_iou: 77.269238 loss_dfl: 80.863388 loss_l1: 21.511559 batch_cost: 33.2117 data_cost: 27.9445 ips: 1.9270 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:49:05] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:49:05] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:49:05] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:49:06] ppdet.engine INFO: Eval iter: 0
+[12/06 18:49:11] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:49:11] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 68.14%
+[12/06 18:49:11] ppdet.engine INFO: Total sample number: 59, average FPS: 9.83579757625732
+[12/06 18:49:11] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 18:49:54] ppdet.engine INFO: Epoch: [86] [0/4] eta: 0:33:31 lr: 0.000005 loss: 229.642471 loss_cls: 70.414436 loss_iou: 77.269238 loss_dfl: 80.863388 loss_l1: 21.038022 batch_cost: 34.4105 data_cost: 29.2103 ips: 1.8599 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:51:31] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:51:31] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:51:31] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:51:32] ppdet.engine INFO: Eval iter: 0
+[12/06 18:51:38] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:51:38] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 68.92%
+[12/06 18:51:38] ppdet.engine INFO: Total sample number: 59, average FPS: 8.23063012244306
+[12/06 18:51:38] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 18:52:23] ppdet.engine INFO: Epoch: [87] [0/4] eta: 0:31:07 lr: 0.000005 loss: 227.369514 loss_cls: 70.136547 loss_iou: 76.072395 loss_dfl: 80.633911 loss_l1: 20.741705 batch_cost: 34.3020 data_cost: 29.0551 ips: 1.8658 images/s max_mem_reserved: 11628 MB d max_mem_allocated: 9170 MB
+[12/06 18:53:59] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:53:59] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:53:59] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:54:00] ppdet.engine INFO: Eval iter: 0
+[12/06 18:54:06] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:54:06] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.14%
+[12/06 18:54:06] ppdet.engine INFO: Total sample number: 59, average FPS: 8.643067223698937
+[12/06 18:54:06] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 18:54:49] ppdet.engine INFO: Epoch: [88] [0/4] eta: 0:28:42 lr: 0.000004 loss: 225.513397 loss_cls: 70.311256 loss_iou: 76.159016 loss_dfl: 78.088333 loss_l1: 20.688060 batch_cost: 34.0735 data_cost: 28.6969 ips: 1.8783 images/s max_mem_reserved: 12305 MB d max_mem_allocated: 9203 MB
+[12/06 18:56:22] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:56:22] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:56:22] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:56:23] ppdet.engine INFO: Eval iter: 0
+[12/06 18:56:29] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:56:29] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 68.21%
+[12/06 18:56:29] ppdet.engine INFO: Total sample number: 59, average FPS: 8.177113473967578
+[12/06 18:56:29] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 18:57:13] ppdet.engine INFO: Epoch: [89] [0/4] eta: 0:26:18 lr: 0.000003 loss: 225.513397 loss_cls: 70.311256 loss_iou: 76.104382 loss_dfl: 78.088333 loss_l1: 20.516044 batch_cost: 34.1680 data_cost: 28.8278 ips: 1.8731 images/s max_mem_reserved: 12305 MB d max_mem_allocated: 9203 MB
+[12/06 18:58:52] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 18:58:52] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 18:58:52] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 18:58:54] ppdet.engine INFO: Eval iter: 0
+[12/06 18:59:00] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 18:59:00] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 68.15%
+[12/06 18:59:00] ppdet.engine INFO: Total sample number: 59, average FPS: 8.020789805429093
+[12/06 18:59:00] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 18:59:46] ppdet.engine INFO: Epoch: [90] [0/4] eta: 0:23:55 lr: 0.000003 loss: 224.006401 loss_cls: 69.559238 loss_iou: 75.656239 loss_dfl: 78.504810 loss_l1: 20.166485 batch_cost: 34.3600 data_cost: 29.1001 ips: 1.8626 images/s max_mem_reserved: 12305 MB d max_mem_allocated: 9203 MB
+[12/06 19:01:33] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 19:01:33] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 19:01:33] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 19:01:34] ppdet.engine INFO: Eval iter: 0
+[12/06 19:01:39] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 19:01:39] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.44%
+[12/06 19:01:39] ppdet.engine INFO: Total sample number: 59, average FPS: 9.177236557959839
+[12/06 19:01:39] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 19:02:21] ppdet.engine INFO: Epoch: [91] [0/4] eta: 0:21:31 lr: 0.000002 loss: 225.672173 loss_cls: 69.813858 loss_iou: 75.870262 loss_dfl: 79.465736 loss_l1: 19.843800 batch_cost: 35.4936 data_cost: 30.5216 ips: 1.8031 images/s max_mem_reserved: 12305 MB d max_mem_allocated: 9203 MB
+[12/06 19:03:59] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 19:03:59] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 19:03:59] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 19:04:00] ppdet.engine INFO: Eval iter: 0
+[12/06 19:04:06] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 19:04:06] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.59%
+[12/06 19:04:06] ppdet.engine INFO: Total sample number: 59, average FPS: 7.7530687201831485
+[12/06 19:04:06] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 19:04:51] ppdet.engine INFO: Epoch: [92] [0/4] eta: 0:19:08 lr: 0.000002 loss: 225.332939 loss_cls: 68.675980 loss_iou: 75.870262 loss_dfl: 79.662727 loss_l1: 19.779952 batch_cost: 35.6843 data_cost: 30.5275 ips: 1.7935 images/s max_mem_reserved: 12305 MB d max_mem_allocated: 9203 MB
+[12/06 19:06:28] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 19:06:28] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 19:06:28] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 19:06:29] ppdet.engine INFO: Eval iter: 0
+[12/06 19:06:34] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 19:06:34] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.85%
+[12/06 19:06:34] ppdet.engine INFO: Total sample number: 59, average FPS: 9.28817603519797
+[12/06 19:06:34] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 19:07:17] ppdet.engine INFO: Epoch: [93] [0/4] eta: 0:16:44 lr: 0.000001 loss: 225.879623 loss_cls: 68.675980 loss_iou: 75.705063 loss_dfl: 80.136784 loss_l1: 20.078325 batch_cost: 34.3498 data_cost: 29.0952 ips: 1.8632 images/s max_mem_reserved: 12305 MB d max_mem_allocated: 9203 MB
+[12/06 19:08:58] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 19:08:58] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 19:08:58] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 19:09:00] ppdet.engine INFO: Eval iter: 0
+[12/06 19:09:05] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 19:09:05] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.64%
+[12/06 19:09:05] ppdet.engine INFO: Total sample number: 59, average FPS: 8.40862994553438
+[12/06 19:09:05] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 19:09:46] ppdet.engine INFO: Epoch: [94] [0/4] eta: 0:14:20 lr: 0.000001 loss: 219.456390 loss_cls: 66.546741 loss_iou: 74.451668 loss_dfl: 78.042477 loss_l1: 20.019186 batch_cost: 34.6771 data_cost: 29.4755 ips: 1.8456 images/s max_mem_reserved: 12305 MB d max_mem_allocated: 9203 MB
+[12/06 19:11:24] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 19:11:24] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 19:11:24] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 19:11:25] ppdet.engine INFO: Eval iter: 0
+[12/06 19:11:31] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 19:11:31] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.70%
+[12/06 19:11:31] ppdet.engine INFO: Total sample number: 59, average FPS: 8.20817642237
+[12/06 19:11:31] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 19:12:16] ppdet.engine INFO: Epoch: [95] [0/4] eta: 0:11:57 lr: 0.000001 loss: 217.011932 loss_cls: 65.750874 loss_iou: 74.824829 loss_dfl: 76.771160 loss_l1: 19.726903 batch_cost: 34.5711 data_cost: 29.2752 ips: 1.8513 images/s max_mem_reserved: 12305 MB d max_mem_allocated: 9203 MB
+[12/06 19:14:06] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 19:14:06] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 19:14:06] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 19:14:07] ppdet.engine INFO: Eval iter: 0
+[12/06 19:14:12] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 19:14:12] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.60%
+[12/06 19:14:12] ppdet.engine INFO: Total sample number: 59, average FPS: 8.72396551476148
+[12/06 19:14:12] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 19:14:56] ppdet.engine INFO: Epoch: [96] [0/4] eta: 0:09:34 lr: 0.000000 loss: 221.311852 loss_cls: 67.010017 loss_iou: 74.776142 loss_dfl: 77.785416 loss_l1: 19.487460 batch_cost: 35.4136 data_cost: 29.9555 ips: 1.8072 images/s max_mem_reserved: 12305 MB d max_mem_allocated: 9203 MB
+[12/06 19:16:42] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 19:16:42] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 19:16:42] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 19:16:44] ppdet.engine INFO: Eval iter: 0
+[12/06 19:16:50] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 19:16:50] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.42%
+[12/06 19:16:50] ppdet.engine INFO: Total sample number: 59, average FPS: 7.755270787867635
+[12/06 19:16:50] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 19:17:36] ppdet.engine INFO: Epoch: [97] [0/4] eta: 0:07:10 lr: 0.000000 loss: 223.921173 loss_cls: 69.106285 loss_iou: 75.394051 loss_dfl: 78.005234 loss_l1: 19.487460 batch_cost: 37.0965 data_cost: 31.7708 ips: 1.7252 images/s max_mem_reserved: 12305 MB d max_mem_allocated: 9203 MB
+[12/06 19:19:19] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 19:19:19] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 19:19:19] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 19:19:21] ppdet.engine INFO: Eval iter: 0
+[12/06 19:19:27] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 19:19:27] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.51%
+[12/06 19:19:27] ppdet.engine INFO: Total sample number: 59, average FPS: 7.466718805537099
+[12/06 19:19:27] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 19:20:15] ppdet.engine INFO: Epoch: [98] [0/4] eta: 0:04:47 lr: 0.000000 loss: 226.317261 loss_cls: 70.108067 loss_iou: 76.437584 loss_dfl: 78.379951 loss_l1: 20.103333 batch_cost: 36.7808 data_cost: 31.5886 ips: 1.7400 images/s max_mem_reserved: 12305 MB d max_mem_allocated: 9203 MB
+[12/06 19:21:56] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 19:21:56] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 19:21:56] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 19:21:57] ppdet.engine INFO: Eval iter: 0
+[12/06 19:22:02] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 19:22:02] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.63%
+[12/06 19:22:02] ppdet.engine INFO: Total sample number: 59, average FPS: 8.919240206427425
+[12/06 19:22:02] ppdet.engine INFO: Best test bbox ap is 0.695.
+[12/06 19:22:45] ppdet.engine INFO: Epoch: [99] [0/4] eta: 0:02:23 lr: 0.000000 loss: 219.476349 loss_cls: 67.487732 loss_iou: 74.390266 loss_dfl: 77.837387 loss_l1: 19.732499 batch_cost: 36.1242 data_cost: 30.9656 ips: 1.7717 images/s max_mem_reserved: 12305 MB d max_mem_allocated: 9203 MB
+[12/06 19:24:43] ppdet.utils.checkpoint INFO: Save checkpoint: output\yolov8_n_100e_64b8b_riceneck293
+[12/06 19:24:43] ppdet.engine INFO: Eval loader length is 8, eval batch_size is 8.
+[12/06 19:24:43] ppdet.engine INFO: Starting evaluation ......
+
+[12/06 19:24:44] ppdet.engine INFO: Eval iter: 0
+[12/06 19:24:51] ppdet.metrics.metrics INFO: Accumulating evaluatation results...
+[12/06 19:24:51] ppdet.metrics.metrics INFO: mAP(0.50, integral) = 67.73%
+[12/06 19:24:51] ppdet.engine INFO: Total sample number: 59, average FPS: 7.844116000160392
+[12/06 19:24:51] ppdet.engine INFO: Best test bbox ap is 0.695.
+
+(paddle) E:\projects\myPaddleYOLO>

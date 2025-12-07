@@ -6,16 +6,23 @@ log_dir=log_dir/${job_name}
 weights=output/${job_name}/model_final.pdparams
 
 # 1.训练（单卡/多卡），加 --eval 表示边训边评估，加 --amp 表示混合精度训练
-CUDA_VISIBLE_DEVICES=0 python tools/train.py -c configs/yolov8/yolov8_n_100e_64b8b_rice80.yml --eval --amp
+python tools/train.py -c configs/yolov8/yolov8_n_100e_64b8b_riceneck293.yml --eval --amp
 # python -m paddle.distributed.launch --log_dir=${log_dir} --gpus 0,1,2,3,4,5,6,7 tools/train.py -c ${config} --eval --amp
 
 # 2.评估，加 --classwise 表示输出每一类mAP
-CUDA_VISIBLE_DEVICES=0 python tools/eval.py -c ${config} -o weights=${weights} --classwise
+python tools/eval.py -c configs/yolov8/yolov8_n_100e_16b8b_rice.yml -o weights=output/yolov8_n_100e_16b8b_rice/best_model.pdparams --classwise
 
 # 3.预测 (单张图/图片文件夹）
-CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c configs/yolov8/yolov8_n_100e_64b8b_rice200.yml -o weights=output/yolov8_n_100e_64b8b_rice200/best_model.pdparams --infer_dir=H:\\dataset\\rice\\80\\images --draw_threshold=0.5 --output_dir=output/yolov8_n_100e_64b8b_rice200/inference_results
-# CUDA_VISIBLE_DEVICES=0 python tools/infer.py -c ${config} -o weights=${weights} --infer_dir=demo/ --draw_threshold=0.5
+# python tools/infer.py -c configs/yolov8/yolov8_n_100e_64b8b_rice200.yml -o weights=output/yolov8_n_100e_64b8b_rice200/best_model.pdparams --infer_img=H:\\dataset\\rice\\80\\images\xxx.jpg --draw_threshold=0.5 --output_dir=output/yolov8_n_100e_64b8b_rice200/inference_results
+python tools/infer.py -c configs/yolov8/yolov8_n_100e_64b8b_riceneck293.yml -o weights=output/yolov8_n_100e_64b8b_riceneck293/best_model.pdparams --infer_dir=H:\\dataset\\rice\\rice_plus_neck\\test --draw_threshold=0.5 --output_dir=output/yolov8_n_100e_64b8b_riceneck293/inference_results
 
+# 4. web demo
+cd rice_demo
+python app.py --config ../configs/yolov8/yolov8_n_100e_64b8b_riceneck293.yml --weights ../output/yolov8_n_100e_64b8b_riceneck293/best_model.pdparams
+
+
+
+""" 以下未被使用 """
 # 4.导出模型，以下3种模式选一种
 ## 普通导出，加trt表示用于trt加速，对NMS和silu激活函数提速明显
 CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c ${config} -o weights=${weights} # trt=True

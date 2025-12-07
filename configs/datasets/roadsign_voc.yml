@@ -4,18 +4,18 @@ num_classes: 4
 
 TrainDataset:
   name: VOCDataSet
-  dataset_dir: dataset/roadsign_voc
+  dataset_dir: F:\roadsign_voc
   anno_path: train.txt
   label_list: label_list.txt
   data_fields: ['image', 'gt_bbox', 'gt_class', 'difficult']
 
 EvalDataset:
   name: VOCDataSet
-  dataset_dir: dataset/roadsign_voc
+  dataset_dir: F:\roadsign_voc
   anno_path: valid.txt
   label_list: label_list.txt
   data_fields: ['image', 'gt_bbox', 'gt_class', 'difficult']
 
 TestDataset:
   name: ImageFolder
-  anno_path: dataset/roadsign_voc/label_list.txt
+  anno_path: F:\roadsign_vo\label_list.txt

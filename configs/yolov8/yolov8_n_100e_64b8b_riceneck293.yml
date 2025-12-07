@@ -1,5 +1,5 @@
 _BASE_: [
-  '../datasets/rice80_voc.yml',
+  '../datasets/riceneck293_voc.yml',
   '../runtime.yml',
   '_base_/optimizer_500e.yml',
   '_base_/yolov8_cspdarknet.yml',
@@ -11,9 +11,10 @@ width_mult: 0.25
 log_iter: 10
 snapshot_epoch: 1
 epoch: 100 
+keep_checkpoint_max: 3 
 
 pretrain_weights: https://paddledet.bj.bcebos.com/models/yolov8_n_500e_coco.pdparams
-weights: output/yolov8_n_100e_64b8b_rice80/model_final 
+weights: output/yolov8_n_100e_64b8b_rice160/model_final 
 
 LearningRate:
   base_lr: 0.0001  
