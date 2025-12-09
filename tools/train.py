@@ -173,7 +173,7 @@ def main():
         cfg.use_mlu = False
 
     if cfg.use_gpu:
-        place = paddle.set_device('gpu')
+        place = paddle.set_device('metax_gpu')
     elif cfg.use_npu:
         place = paddle.set_device('npu')
     elif cfg.use_xpu:
