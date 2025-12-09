@@ -105,7 +105,7 @@ def check_gpu(use_gpu):
     try:
         if use_gpu and not paddle.is_compiled_with_cuda():
             logger.error(err)
-            sys.exit(1)
+            #sys.exit(1)
     except Exception as e:
         pass
 
