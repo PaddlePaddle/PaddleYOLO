@@ -1,4 +1,5 @@
-use_gpu: true
+use_gpu: false
+use_metax_gpu: true
 use_xpu: false
 use_mlu: false
 use_npu: false
