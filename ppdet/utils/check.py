@@ -26,7 +26,7 @@ from .logger import setup_logger
 logger = setup_logger(__name__)
 
 __all__ = [
-    'check_gpu', 'check_npu', 'check_xpu', 'check_mlu', 'check_version',
+    'check_gpu', 'check_npu', 'check_xpu', 'check_mlu', 'check_metax_gpu', 'check_version',
     'check_config', "_IS_NPU"
 ]
 
@@ -109,7 +109,24 @@ def check_gpu(use_gpu):
     except Exception as e:
         pass
 
+def check_metax_gpu(use_metax_gpu):
+     """
+    Log error and exit when set use_metax_gpu=true in paddlepaddle
+    cpu version.
+    """
+    err = "Config use_metax_gpu cannot be set as true while you are " \
+          "using paddlepaddle cpu version ! \nPlease try: \n" \
+          "\t1. Install paddlepaddle-metax_gpu to run model on Metax_GPU \n" \
+          "\t2. Set use_metax_gpu as false in config file to run " \
+          "model on CPU"
 
+    try:
+        if use_metax_gpu and not paddle.is_compiled_with_custom_device('metax_gpu'):
+            logger.error(err)
+            sys.exit(1)
+    except Exception as e:
+        pass
+        
 def check_version(version='2.2'):
     """
     Log error and exit when the installed version of paddlepaddle is
