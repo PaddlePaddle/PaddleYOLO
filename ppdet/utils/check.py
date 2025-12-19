@@ -116,7 +116,7 @@ def check_metax_gpu(use_metax_gpu):
     """
     err = "Config use_metax_gpu cannot be set as true while you are " \
           "using paddlepaddle cpu version ! \nPlease try: \n" \
-          "\t1. Install paddlepaddle-metax_gpu to run model on GPU \n" \
+          "\t1. Install paddlepaddle-metax_gpu to run model on Metax_GPU \n" \
           "\t2. Set use_metax_gpu as false in config file to run " \
           "model on CPU"
 
