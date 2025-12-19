@@ -121,7 +121,7 @@ def check_metax_gpu(use_metax_gpu):
           "model on CPU"
 
     try:
-        if use_metax_gpu and not paddle.is_compiled_with_custom_device():
+        if use_metax_gpu and not paddle.is_compiled_with_custom_device('metax_gpu'):
             logger.error(err)
             sys.exit(1)
     except Exception as e:
