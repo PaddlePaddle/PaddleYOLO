@@ -1,4 +1,4 @@
-numpy < 1.24
+numpy==1.26.4
 tqdm
 typeguard
 visualdl>=2.2.0
