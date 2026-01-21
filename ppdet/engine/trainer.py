@@ -429,8 +429,8 @@ class Trainer(object):
         model = self.model
         if self.cfg.get('to_static', False):
             model = apply_to_static(self.cfg, model)
-            if self.cfg.architecture == 'YOLOv5':
-                model.yolo_head.loss.to_static = True
+            #if self.cfg.architecture == 'YOLOv5':
+            #    model.yolo_head.loss.to_static = True
         sync_bn = (
             getattr(self.cfg, 'norm_type', None) == 'sync_bn' and
             (self.cfg.use_gpu or self.cfg.use_npu or self.cfg.use_mlu) and
